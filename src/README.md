@@ -1,5 +1,5 @@
 # Integrated building energy system optimization 
-`run_building_opt.py` *also see source code documentation at [readthedocs/P2bldg](https://app.readthedocs.org)*
+`run_building_opt.py` *also see source code documentation at [p2bldg.readthedocs/run_building_opt.py](https://p2bldg.readthedocs.io/en/latest/run_building_opt.html)*
 
 This routine performs an integrated optimization of building energy systems, considering both electrical and thermal 
 demands, generation, and storage options. The following figure illustrates the system components considered in 
@@ -40,7 +40,7 @@ How to run `run_building_opt` (Windows)
 
 
 # PV + BESS optimization 
-`run_battery_opt.py` *also see source code documentation at [readthedocs/P2bldg](https://app.readthedocs.org).*
+`run_battery_opt.py` *also see source code documentation at [p2bldg.readthedocs/run_battery_opt.py](https://p2bldg.readthedocs.io/en/latest/run_battery_opt.html)*
 
 This simpler routine performs an optimization of a PV + Battery Energy Storage System (BESS) for a building or facility. 
 The optimization is performed for a full year in quarter-hourly resolution. Timeseries for electrical load, PV generation 

@@ -37,7 +37,7 @@ In the `src` folder two example routines are provided for different use cases:
 - `run_battery_opt.py`: PV + Battery storage optimization
 
 These are described under [src/README.md](src/README.md). A detailed documentation of the source code 
-can be found under [readthedocs/P2bldg](https://app.readthedocs.org).
+can be found under [p2bldg.readthedocs](https://p2bldg.readthedocs.io/en/latest/).
 
 -------------------
 Quick prerequisites
