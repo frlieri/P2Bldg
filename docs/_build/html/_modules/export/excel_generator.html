@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>export.excel_generator &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">export.excel_generator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for export.excel_generator</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">src/export/excel_generator.py</span>
+
+<span class="sd">Utilities to export pandas DataFrames to an Excel workbook and to insert</span>
+<span class="sd">XlsxWriter charts based on declarative graph specifications.</span>
+
+<span class="sd">Responsibilities:</span>
+
+<span class="sd">- write multiple DataFrames to separate worksheets in a single `.xlsx` file.</span>
+<span class="sd">- create and insert XlsxWriter charts configured via a compact `graph_specs`</span>
+<span class="sd">  dictionary, including support for primary/secondary charts, dual y-axis,</span>
+<span class="sd">  trendlines, custom series styles and selective legend hiding.</span>
+<span class="sd">- handle common pandas structures (flat columns, MultiIndex columns, MultiIndex</span>
+<span class="sd">  index) so that chart ranges and category columns are written correctly.</span>
+
+<span class="sd">Public functions:</span>
+
+<span class="sd">- add_chart_to_worksheet(workbook, worksheet, graph_nr, graph_specs, df, dfname)</span>
+<span class="sd">    Build and add one (possibly combined) XlsxWriter chart to the given worksheet</span>
+<span class="sd">    using the provided DataFrame and `graph_specs`.</span>
+
+<span class="sd">- save_xlsx_wb(out_path, df_dict, graphs=None)</span>
+<span class="sd">    Write a workbook with one sheet per DataFrame in `df_dict` and insert charts</span>
+<span class="sd">    described in `graphs`. Uses the `xlsxwriter` engine via `pandas.ExcelWriter`.</span>
+
+<span class="sd">Key behavior and expectations:</span>
+
+<span class="sd">- Requires `pandas` and the `xlsxwriter` engine available to `pandas.ExcelWriter`.</span>
+<span class="sd">- DataFrame indexes are written to Excel; index names are cleared to avoid extra</span>
+<span class="sd">  header cells. MultiIndex columns are flattened for export so column lookups</span>
+<span class="sd">  used to configure chart series remain stable.</span>
+<span class="sd">- Chart series use Excel row/column ranges built from the exported sheet layout.</span>
+<span class="sd">  If a requested column name is missing, the function logs a message and skips it.</span>
+<span class="sd">- `graph_specs` is declarative and supports keys such as `graph_type_1`,</span>
+<span class="sd">  `graph_type_2`, `graph_type_2_cols`, `cols_to_include`, `skip_first_n_rows`,</span>
+<span class="sd">  `skip_last_n_rows`, `position`, `x_y_scale`, `title`, `x_axis_title`,</span>
+<span class="sd">  `y_axis_title`, `font_size`, `column_styles`, `delete_series_from_legend`,</span>
+<span class="sd">  and `trendline`.</span>
+<span class="sd">- Trendline color is taken from the corresponding column style entry; ensure</span>
+<span class="sd">  `column_styles` contains the expected color path if trendlines are used.</span>
+
+<span class="sd">Example (concept):</span>
+<span class="sd">    graphs = {</span>
+<span class="sd">        &quot;sheet&quot;: [</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;graph_type_1&quot;: {&quot;type&quot;: &quot;line&quot;},</span>
+<span class="sd">                &quot;cols_to_include&quot;: [&quot;col_a&quot;, &quot;col_b&quot;],</span>
+<span class="sd">                &quot;position&quot;: &quot;B3&quot;,</span>
+<span class="sd">                &quot;x_y_scale&quot;: [1.5, 1.0],</span>
+<span class="sd">            }</span>
+<span class="sd">        ]</span>
+<span class="sd">    }</span>
+
+<span class="sd">Return values:</span>
+<span class="sd">- Both helpers perform file/worksheet side effects and return `None`.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+
+<div class="viewcode-block" id="add_chart_to_worksheet"><a class="viewcode-back" href="../../export.html#export.excel_generator.add_chart_to_worksheet">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">add_chart_to_worksheet</span><span class="p">(</span><span class="n">workbook</span><span class="p">,</span> <span class="n">worksheet</span><span class="p">,</span> <span class="n">graph_nr</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">graph_specs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span>
+                           <span class="n">dfname</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adds a chart to the specified worksheet based on the provided specifications and dataframe.</span>
+
+<span class="sd">    Summary:</span>
+<span class="sd">    This function generates Excel charts using the provided workbook, worksheet, graph specifications,</span>
+<span class="sd">    and data (df). It supports adding multiple charts, customizing their appearance (e.g., titles,</span>
+<span class="sd">    axis labels, font sizes, etc.), and handles features like trendlines, dual-axis charts, and selective</span>
+<span class="sd">    legend customization. The charts can be positioned and scaled according to the `graph_specs` provided.</span>
+
+<span class="sd">    :param workbook: The Excel workbook where the chart is to be created.</span>
+<span class="sd">    :param worksheet: The worksheet within the workbook where the chart will be inserted.</span>
+<span class="sd">    :param graph_nr: An integer indicating the index of the graph for placement on the worksheet.</span>
+<span class="sd">    :param graph_specs: A dictionary containing configurations for the chart, such as type, column styles,</span>
+<span class="sd">        axis labels, font sizes, trendlines, and positioning details.</span>
+<span class="sd">    :param df: The pandas DataFrame containing the data to be plotted.</span>
+<span class="sd">    :param dfname: The name of the worksheet (string) with the reference data for the chart.</span>
+<span class="sd">    :return: None</span>
+
+<span class="sd">    Minimal example::</span>
+<span class="sd">    graph_specs =</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;graph_type_1&quot;: {&quot;type&quot;: &quot;line&quot;},</span>
+<span class="sd">                        &quot;cols_to_include&quot;: [&quot;col_a&quot;, &quot;col_b&quot;],</span>
+<span class="sd">                        &quot;position&quot;: &quot;B3&quot;,</span>
+<span class="sd">                        &quot;x_y_scale&quot;: [2.0, 1.0],</span>
+<span class="sd">                    }</span>
+
+<span class="sd">    List of possible graph options</span>
+<span class="sd">    {&#39;type&#39;: &#39;area&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;area&#39;, &#39;subtype&#39;: &#39;stacked&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;area&#39;, &#39;subtype&#39;: &#39;percent_stacked&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;bar&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;bar&#39;, &#39;subtype&#39;: &#39;stacked&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;bar&#39;, &#39;subtype&#39;: &#39;percent_stacked&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;column&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;column&#39;, &#39;subtype&#39;: &#39;stacked&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;column&#39;, &#39;subtype&#39;: &#39;percent_stacked&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;line&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;line&#39;, &#39;subtype&#39;: &#39;stacked&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;line&#39;, &#39;subtype&#39;: &#39;percent_stacked&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;pie&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;pie&#39;, &#39;subtype&#39;: &#39;exploded&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;doughnut&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;scatter&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;scatter&#39;, &#39;subtype&#39;: &#39;straight&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;scatter&#39;, &#39;subtype&#39;: &#39;straight_with_markers&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;scatter&#39;, &#39;subtype&#39;: &#39;smooth&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;scatter&#39;, &#39;subtype&#39;: &#39;smooth_with_markers&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;radar&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;radar&#39;, &#39;subtype&#39;: &#39;with_markers&#39;},</span>
+<span class="sd">    {&#39;type&#39;: &#39;radar&#39;, &#39;subtype&#39;: &#39;filled&#39;}</span>
+
+<span class="sd">    dash type options</span>
+<span class="sd">    &#39;solid&#39;: A solid line.</span>
+<span class="sd">    &#39;dash&#39;: A dashed line.</span>
+<span class="sd">    &#39;dot&#39;: A dotted line.</span>
+<span class="sd">    &#39;dash_dot&#39;: A line with alternating dashes and dots.</span>
+<span class="sd">    &#39;dash_dot_dot&#39;: A line with alternating dashes and two dots.</span>
+<span class="sd">    &#39;long_dash&#39;: A line with long dashes.</span>
+<span class="sd">    &#39;long_dash_dot&#39;: A line with long dashes and a dot.</span>
+<span class="sd">    &#39;long_dash_dot_dot&#39;: A line with long dashes and two dots.</span>
+
+<span class="sd">    pattern options</span>
+<span class="sd">    percent_xx</span>
+<span class="sd">    dark_downward_diagonal</span>
+<span class="sd">    dark_horizontal</span>
+<span class="sd">    dark_upward_diagonal</span>
+<span class="sd">    dark_vertical</span>
+<span class="sd">    dashed_downward_diagonal</span>
+<span class="sd">    dashed_horizontal</span>
+<span class="sd">    dashed_upward_diagonal</span>
+<span class="sd">    dashed_vertical</span>
+<span class="sd">    diagonal_brick</span>
+<span class="sd">    diagonal_cross</span>
+<span class="sd">    pattern_divot</span>
+<span class="sd">    dotted_diamond</span>
+<span class="sd">    dotted_grid</span>
+<span class="sd">    downward_diagonal</span>
+<span class="sd">    horizontal</span>
+<span class="sd">    horizontal_brick</span>
+<span class="sd">    large_checker_board</span>
+<span class="sd">    large_confetti</span>
+<span class="sd">    large_grid</span>
+<span class="sd">    light_downward_diagonal</span>
+<span class="sd">    light_horizontal</span>
+<span class="sd">    light_upward_diagonal</span>
+<span class="sd">    light_vertical</span>
+<span class="sd">    mixed_pattern</span>
+<span class="sd">    narrow_horizontal</span>
+<span class="sd">    narrow_vertical</span>
+<span class="sd">    outlined_diamond</span>
+<span class="sd">    plaid</span>
+<span class="sd">    shingle</span>
+<span class="sd">    small_checker_board</span>
+<span class="sd">    small_confetti</span>
+<span class="sd">    small_grid</span>
+<span class="sd">    solid_diamond</span>
+<span class="sd">    sphere</span>
+<span class="sd">    trellis</span>
+<span class="sd">    upward_diagonal</span>
+<span class="sd">    vertical</span>
+<span class="sd">    wave</span>
+<span class="sd">    weave</span>
+<span class="sd">    wide_downward_diagonal</span>
+<span class="sd">    wide_upward_diagonal</span>
+<span class="sd">    zig_zag</span>
+
+<span class="sd">    marker options</span>
+<span class="sd">    &#39;none&#39;: No marker.</span>
+<span class="sd">    &#39;circle&#39;: Circular markers.</span>
+<span class="sd">    &#39;square&#39;: Square markers.</span>
+<span class="sd">    &#39;diamond&#39;: Diamond-shaped markers.</span>
+<span class="sd">    &#39;triangle&#39;: Triangle markers.</span>
+<span class="sd">    &#39;x&#39;: X-shaped markers.</span>
+<span class="sd">    &#39;plus&#39;: Plus-shaped markers.</span>
+<span class="sd">    &#39;dash&#39;: Dash-shaped markers.</span>
+<span class="sd">    &#39;star&#39;: Star-shaped markers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="s1">&#39;graph_type_1&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="n">graph_type_1</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;graph_type_1&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">graph_type_1</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;line&#39;</span><span class="p">}</span>
+
+    <span class="k">if</span> <span class="s1">&#39;graph_type_2&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="s1">&#39;graph_type_2_cols&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">,</span> <span class="s1">&#39;No columns for graph_type_2 given&#39;</span>
+        <span class="n">graph_type_2</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;graph_type_2&#39;</span><span class="p">]</span>
+        <span class="n">graph_type_2_cols</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;graph_type_2_cols&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">graph_type_2</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">graph_type_2_cols</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="n">charts</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># skip last or first n rows</span>
+    <span class="k">if</span> <span class="s1">&#39;skip_last_n_rows&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="n">max_row</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="o">-</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;skip_last_n_rows&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">max_row</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s1">&#39;skip_first_n_rows&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="n">min_row</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;skip_first_n_rows&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">min_row</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># handle MultiIndex columns</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">):</span>
+        <span class="n">nr_of_ind_cols</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">levels</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nr_of_ind_cols</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="c1"># select columns to plot</span>
+    <span class="k">if</span> <span class="s1">&#39;cols_to_include&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;cols_to_include&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">cols</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+
+    <span class="c1"># add columns to chart</span>
+    <span class="k">for</span> <span class="n">series_nr</span><span class="p">,</span> <span class="n">col</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">cols</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">col_nr</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+
+            <span class="c1"># set specifications for plotting column: [sheetname, first_row, first_col, last_row, last_col]</span>
+            <span class="n">series_specs</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">dfname</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">col_nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="s1">&#39;categories&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">dfname</span><span class="p">,</span> <span class="n">min_row</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_row</span><span class="p">,</span> <span class="n">nr_of_ind_cols</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span>
+                <span class="s1">&#39;values&#39;</span><span class="p">:</span> <span class="p">[</span><span class="n">dfname</span><span class="p">,</span> <span class="n">min_row</span><span class="p">,</span> <span class="n">col_nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">max_row</span><span class="p">,</span> <span class="n">col_nr</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="p">}</span>
+            <span class="k">if</span> <span class="s1">&#39;trendline&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span> <span class="ow">and</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;trendline&#39;</span><span class="p">]:</span>
+                <span class="n">series_specs</span><span class="p">[</span><span class="s1">&#39;trendline&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;trendline&#39;</span><span class="p">][</span><span class="n">col</span><span class="p">],</span>
+                    <span class="s1">&#39;line&#39;</span><span class="p">:</span> <span class="p">{</span>
+                        <span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;column_styles&#39;</span><span class="p">][</span><span class="n">col</span><span class="p">][</span><span class="s1">&#39;marker&#39;</span><span class="p">][</span><span class="s1">&#39;line&#39;</span><span class="p">][</span><span class="s1">&#39;color&#39;</span><span class="p">],</span>
+                        <span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                        <span class="s1">&#39;dash_type&#39;</span><span class="p">:</span> <span class="s1">&#39;long_dash&#39;</span><span class="p">,</span>
+                    <span class="p">},</span>
+                <span class="p">}</span>
+            <span class="c1"># if custom styles for column given, apply</span>
+            <span class="k">if</span> <span class="s1">&#39;column_styles&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span> <span class="ow">and</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;column_styles&#39;</span><span class="p">]:</span>
+                <span class="n">col_style</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;column_styles&#39;</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
+                <span class="n">series_specs</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="o">**</span><span class="n">series_specs</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">col_style</span><span class="p">,</span>
+                <span class="p">}</span>
+
+            <span class="k">if</span> <span class="n">col</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">graph_type_2_cols</span><span class="p">:</span>
+                <span class="c1"># Create chart for graph type</span>
+                <span class="k">if</span> <span class="s1">&#39;graph_type_1&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">charts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">charts</span><span class="p">[</span><span class="s1">&#39;graph_type_1&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="o">.</span><span class="n">add_chart</span><span class="p">(</span><span class="n">graph_type_1</span><span class="p">)</span>
+                <span class="c1"># Add a data series to the chart</span>
+                <span class="n">charts</span><span class="p">[</span><span class="s1">&#39;graph_type_1&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">add_series</span><span class="p">(</span><span class="n">series_specs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Create chart for graph type</span>
+                <span class="k">if</span> <span class="s1">&#39;graph_type_2&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">charts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">charts</span><span class="p">[</span><span class="s1">&#39;graph_type_2&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">workbook</span><span class="o">.</span><span class="n">add_chart</span><span class="p">(</span><span class="n">graph_type_2</span><span class="p">)</span>
+                <span class="k">if</span> <span class="s1">&#39;y2_axis&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+                    <span class="n">series_specs</span><span class="p">[</span><span class="s1">&#39;y2_axis&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;y2_axis&#39;</span><span class="p">]</span>
+                <span class="c1"># Add a data series to the chart</span>
+                <span class="n">charts</span><span class="p">[</span><span class="s1">&#39;graph_type_2&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">add_series</span><span class="p">(</span><span class="n">series_specs</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Column </span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s2"> not found in dataframe </span><span class="si">{</span><span class="n">dfname</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">chart1</span> <span class="o">=</span> <span class="n">charts</span><span class="p">[</span><span class="s1">&#39;graph_type_1&#39;</span><span class="p">]</span>
+
+    <span class="c1"># Combine charts</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">charts</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">chart2</span> <span class="o">=</span> <span class="n">charts</span><span class="p">[</span><span class="s1">&#39;graph_type_2&#39;</span><span class="p">]</span>
+        <span class="n">chart1</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span><span class="n">chart2</span><span class="p">)</span>
+
+    <span class="c1"># set font size and titles for chart</span>
+    <span class="n">font_size</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="k">if</span> <span class="s1">&#39;font_size&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="n">font_size</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;font_size&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s1">&#39;title&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="n">chart1</span><span class="o">.</span><span class="n">set_title</span> \
+            <span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">],</span> <span class="s1">&#39;name_font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="n">font_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;bold&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}})</span>
+    <span class="k">if</span> <span class="s1">&#39;x_axis_title&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="c1"># Add x-axis label</span>
+        <span class="n">chart1</span><span class="o">.</span><span class="n">set_x_axis</span> \
+            <span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;x_axis_title&#39;</span><span class="p">],</span> <span class="s1">&#39;name_font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="n">font_size</span><span class="p">,</span> <span class="s1">&#39;bold&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}})</span>
+    <span class="k">if</span> <span class="s1">&#39;y_axis_title&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="c1"># Add y-axis label</span>
+        <span class="n">chart1</span><span class="o">.</span><span class="n">set_y_axis</span> \
+            <span class="p">({</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;y_axis_title&#39;</span><span class="p">],</span> <span class="s1">&#39;name_font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="n">font_size</span><span class="p">,</span> <span class="s1">&#39;bold&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}})</span>
+
+    <span class="c1"># customize legend</span>
+    <span class="n">legend_specs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;font&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;size&#39;</span><span class="p">:</span> <span class="n">font_size</span><span class="p">,</span> <span class="s1">&#39;bold&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+    <span class="p">}</span>
+
+    <span class="c1"># handle columns that should be plotted but not shown on legend</span>
+    <span class="c1"># (e.g. helper variables for ts-plotting)</span>
+    <span class="k">if</span> <span class="s1">&#39;delete_series_from_legend&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="n">legend_specs</span><span class="p">[</span><span class="s1">&#39;delete_series&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;delete_series_from_legend&#39;</span><span class="p">]</span>
+
+    <span class="n">chart1</span><span class="o">.</span><span class="n">set_legend</span><span class="p">(</span><span class="n">legend_specs</span><span class="p">)</span>
+
+    <span class="c1"># add chart to the worksheet with given offset values at the given positions or at default values</span>
+    <span class="k">if</span> <span class="s1">&#39;position&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="n">position</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;position&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">position</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;B</span><span class="si">{</span><span class="mi">3</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">15</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">graph_nr</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="k">if</span> <span class="s1">&#39;x_y_scale&#39;</span> <span class="ow">in</span> <span class="n">graph_specs</span><span class="p">:</span>
+        <span class="n">x_y_scale</span> <span class="o">=</span> <span class="n">graph_specs</span><span class="p">[</span><span class="s1">&#39;x_y_scale&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x_y_scale</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
+
+    <span class="n">worksheet</span><span class="o">.</span><span class="n">insert_chart</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">chart1</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;x_scale&#39;</span><span class="p">:</span> <span class="n">x_y_scale</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s1">&#39;y_scale&#39;</span><span class="p">:</span> <span class="n">x_y_scale</span><span class="p">[</span><span class="mi">1</span><span class="p">]})</span></div>
+
+
+<div class="viewcode-block" id="save_xlsx_wb"><a class="viewcode-back" href="../../export.html#export.excel_generator.save_xlsx_wb">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">save_xlsx_wb</span><span class="p">(</span><span class="n">out_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">df_dict</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">graphs</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Write one Excel workbook containing multiple sheets (Pandas DataFrames) and optional charts.</span>
+
+<span class="sd">    This helper exports each DataFrame in ``df_dict`` to its own worksheet (sheet name = dict key),</span>
+<span class="sd">    using the ``xlsxwriter`` engine. If ``graphs`` is provided, one or more XlsxWriter charts are</span>
+<span class="sd">    inserted into selected worksheets.</span>
+
+<span class="sd">    Notes on data export</span>
+<span class="sd">    --------------------</span>
+<span class="sd">    - The DataFrame index is written to Excel (Pandas default for ``to_excel``), but any *index name*</span>
+<span class="sd">      is removed (``df.index.name = None``) to avoid an extra header label.</span>
+<span class="sd">    - If a DataFrame has a MultiIndex for *columns*, the columns are flattened via</span>
+<span class="sd">      ``df.columns.to_flat_index()`` before exporting (so chart column lookups work reliably).</span>
+<span class="sd">    - If a DataFrame has a MultiIndex for the *index*, all index levels are written as separate</span>
+<span class="sd">      index columns in Excel and are used as the chart category range.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    out_path:</span>
+<span class="sd">        Output ``.xlsx`` file path.</span>
+<span class="sd">    df_dict:</span>
+<span class="sd">        Mapping ``{sheet_name: dataframe}``. Each key is converted to ``str`` and used as the worksheet name.</span>
+<span class="sd">    graphs:</span>
+<span class="sd">        Optional chart specification mapping per worksheet:</span>
+
+<span class="sd">        ``{sheet_name: [graph_specs, graph_specs, ...]}``</span>
+
+<span class="sd">        Each ``graph_specs`` entry describes one chart &quot;slot&quot; to insert into the given worksheet.</span>
+<span class="sd">        Within one slot, the function can create a primary chart (``graph_type_1``) and optionally</span>
+<span class="sd">        a secondary chart (``graph_type_2``) and then *combine* them.</span>
+
+<span class="sd">        Minimal example::</span>
+
+<span class="sd">            graphs = {</span>
+<span class="sd">                &quot;my_sheet&quot;: [</span>
+<span class="sd">                    {</span>
+<span class="sd">                        &quot;graph_type_1&quot;: {&quot;type&quot;: &quot;line&quot;},</span>
+<span class="sd">                        &quot;cols_to_include&quot;: [&quot;col_a&quot;, &quot;col_b&quot;],</span>
+<span class="sd">                        &quot;position&quot;: &quot;B3&quot;,</span>
+<span class="sd">                        &quot;x_y_scale&quot;: [2.0, 1.0],</span>
+<span class="sd">                    }</span>
+<span class="sd">                ]</span>
+<span class="sd">            }</span>
+
+<span class="sd">        Supported ``graph_specs`` keys</span>
+<span class="sd">        ------------------------------</span>
+<span class="sd">        Chart types</span>
+<span class="sd">            - ``graph_type_1``: dict passed to ``workbook.add_chart(...)`` (default: ``{&quot;type&quot;: &quot;line&quot;}``)</span>
+<span class="sd">            - ``graph_type_2``: optional dict passed to ``workbook.add_chart(...)``</span>
+<span class="sd">            - ``graph_type_2_cols``: required if ``graph_type_2`` is set; columns that should be plotted on chart 2</span>
+<span class="sd">            - ``y2_axis``: optional (typically ``1``) to plot selected series on the secondary axis</span>
+
+<span class="sd">        Data selection</span>
+<span class="sd">            - ``cols_to_include``: list of columns to plot. If omitted, all DataFrame columns are used.</span>
+<span class="sd">            - ``skip_first_n_rows``: skip N first data rows for chart ranges (default: 1; row 0 is header)</span>
+<span class="sd">            - ``skip_last_n_rows``: skip N last data rows for chart ranges (default: 0)</span>
+
+<span class="sd">        Placement / sizing</span>
+<span class="sd">            - ``position``: Excel cell anchor like ``&quot;B3&quot;`` (default: ``&quot;B{3 + 15*graph_nr}&quot;``)</span>
+<span class="sd">            - ``x_y_scale``: ``[x_scale, y_scale]`` passed to ``worksheet.insert_chart`` (default: ``[1.0, 1.0]``)</span>
+
+<span class="sd">        Titles and axes</span>
+<span class="sd">            - ``title``: chart title string</span>
+<span class="sd">            - ``x_axis_title`` / ``y_axis_title``: axis label strings</span>
+<span class="sd">            - ``font_size``: base font size used for title/axis/legend (default: 10)</span>
+
+<span class="sd">        Styling and legend</span>
+<span class="sd">            - ``column_styles``: mapping ``{column_name: series_style_dict}`` merged into the series specs passed</span>
+<span class="sd">              to ``chart.add_series(...)``. Typical keys: ``line``, ``fill``, ``pattern``, ``marker``.</span>
+<span class="sd">            - ``delete_series_from_legend``: list of series indices to hide from the legend (passed through to</span>
+<span class="sd">              ``chart.set_legend({&#39;delete_series&#39;: ...})``)</span>
+
+<span class="sd">        Trendlines</span>
+<span class="sd">            - ``trendline``: mapping ``{column_name: trendline_type}`` (e.g. ``&quot;linear&quot;``).</span>
+<span class="sd">              The trendline line color is taken from</span>
+<span class="sd">              ``graph_specs[&#39;column_styles&#39;][col][&#39;marker&#39;][&#39;line&#39;][&#39;color&#39;]`` (so if you use trendlines,</span>
+<span class="sd">              ensure that path exists in your styles).</span>
+
+<span class="sd">    Behavior and limitations</span>
+<span class="sd">    ------------------------</span>
+<span class="sd">    - For each plotted column, the function looks up the column index via ``df.columns.get_loc(col)``.</span>
+<span class="sd">      If a specified column is missing, it prints a message and continues.</span>
+<span class="sd">    - Chart categories always refer to the exported index columns (first worksheet columns).</span>
+<span class="sd">      For MultiIndex indices, the category range spans all index-level columns.</span>
+<span class="sd">    - If no valid series are added for ``graph_type_1``, chart creation will fail (because the code</span>
+<span class="sd">      expects a primary chart to exist).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    None</span>
+<span class="sd">        Writes the workbook to disk and closes the writer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">writer</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">ExcelWriter</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">engine</span><span class="o">=</span><span class="s2">&quot;xlsxwriter&quot;</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">dfname</span><span class="p">,</span> <span class="n">df</span> <span class="ow">in</span> <span class="n">df_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">dfname</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dfname</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># drop index name</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">):</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_flat_index</span><span class="p">()</span>  <span class="c1"># flatten multiindex for columns</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="n">writer</span><span class="p">,</span> <span class="n">sheet_name</span><span class="o">=</span><span class="n">dfname</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">graphs</span> <span class="ow">and</span> <span class="n">dfname</span> <span class="ow">in</span> <span class="n">graphs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+            <span class="c1"># access the XlsxWriter workbook and worksheet objects from the dataframe.</span>
+            <span class="n">workbook</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">book</span>
+            <span class="n">worksheet</span> <span class="o">=</span> <span class="n">writer</span><span class="o">.</span><span class="n">sheets</span><span class="p">[</span><span class="n">dfname</span><span class="p">]</span>
+
+            <span class="c1"># add charts to worksheet</span>
+            <span class="k">for</span> <span class="n">graph_nr</span><span class="p">,</span> <span class="n">graph_specs</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">graphs</span><span class="p">[</span><span class="n">dfname</span><span class="p">]):</span>
+                <span class="n">add_chart_to_worksheet</span><span class="p">(</span><span class="n">workbook</span><span class="p">,</span> <span class="n">worksheet</span><span class="p">,</span> <span class="n">graph_nr</span><span class="p">,</span> <span class="n">graph_specs</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">dfname</span><span class="p">)</span>
+
+    <span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;wrote </span><span class="si">{</span><span class="n">out_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

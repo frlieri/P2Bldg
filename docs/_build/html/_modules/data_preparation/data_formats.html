@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>data_preparation.data_formats &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">data_preparation.data_formats</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for data_preparation.data_formats</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">src/data_preparation/data_formats.py</span>
+
+<span class="sd">This module provides core data structures and utilities for preparing and</span>
+<span class="sd">handling time-series and scenario data used by the optimization workflows.</span>
+
+<span class="sd">Primary classes and responsibilities:</span>
+
+<span class="sd">- Timeseries:</span>
+<span class="sd">    Encapsulates time-indexed data using a pandas DataFrame and provides</span>
+<span class="sd">    utilities for indexing, resampling (hourly, quarter-hourly, daily),</span>
+<span class="sd">    filtering by season/typeday/week/hour ranges, aggregation, normalization,</span>
+<span class="sd">    and plotting helpers for typical-day analysis.</span>
+
+<span class="sd">- ScenarioData:</span>
+<span class="sd">    Wraps scenario-specific input values extracted from the project Excel</span>
+<span class="sd">    workbook. It enforces declared datatypes and yields structured sheet-level</span>
+<span class="sd">    data objects for downstream initialization of model components.</span>
+
+<span class="sd">- SheetData:</span>
+<span class="sd">    Dynamically organizes sheet parameters and component entries (e.g.</span>
+<span class="sd">    pv, batt, hp, st) into attributes and nested dictionaries. Empty component</span>
+<span class="sd">    entries are dropped to simplify component initialization.</span>
+
+<span class="sd">- BuildingModelInput:</span>
+<span class="sd">    Loads and validates the structured Excel input file, enforces consistent</span>
+<span class="sd">    scenario definitions across sheets, and prepares scenario dictionaries and</span>
+<span class="sd">    heat-pump specification tables for use by model builders.</span>
+
+<span class="sd">- ScenarioResults:</span>
+<span class="sd">    Converts a solved Pyomo ConcreteModel into a set of labeled time-series</span>
+<span class="sd">    tables and time-invariant component summaries. It exposes helpers to query</span>
+<span class="sd">    component-level costs, balances and time-series slices by regex and season.</span>
+
+<span class="sd">- prepare_dummy_ts:</span>
+<span class="sd">    Convenience function to create a Timeseries instance populated with a</span>
+<span class="sd">    constant value for quick testing or placeholder inputs.</span>
+
+<span class="sd">Notes and dependencies:</span>
+
+<span class="sd">- This module depends on pandas and pyomo (ConcreteModel types are referenced),</span>
+<span class="sd">  and it integrates with project constants and helper functions defined in</span>
+<span class="sd">  `src.const` and `src.helper`.</span>
+<span class="sd">- Timeseries index/metadata columns follow the project `TimeseriesCols`</span>
+<span class="sd">  enumeration and rely on modeled year and time-step constants for correct</span>
+<span class="sd">  indexing and resampling behaviour.</span>
+<span class="sd">- Designed to be agnostic to solver details; conversion of model outputs to</span>
+<span class="sd">  pandas DataFrames is intended to simplify postprocessing, plotting and</span>
+<span class="sd">  export.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyomo.environ</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConcreteModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">math</span><span class="w"> </span><span class="kn">import</span> <span class="n">floor</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src</span><span class="w"> </span><span class="kn">import</span> <span class="n">const</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.const</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeseriesCols</span><span class="p">,</span> <span class="n">Season</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.helper</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_season</span><span class="p">,</span> <span class="n">get_typeday</span><span class="p">,</span> <span class="n">normalize_wrt_sum</span><span class="p">,</span> <span class="n">hour_within_period</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.export.analysis_plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_typical_day_quantiles</span><span class="p">,</span> <span class="n">plot_timeseries</span>
+
+
+<div class="viewcode-block" id="Timeseries"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Timeseries</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Handles time-series data and provides functionality for manipulation, aggregation, resampling,</span>
+<span class="sd">    filtering, and visualization. This class is primarily designed to leverage pandas DataFrame under</span>
+<span class="sd">    the hood to enable robust time-series data analysis.</span>
+
+<span class="sd">    The class organizes time-series data within a structured DataFrame, allowing users to define</span>
+<span class="sd">    attributes such as frequency, temporal periods, and specific data columns. It supports operations</span>
+<span class="sd">    like normalization, averaging, resampling between resolutions, and specialized plots for</span>
+<span class="sd">    analytic visualizations.</span>
+
+<span class="sd">    :ivar years: List of years covered by the time-series data.</span>
+<span class="sd">    :type years: list[int]</span>
+<span class="sd">    :ivar freq: Frequency/step size of the time-series data.</span>
+<span class="sd">    :type freq: Any</span>
+<span class="sd">    :ivar index_columns: List of pre-defined index columns for time-series metadata.</span>
+<span class="sd">    :type index_columns: list[str]</span>
+<span class="sd">    :ivar data_columns: List of data columns that represent the core time-series values.</span>
+<span class="sd">    :type data_columns: list[str]</span>
+<span class="sd">    :ivar df: The primary DataFrame representation of the time-series data.</span>
+<span class="sd">    :type df: pandas.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">HOURLY</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">start_year</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span><span class="p">,</span>
+                 <span class="n">end_year</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initializes the timeseries object with data and parameters for analysis. The</span>
+<span class="sd">        method sets up the time series structure, including index and data columns,</span>
+<span class="sd">        and populates initial values if a DataFrame is provided.</span>
+
+<span class="sd">        :param df: Input data as a pandas DataFrame. If not provided, an empty</span>
+<span class="sd">            DataFrame is created.</span>
+<span class="sd">        :type df: pandas.DataFrame, optional</span>
+
+<span class="sd">        :param freq: Time step size for the timeseries. Default is `HOURLY`.</span>
+<span class="sd">            Defines the temporal resolution of the time series.</span>
+<span class="sd">        :type freq: const.TSStepSize, optional</span>
+
+<span class="sd">        :param columns: List of column names for the data portion of the timeseries.</span>
+<span class="sd">            If `None` and `df` is provided, column names are derived from the DataFrame;</span>
+<span class="sd">            otherwise, defaults to an empty list.</span>
+<span class="sd">        :type columns: list of str, optional</span>
+
+<span class="sd">        :param start_year: The starting year of the time series. Determines the first</span>
+<span class="sd">            year in the year range.</span>
+<span class="sd">        :type start_year: int, optional</span>
+
+<span class="sd">        :param end_year: The ending year of the time series. If not provided, it</span>
+<span class="sd">            defaults to `start_year`. Defines the last year in the year range.</span>
+<span class="sd">        :type end_year: int, optional</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">columns</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">columns</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">end_year</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">end_year</span> <span class="o">=</span> <span class="n">start_year</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">years</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">start_year</span><span class="p">,</span> <span class="n">end_year</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">freq</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_ts_per_day</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Hour</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Step</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">TSDay</span><span class="p">,</span>
+                              <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Yday</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Week</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Month</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Year</span><span class="p">,</span>
+                              <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Typeday</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span> <span class="o">=</span> <span class="n">columns</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">index_columns</span><span class="p">,</span> <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_index_cols</span><span class="p">()</span>
+
+        <span class="c1"># set values from df given</span>
+        <span class="k">if</span> <span class="n">df</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">:</span>
+                <span class="bp">self</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_ts_per_day</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">==</span> <span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">HOURLY</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts_per_day</span> <span class="o">=</span> <span class="mi">24</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">==</span> <span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">QUARTER_HOURLY</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts_per_day</span> <span class="o">=</span> <span class="mi">96</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">==</span> <span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">DAILY</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts_per_day</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;invalid freq for Timeseries&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_index_cols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># add columns for day of year and month</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span>
+            <span class="n">start</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">years</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+            <span class="n">end</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">years</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">31</span><span class="p">,</span> <span class="mi">23</span><span class="p">,</span> <span class="mi">59</span><span class="p">),</span>
+            <span class="n">freq</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">freq</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Step</span><span class="p">]</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Hour</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">hour</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">TSDay</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Step</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">floor</span><span class="p">(</span><span class="n">x</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">ts_per_day</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Yday</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Week</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">week</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Month</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">month</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Year</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">get_season</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Typeday</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">get_typeday</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Step</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="c1"># setting dataseries by name using ts[&#39;name&#39;]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">index_columns</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+        <span class="c1"># getting dataseries by name using ts[&#39;name&#39;]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">key</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="Timeseries.no_of_timesteps"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.no_of_timesteps">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">no_of_timesteps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Timeseries.sum"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.sum">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">sum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Timeseries.max"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.max">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">max</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Timeseries.min"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.min">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">min</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Timeseries.mean"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.mean">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Timeseries.normalize"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.normalize">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">normalize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Normalize specified columns or data columns of the dataframe with respect</span>
+<span class="sd">        to their sum. This can help in bringing the values of the dataset into</span>
+<span class="sd">        a specific range by dividing them by their respective sum.</span>
+
+<span class="sd">        :param columns: List of column names or string representing a column name</span>
+<span class="sd">            to normalize. If None, all data columns will be normalized.</span>
+<span class="sd">        :type columns: list or str, optional</span>
+<span class="sd">        :return: The dataframe after performing normalization on the specified</span>
+<span class="sd">            columns.</span>
+<span class="sd">        :rtype: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">normalize_wrt_sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">normalize_wrt_sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">columns</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Timeseries.monthly_avg"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.monthly_avg">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">monthly_avg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Month</span><span class="p">)[</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Timeseries.daily_avg"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.daily_avg">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">daily_avg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">apply_agg</span><span class="p">(</span><span class="n">groupby_col</span><span class="o">=</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">TSDay</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="n">data_cols</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Timeseries.apply_agg"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.apply_agg">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">apply_agg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">groupby_col</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">func</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">data_cols</span><span class="p">:</span> <span class="nb">list</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Applies an aggregation function across specified columns after grouping the</span>
+<span class="sd">        dataframe by a given column.</span>
+
+<span class="sd">        This method groups the dataframe by the specified column and applies the given</span>
+<span class="sd">        function to the data in the specified columns. If no specific columns are</span>
+<span class="sd">        provided, the aggregation function is applied across all columns in the</span>
+<span class="sd">        dataframe.</span>
+
+<span class="sd">        :param groupby_col: The name of the column by which the dataframe should</span>
+<span class="sd">            be grouped.</span>
+<span class="sd">        :type groupby_col: str</span>
+<span class="sd">        :param func: The function to be applied to the grouped data.</span>
+<span class="sd">        :type func: Callable</span>
+<span class="sd">        :param data_cols: A list of column names specifying the subset of the</span>
+<span class="sd">            dataframe to which the function should be applied. If None, all columns</span>
+<span class="sd">            are included.</span>
+<span class="sd">        :type data_cols: list</span>
+<span class="sd">        :return: The resulting dataframe after applying the aggregation function to</span>
+<span class="sd">            the grouped data.</span>
+<span class="sd">        :rtype: pandas.DataFrame</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">data_cols</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">data_cols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">groupby_col</span><span class="p">)[</span><span class="n">data_cols</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">func</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Timeseries.convert_to_hourly"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.convert_to_hourly">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">convert_to_hourly</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resample</span><span class="p">(</span><span class="n">res_target_profile_in_h</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>     <span class="c1"># instead pandas resample function could be used</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">HOURLY</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_ts_per_day</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_index_cols</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Timeseries.convert_to_quarter_hourly"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.convert_to_quarter_hourly">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">convert_to_quarter_hourly</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resample</span><span class="p">(</span><span class="n">res_target_profile_in_h</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">QUARTER_HOURLY</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_ts_per_day</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_index_cols</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Timeseries.convert_to_daily"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.convert_to_daily">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">convert_to_daily</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_resample</span><span class="p">(</span><span class="n">res_target_profile_in_h</span><span class="o">=</span><span class="mi">24</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">DAILY</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_ts_per_day</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_index_cols</span><span class="p">()</span></div>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_resample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_target_profile_in_h</span><span class="p">,</span> <span class="n">downsampling_val_used</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Resamples the timeseries data to the specified target profile resolution. This method adjusts the resolution of the</span>
+<span class="sd">        data in the DataFrame either from a higher to a lower resolution (down-sampling) or from a lower to a higher</span>
+<span class="sd">        resolution (up-sampling), based on the provided target profile resolution. The method supports various aggregation</span>
+<span class="sd">        functions for down-sampling such as mean, min, and max.</span>
+
+<span class="sd">        :param res_target_profile_in_h: Desired target resolution for the timeseries profile in hours.</span>
+<span class="sd">        :type res_target_profile_in_h: float</span>
+<span class="sd">        :param downsampling_val_used: The aggregation function to use for down-sampling. Valid options are &#39;mean&#39;, &#39;min&#39;,</span>
+<span class="sd">            and &#39;max&#39;. Default is &#39;mean&#39;.</span>
+<span class="sd">        :type downsampling_val_used: str</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">==</span> <span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">HOURLY</span><span class="p">:</span>
+            <span class="n">res_self_in_h</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">==</span> <span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">QUARTER_HOURLY</span><span class="p">:</span>
+            <span class="n">res_self_in_h</span> <span class="o">=</span> <span class="mf">0.25</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid frequency for Timeseries&quot;</span><span class="p">)</span>
+
+        <span class="n">res_ratio</span> <span class="o">=</span> <span class="n">res_self_in_h</span> <span class="o">/</span> <span class="n">res_target_profile_in_h</span>
+
+        <span class="c1"># from higher to lower resolution</span>
+        <span class="k">if</span> <span class="n">res_ratio</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">high_low_ratio</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">res_ratio</span><span class="p">)</span>
+            <span class="n">target_profile</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Step</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="n">high_low_ratio</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">target_profile</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                <span class="n">i_start</span> <span class="o">=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">high_low_ratio</span>
+                <span class="n">i_end</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">high_low_ratio</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="n">downsampling_val_used</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+                    <span class="n">target_profile</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">i_start</span><span class="p">:</span> <span class="n">i_end</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">downsampling_val_used</span> <span class="o">==</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span>
+                    <span class="n">target_profile</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">i_start</span><span class="p">:</span> <span class="n">i_end</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">downsampling_val_used</span> <span class="o">==</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span>
+                    <span class="n">target_profile</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">i_start</span><span class="p">:</span> <span class="n">i_end</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid func_for_upsampling param&quot;</span><span class="p">)</span>
+
+        <span class="c1"># from lower to higher resolution</span>
+        <span class="k">elif</span> <span class="n">res_ratio</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">high_low_ratio</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">res_ratio</span><span class="p">)</span>
+            <span class="n">target_profile</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                <span class="n">columns</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
+                <span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="n">high_low_ratio</span><span class="p">)</span> <span class="o">+</span> <span class="n">high_low_ratio</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+                <span class="n">target_profile</span><span class="p">[(</span><span class="n">i</span> <span class="o">*</span> <span class="n">high_low_ratio</span><span class="p">):((</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">high_low_ratio</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">target_profile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span> <span class="o">=</span> <span class="n">target_profile</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">freq</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">res_target_profile_in_h</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">h&quot;</span>
+
+<div class="viewcode-block" id="Timeseries.get_specs"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.get_specs">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_specs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+            <span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+            <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span>
+            <span class="s1">&#39;avg&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+            <span class="s1">&#39;sum&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="p">})</span></div>
+
+<div class="viewcode-block" id="Timeseries.plot_ts"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.plot_ts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">plot_ts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots the timeseries data for specified columns in the DataFrame. If no columns</span>
+<span class="sd">        are specified, it defaults to plotting all columns defined in the dataset&#39;s</span>
+<span class="sd">        data_columns attribute.</span>
+
+<span class="sd">        :param columns: A list of column names to plot. If None, all relevant columns</span>
+<span class="sd">                        in the dataset will be used for plotting.</span>
+<span class="sd">        :type columns: list, optional</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span>
+        <span class="n">plot_timeseries</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">columns</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="Timeseries.plot_typeday"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.plot_typeday">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">plot_typeday</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">season</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">typeday</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Plots the typical day quantiles for a given column in the dataframe. This method filters</span>
+<span class="sd">        the data based on specified season and type of day, and then plots the quantiles for</span>
+<span class="sd">        the specified column. The plot can also have a custom title if provided.</span>
+
+<span class="sd">        :param column: The name of the column in the dataframe to be plotted.</span>
+<span class="sd">        :type column: str</span>
+<span class="sd">        :param season: Optionally specify a season for filtering the data.</span>
+<span class="sd">        :type season: Optional</span>
+<span class="sd">        :param typeday: Optionally specify a type of day for filtering the data.</span>
+<span class="sd">        :type typeday: Optional</span>
+<span class="sd">        :param title: Optional custom title for the plot. Defaults to the column name.</span>
+<span class="sd">        :type title: Optional</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">title</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">title</span> <span class="o">=</span> <span class="n">column</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]</span>
+        <span class="n">plot_typical_day_quantiles</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">season</span><span class="o">=</span><span class="n">season</span><span class="p">,</span> <span class="n">typeday</span><span class="o">=</span><span class="n">typeday</span><span class="p">)[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">),</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Step</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Timeseries.filter"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.filter">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">season</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weeks</span><span class="p">:</span> <span class="nb">list</span><span class="o">|</span><span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">typeday</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">daysofweek</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">hour_periods</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+               <span class="n">data_only</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Filters the dataset based on various temporal and categorical parameters.</span>
+<span class="sd">        The method enables filtering by seasons, weeks, typedays, days of the week,</span>
+<span class="sd">        specific hour periods, and can return data-only columns if required.</span>
+
+<span class="sd">        :param season: The season to filter the dataset, must match values</span>
+<span class="sd">                       defined in ``const.Season``</span>
+<span class="sd">        :param weeks: A list or single integer representing specific week numbers</span>
+<span class="sd">                      to filter, ranging from 0 to 52</span>
+<span class="sd">        :param typeday: The type of day to filter, must match values defined in</span>
+<span class="sd">                        ``const.Typeday``</span>
+<span class="sd">        :param daysofweek: A list of integers (ranging from 0 to 6) representing</span>
+<span class="sd">                           days of the week to filter, where 0 is Monday and 6 is</span>
+<span class="sd">                           Sunday</span>
+<span class="sd">        :param hour_periods: A collection of hour periods used for filtering. Each</span>
+<span class="sd">                             period should define a valid range of hours</span>
+<span class="sd">        :param data_only: A boolean flag. If set to ``True``, only columns specified</span>
+<span class="sd">                          in ``self.data_columns`` are included in the returned DataFrame</span>
+<span class="sd">        :returns: A filtered pandas DataFrame based on the specified parameters</span>
+<span class="sd">        :rtype: pandas.DataFrame</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span>
+        <span class="k">if</span> <span class="n">season</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">season</span> <span class="ow">in</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">Season</span><span class="p">],</span> <span class="s1">&#39;Invalid season&#39;</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="n">filtered</span><span class="p">[</span><span class="n">filtered</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">]</span> <span class="o">==</span> <span class="n">season</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">weeks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weeks</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">weeks</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">weeks</span><span class="p">)]</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">w</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">53</span><span class="p">)</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">weeks</span><span class="p">),</span> <span class="s1">&#39;Invalid week &#39;</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="n">filtered</span><span class="p">[</span><span class="n">filtered</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Week</span><span class="p">]</span> <span class="ow">in</span> <span class="n">weeks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">typeday</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">typeday</span> <span class="ow">in</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">const</span><span class="o">.</span><span class="n">Typeday</span><span class="p">],</span> <span class="s1">&#39;Invalid Typeday&#39;</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="n">filtered</span><span class="p">[</span><span class="n">filtered</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Typeday</span><span class="p">]</span> <span class="o">==</span> <span class="n">typeday</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">daysofweek</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">dow</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">7</span><span class="p">)</span> <span class="k">for</span> <span class="n">dow</span> <span class="ow">in</span> <span class="n">daysofweek</span><span class="p">),</span> <span class="s1">&#39;Invalid daysofweek&#39;</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="n">filtered</span><span class="p">[</span><span class="n">filtered</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">DTime</span><span class="p">]</span><span class="o">.</span><span class="n">dayofweek</span> <span class="ow">in</span> <span class="n">daysofweek</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="n">hour_periods</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="nb">filter</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">filtered</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">period</span> <span class="ow">in</span> <span class="n">hour_periods</span><span class="p">:</span>
+                <span class="nb">filter</span> <span class="o">|=</span> <span class="n">filtered</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">hour_within_period</span><span class="p">(</span><span class="n">period</span><span class="p">,</span> <span class="n">x</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Hour</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="n">filtered</span> <span class="o">=</span> <span class="n">filtered</span><span class="p">[</span><span class="nb">filter</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">data_only</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="n">filtered</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">filtered</span></div>
+
+<div class="viewcode-block" id="Timeseries.groupby"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.groupby">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">groupby</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Timeseries.duration_curve"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.duration_curve">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">duration_curve</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">column</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">season</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">typeday</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">season</span><span class="o">=</span><span class="n">season</span><span class="p">,</span> <span class="n">typeday</span><span class="o">=</span><span class="n">typeday</span><span class="p">)[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Timeseries.daysums"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.daysums">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">daysums</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="o">|</span><span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">season</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Sums up data values by day for specified columns in the dataset. If a season is</span>
+<span class="sd">        specified, sums are computed only for data within the given season; otherwise,</span>
+<span class="sd">        the entire dataset is used.</span>
+
+<span class="sd">        :param columns: List of column names or a single column name to sum by day. If</span>
+<span class="sd">            not provided, defaults to all data columns.</span>
+<span class="sd">        :type columns: list | str, optional</span>
+<span class="sd">        :param season: The season for which data should be filtered (&#39;all&#39; by default</span>
+<span class="sd">            for no filtering).</span>
+<span class="sd">        :type season: str</span>
+<span class="sd">        :return: A pandas Series where the index corresponds to days, and the values</span>
+<span class="sd">            are the sum of the specified column(s) for each day.</span>
+<span class="sd">        :rtype: pandas.Series</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">columns</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">season</span> <span class="o">!=</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">season</span><span class="p">)</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">TSDay</span><span class="p">)[</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">TSDay</span><span class="p">)[</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span></div>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_get_quant_range</span><span class="p">(</span><span class="n">daysum</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">daysum_quants</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">is_larger_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">daysum_quants</span> <span class="o">&lt;=</span> <span class="n">daysum</span><span class="p">)</span>
+        <span class="n">low_quant</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.00</span> <span class="k">if</span> <span class="n">daysum_quants</span><span class="p">[</span><span class="n">is_larger_mask</span><span class="p">]</span><span class="o">.</span><span class="n">empty</span>
+                     <span class="k">else</span> <span class="n">daysum_quants</span><span class="p">[</span><span class="n">is_larger_mask</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;index&#39;</span><span class="p">])</span>
+        <span class="n">is_smaller_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">daysum_quants</span> <span class="o">&gt;</span> <span class="n">daysum</span><span class="p">)</span>
+        <span class="n">high_quant</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.00</span> <span class="k">if</span> <span class="n">daysum_quants</span><span class="p">[</span><span class="n">is_smaller_mask</span><span class="p">]</span><span class="o">.</span><span class="n">empty</span>
+                      <span class="k">else</span> <span class="n">daysum_quants</span><span class="p">[</span><span class="n">is_smaller_mask</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;index&#39;</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">low_quant</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">high_quant</span><span class="si">}</span><span class="s2">&quot;</span>
+
+<div class="viewcode-block" id="Timeseries.get_daysum_quant_range"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.get_daysum_quant_range">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_daysum_quant_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">:</span> <span class="nb">list</span><span class="o">|</span><span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">season</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">quantiles</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Calculates the range of quantiles for the daily sums of specified columns within a dataset,</span>
+<span class="sd">        optionally filtered by season. The method allows users to analyze the distribution and</span>
+<span class="sd">        quantitative ranges of the daily aggregated values.</span>
+
+<span class="sd">        :param columns: A list or string that specifies the data columns to process. If None,</span>
+<span class="sd">            all data columns will be processed. If a string is provided, it will be</span>
+<span class="sd">            converted into a single-element list.</span>
+<span class="sd">            Type: list | str | None</span>
+<span class="sd">        :param season: A string indicating the season for which data should be filtered.</span>
+<span class="sd">            Default is &#39;all&#39;, which means no seasonal filtering is applied.</span>
+<span class="sd">            Type: str</span>
+<span class="sd">        :param quantiles: A list of float values indicating the quantiles to use for the</span>
+<span class="sd">            calculation. If None, default quantiles from 0.0 to 0.9 (incremented by 0.1)</span>
+<span class="sd">            will be used.</span>
+<span class="sd">            Type: list[float] | None</span>
+<span class="sd">        :return: A pandas DataFrame containing the quantile range classifications for the</span>
+<span class="sd">            daily sums of the specified columns. Each column in the DataFrame corresponds</span>
+<span class="sd">            to a column from the input, with values classified based on their respective</span>
+<span class="sd">            quantile ranges.</span>
+<span class="sd">            Type: pd.DataFrame</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">columns</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">columns</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">quantiles</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">quantiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">i</span><span class="o">/</span><span class="mi">10</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">)]</span>
+
+        <span class="n">daysum_quant_ranges</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+            <span class="n">daysums</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">daysums</span><span class="p">(</span><span class="n">col</span><span class="p">,</span> <span class="n">season</span><span class="p">)</span>
+            <span class="n">daysum_quants</span> <span class="o">=</span> <span class="n">daysums</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">quantiles</span><span class="p">)</span>
+            <span class="n">daysum_quant_ranges</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">daysums</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_quant_range</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">daysum_quants</span><span class="p">[</span><span class="n">col</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">daysum_quant_ranges</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Timeseries.get_profiles_for_days"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.Timeseries.get_profiles_for_days">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_profiles_for_days</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">day_selection</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">data_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        for all days in dayselection get the corresponding dayprofile and concatenate them</span>
+<span class="sd">        :param day_selection: ordered list for day selection to create profiles</span>
+<span class="sd">        :param data_only: decision variable whether only data columns should be passed or also Timeseries indices</span>
+<span class="sd">        :return: pd.DataFrame with the concatenated dayprofiles</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">ret_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">day</span> <span class="ow">in</span> <span class="n">day_selection</span><span class="p">:</span>
+            <span class="n">ret_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">concat</span><span class="p">([</span><span class="n">ret_df</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">df</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">TSDay</span><span class="p">]</span> <span class="o">==</span> <span class="n">day</span><span class="p">]])</span>
+
+        <span class="k">if</span> <span class="n">data_only</span><span class="p">:</span>
+            <span class="n">ret_df</span> <span class="o">=</span> <span class="n">ret_df</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">ret_df</span></div></div>
+
+
+<div class="viewcode-block" id="ScenarioData"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.ScenarioData">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ScenarioData</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents a scenario-specific dataset extracted from the input excel sheet.</span>
+
+<span class="sd">    This class is designed to manage and initialize data relevant to a specific</span>
+<span class="sd">    scenario in a structured format. It extracts and converts data relevant to the</span>
+<span class="sd">    scenario from the provided Excel sheets, ensuring proper datatype validation</span>
+<span class="sd">    and consistency.</span>
+
+<span class="sd">    :ivar scenario_name: The name of the scenario being processed.</span>
+<span class="sd">    :type scenario_name: str</span>
+<span class="sd">    :ivar location: Sheet-specific data for &#39;Location&#39;, initialized for the given scenario.</span>
+<span class="sd">    :type location: SheetData</span>
+<span class="sd">    :ivar consumption_data: Sheet-specific data for &#39;Consumption Data&#39;, initialized for the given scenario.</span>
+<span class="sd">    :type consumption_data: SheetData</span>
+<span class="sd">    :ivar building_data: Sheet-specific data for &#39;Building Data&#39;, initialized for the given scenario.</span>
+<span class="sd">    :type building_data: SheetData</span>
+<span class="sd">    :ivar tech_data: Sheet-specific data for &#39;Technical Component Data&#39;, initialized for the given scenario.</span>
+<span class="sd">    :type tech_data: SheetData</span>
+<span class="sd">    :ivar economic_data: Sheet-specific data for &#39;Economic Data&#39;, initialized for the given scenario.</span>
+<span class="sd">    :type economic_data: SheetData</span>
+<span class="sd">    :ivar model_settings: Sheet-specific data for &#39;Model Settings&#39;, initialized for the given scenario.</span>
+<span class="sd">    :type model_settings: SheetData</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">excel_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">scenario</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenario_name</span> <span class="o">=</span> <span class="n">scenario</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">location</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_sheet_data</span><span class="p">(</span><span class="n">excel_data</span><span class="p">[</span><span class="s1">&#39;Location&#39;</span><span class="p">],</span> <span class="n">scenario</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">consumption_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_sheet_data</span><span class="p">(</span><span class="n">excel_data</span><span class="p">[</span><span class="s1">&#39;Consumption Data&#39;</span><span class="p">],</span> <span class="n">scenario</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">building_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_sheet_data</span><span class="p">(</span><span class="n">excel_data</span><span class="p">[</span><span class="s1">&#39;Building Data&#39;</span><span class="p">],</span> <span class="n">scenario</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tech_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_sheet_data</span><span class="p">(</span><span class="n">excel_data</span><span class="p">[</span><span class="s1">&#39;Technical Component Data&#39;</span><span class="p">],</span> <span class="n">scenario</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">economic_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_sheet_data</span><span class="p">(</span><span class="n">excel_data</span><span class="p">[</span><span class="s1">&#39;Economic Data&#39;</span><span class="p">],</span> <span class="n">scenario</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">model_settings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_sheet_data</span><span class="p">(</span><span class="n">excel_data</span><span class="p">[</span><span class="s1">&#39;Model Settings&#39;</span><span class="p">],</span> <span class="n">scenario</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_sheet_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">sce_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">param_vals</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_datatypes</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;SCENARIO VALUES&#39;</span><span class="p">][</span><span class="n">sce_name</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;PARAMETERS&#39;</span><span class="p">][</span><span class="s1">&#39;datatype&#39;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">SheetData</span><span class="p">(</span><span class="o">**</span><span class="n">param_vals</span><span class="o">.</span><span class="n">to_dict</span><span class="p">())</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_datatypes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sce_data</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">datatypes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">var</span><span class="p">,</span> <span class="n">datatype</span> <span class="ow">in</span> <span class="n">datatypes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">sce_data</span><span class="p">[</span><span class="n">var</span><span class="p">])</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s1">&#39;float&#39;</span><span class="p">:</span>
+                    <span class="n">sce_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">sce_data</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s1">&#39;int&#39;</span><span class="p">:</span>
+                    <span class="n">sce_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">sce_data</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s1">&#39;bool&#39;</span><span class="p">:</span>
+                    <span class="n">sce_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">sce_data</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="n">datatype</span> <span class="o">==</span> <span class="s1">&#39;str&#39;</span><span class="p">:</span>
+                    <span class="n">sce_data</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">sce_data</span><span class="p">[</span><span class="n">var</span><span class="p">])</span>
+
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">var</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">sce_data</span><span class="p">[</span><span class="n">var</span><span class="p">]</span><span class="si">}</span><span class="s2"> cannot be converted to </span><span class="si">{</span><span class="n">datatype</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sce_data</span></div>
+
+
+<div class="viewcode-block" id="SheetData"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.SheetData">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SheetData</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Holds and processes data related to various component types and their attributes.</span>
+
+<span class="sd">    The `SheetData` class is designed to dynamically assign attributes based on</span>
+<span class="sd">    provided data, categorizing attributes into components and supporting</span>
+<span class="sd">    their initialization. Parameters not related to known components are stored</span>
+<span class="sd">    directly as attributes, while recognized component-related attributes are</span>
+<span class="sd">    organized into dictionaries for easier management. The class also removes</span>
+<span class="sd">    component data that is entirely empty or contains only `NaN` values for</span>
+<span class="sd">    better organization and relevance.</span>
+
+<span class="sd">    :ivar attribute1: Description of the attribute. The attribute can be any key</span>
+<span class="sd">                      passed to the constructor that does not belong to a recognized</span>
+<span class="sd">                      component type.</span>
+<span class="sd">    :type attribute1: Any</span>
+<span class="sd">    :ivar component_type: A dictionary of dictionaries, categorizing attributes</span>
+<span class="sd">                          related to known components by their types and instances.</span>
+<span class="sd">                          For example, categories such as walls, roofs, PVs, etc.,</span>
+<span class="sd">                          create separate structured data storage.</span>
+<span class="sd">    :type component_type: Dict[str, Dict[str, Dict[str, Any]]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span><span class="p">):</span>
+        <span class="n">comp_types</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;wall&#39;</span><span class="p">,</span> <span class="s1">&#39;roof&#39;</span><span class="p">,</span> <span class="s1">&#39;pv&#39;</span><span class="p">,</span> <span class="s1">&#39;batt&#39;</span><span class="p">,</span> <span class="s1">&#39;st&#39;</span><span class="p">,</span> <span class="s1">&#39;hp&#39;</span><span class="p">,</span> <span class="s1">&#39;ac&#39;</span><span class="p">,</span> <span class="s1">&#39;deh&#39;</span><span class="p">,</span> <span class="s1">&#39;buffsto&#39;</span><span class="p">,</span> <span class="s1">&#39;dhwsto&#39;</span><span class="p">,</span>
+                                          <span class="s1">&#39;boiler&#39;</span><span class="p">,</span> <span class="s1">&#39;refurb&#39;</span><span class="p">,</span> <span class="s1">&#39;ev&#39;</span><span class="p">]:</span>
+                <span class="c1"># set dicitionaries as properties for components,</span>
+                <span class="c1"># so that they can be used directly for component initialisation</span>
+                <span class="n">comp_name</span> <span class="o">=</span> <span class="n">key</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">comp_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">comp_types</span><span class="p">:</span>
+                    <span class="n">comp_types</span><span class="p">[</span><span class="n">comp_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">if</span> <span class="n">comp_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">comp_types</span><span class="p">[</span><span class="n">comp_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]]:</span>
+                    <span class="n">comp_types</span><span class="p">[</span><span class="n">comp_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]][</span><span class="n">comp_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">if</span> <span class="n">val</span> <span class="o">!=</span> <span class="s1">&#39;nan&#39;</span><span class="p">:</span>
+                    <span class="n">comp_types</span><span class="p">[</span><span class="n">comp_name</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]][</span><span class="n">comp_name</span><span class="p">][</span><span class="n">key</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">comp_name</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">:]]</span> <span class="o">=</span> <span class="n">val</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># write parameter as class attribute</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">comp_type</span> <span class="ow">in</span> <span class="n">comp_types</span><span class="p">:</span>
+            <span class="c1"># erase empty data</span>
+            <span class="n">comps_to_delete</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">comp_inst</span> <span class="ow">in</span> <span class="n">comp_types</span><span class="p">[</span><span class="n">comp_type</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">comp_types</span><span class="p">[</span><span class="n">comp_type</span><span class="p">][</span><span class="n">comp_inst</span><span class="p">])</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">():</span>
+                    <span class="n">comps_to_delete</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">comp_type</span><span class="p">,</span> <span class="n">comp_inst</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">comps_to_delete</span><span class="p">:</span>
+                <span class="n">comp_types</span><span class="p">[</span><span class="n">key</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># write dictionary as class attribute</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">comp_type</span><span class="p">,</span> <span class="n">comp_types</span><span class="p">[</span><span class="n">comp_type</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="BuildingModelInput"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.BuildingModelInput">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">BuildingModelInput</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents an input model for building simulations derived from Excel files.</span>
+
+<span class="sd">    This class is designed to read and process input data from the structured Excel input workbook</span>
+<span class="sd">    used in the building optimization. It handles multiple sheets with specific configurations,</span>
+<span class="sd">    validates the scenario data across sheets, and processes heat pump specifications (HP Specifications).</span>
+<span class="sd">    The class ensures consistency in scenario data and prepares the data for further usage.</span>
+
+<span class="sd">    :ivar fpath: Full file path to the input Excel file.</span>
+<span class="sd">    :type fpath: str</span>
+<span class="sd">    :ivar sheet_names: List of sheet names expected in the input Excel file.</span>
+<span class="sd">    :type sheet_names: list[str]</span>
+<span class="sd">    :ivar sheet_names_sce_data: List of sheet names containing scenario-related data.</span>
+<span class="sd">    :type sheet_names_sce_data: list[str]</span>
+<span class="sd">    :ivar excel_data: Dictionary containing processed data from each sheet in the input Excel file.</span>
+<span class="sd">                      This excludes empty columns and fills missing data with placeholder values (&#39;nan&#39;).</span>
+<span class="sd">    :type excel_data: dict</span>
+<span class="sd">    :ivar scenarios: List of scenario names extracted from the &#39;Location&#39; sheet of the input file.</span>
+<span class="sd">    :type scenarios: list[str]</span>
+<span class="sd">    :ivar scenario_data: Dictionary holding `ScenarioData` objects for each scenario.</span>
+<span class="sd">    :type scenario_data: dict</span>
+<span class="sd">    :ivar hp_specs: Dictionary containing processed heat pump specifications indexed by heat pump type.</span>
+<span class="sd">    :type hp_specs: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fname</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fpath</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">PATH_TO_WD</span> <span class="o">+</span> <span class="s2">&quot;/data/input/&quot;</span> <span class="o">+</span> <span class="n">fname</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sheet_names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Location&#39;</span><span class="p">,</span> <span class="s1">&#39;Consumption Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Building Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Technical Component Data&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;Economic Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Model Settings&#39;</span><span class="p">,</span> <span class="s1">&#39;HP Specifications&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sheet_names_sce_data</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Location&#39;</span><span class="p">,</span> <span class="s1">&#39;Consumption Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Building Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Technical Component Data&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;Economic Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Model Settings&#39;</span><span class="p">,]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">excel_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fpath</span><span class="p">,</span>
+            <span class="n">sheet_name</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Location&#39;</span><span class="p">,</span> <span class="s1">&#39;Consumption Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Building Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Technical Component Data&#39;</span><span class="p">,</span> <span class="s1">&#39;Economic Data&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;Model Settings&#39;</span><span class="p">,</span> <span class="s1">&#39;HP Specifications&#39;</span><span class="p">],</span>
+            <span class="n">header</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+            <span class="n">index_col</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">excel_data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">sheet</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">excel_data</span><span class="p">[</span><span class="n">sheet</span><span class="p">]</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">13</span><span class="p">]</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">how</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>  <span class="c1"># max. 10 scenarios</span>
+            <span class="k">for</span> <span class="n">sheet</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">excel_data</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">excel_data</span><span class="p">[</span><span class="s1">&#39;Location&#39;</span><span class="p">][</span><span class="s1">&#39;SCENARIO VALUES&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">sheet</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sheet_names_sce_data</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">excel_data</span><span class="p">[</span><span class="n">sheet</span><span class="p">][</span><span class="s1">&#39;SCENARIO VALUES&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span><span class="p">),</span> \
+                <span class="sa">f</span><span class="s2">&quot;Scenarios must be the same for all sheets. Check for wrongly inserted data in excel input file.&quot;</span> \
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">sheet</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">excel_data</span><span class="p">[</span><span class="n">sheet</span><span class="p">][</span><span class="s1">&#39;SCENARIO VALUES&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span><span class="si">}</span><span class="s2"> != </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_scenario_data</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hp_specs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_hp_specs</span><span class="p">()</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_scenario_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">scenario_data</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">sce</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scenarios</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">scenario_data</span><span class="p">[</span><span class="n">sce</span><span class="p">]</span> <span class="o">=</span> <span class="n">ScenarioData</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">excel_data</span><span class="p">,</span> <span class="n">sce</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_set_hp_specs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">hp_specs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">hp_type</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">excel_data</span><span class="p">[</span><span class="s1">&#39;HP Specifications&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">unique</span><span class="p">():</span>
+            <span class="n">hp_specs</span><span class="p">[</span><span class="n">hp_type</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">excel_data</span><span class="p">[</span><span class="s1">&#39;HP Specifications&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">hp_type</span><span class="p">]</span>
+            <span class="n">hp_specs</span><span class="p">[</span><span class="n">hp_type</span><span class="p">]</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span><span class="n">hp_specs</span><span class="p">[</span><span class="n">hp_type</span><span class="p">][</span><span class="s1">&#39;INDEX&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+            <span class="n">hp_specs</span><span class="p">[</span><span class="n">hp_type</span><span class="p">]</span> <span class="o">=</span> <span class="n">hp_specs</span><span class="p">[</span><span class="n">hp_type</span><span class="p">][</span><span class="s1">&#39;VALUES&#39;</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">hp_specs</span></div>
+
+
+<div class="viewcode-block" id="ScenarioResults"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.ScenarioResults">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ScenarioResults</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Represents the results of one scenario of run_building_opt, handling time-series data,</span>
+<span class="sd">    energy balances, and result summaries.</span>
+
+<span class="sd">    The class processes inputs and model parameters, extracting various time-series datasets</span>
+<span class="sd">    related to energy sources, sinks, storages, and other components. It computes yearly</span>
+<span class="sd">    summaries and provides methods to query and filter the data for insights and analysis.</span>
+
+<span class="sd">    The purpose of this class is to enable streamlined management and retrieval of simulation</span>
+<span class="sd">    results, offering flexibility for further analysis and reporting.</span>
+
+<span class="sd">    :ivar ts_inputs: Time-series input data used in simulation.</span>
+<span class="sd">    :type ts_inputs: pd.DataFrame</span>
+<span class="sd">    :ivar ts_el_sources: Time-series data for electrical energy sources.</span>
+<span class="sd">    :type ts_el_sources: pd.DataFrame</span>
+<span class="sd">    :ivar ts_el_sinks: Time-series data for electrical energy sinks.</span>
+<span class="sd">    :type ts_el_sinks: pd.DataFrame</span>
+<span class="sd">    :ivar ts_th_sources: Time-series data for thermal energy sources.</span>
+<span class="sd">    :type ts_th_sources: pd.DataFrame</span>
+<span class="sd">    :ivar ts_th_sinks: Time-series data for thermal energy sinks.</span>
+<span class="sd">    :type ts_th_sinks: pd.DataFrame</span>
+<span class="sd">    :ivar ts_storages: Time-series data for storages.</span>
+<span class="sd">    :type ts_storages: pd.DataFrame</span>
+<span class="sd">    :ivar ts_others: Time-series data for other parameters.</span>
+<span class="sd">    :type ts_others: pd.DataFrame</span>
+<span class="sd">    :ivar yearly_sums: Summarized yearly data grouped by energy sources, sinks, and others.</span>
+<span class="sd">    :type yearly_sums: pd.DataFrame</span>
+<span class="sd">    :ivar key_facts: Holds specific key insights or summaries extracted from the results. Default is None.</span>
+<span class="sd">    :type key_facts: None or pd.DataFrame</span>
+<span class="sd">    :ivar ts_el_balance: Represents the electrical energy balance time-series. Default is None.</span>
+<span class="sd">    :type ts_el_balance: None or pd.DataFrame</span>
+<span class="sd">    :ivar ts_th_balance: Represents the thermal energy balance time-series. Default is None.</span>
+<span class="sd">    :type ts_th_balance: None or pd.DataFrame</span>
+<span class="sd">    :ivar ti_components: Technical and investment-related data of components, extracted and structured.</span>
+<span class="sd">    :type ti_components: pd.DataFrame</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ts_inputs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="n">ConcreteModel</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_inputs</span> <span class="o">=</span> <span class="n">ts_inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_ti_components</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_el_sources</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">comp</span><span class="p">):</span> <span class="p">{(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="n">m</span><span class="o">.</span><span class="n">p_el_t_feed</span><span class="p">[</span><span class="n">comp</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">t</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">el_sources</span><span class="p">}</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_el_sinks</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">comp</span><span class="p">):</span> <span class="p">{(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="n">m</span><span class="o">.</span><span class="n">p_el_t_drain</span><span class="p">[</span><span class="n">comp</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">t</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">el_sinks</span><span class="p">}</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_th_sources</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">temp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="p">{(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="n">m</span><span class="o">.</span><span class="n">p_th_t_feed</span><span class="p">[</span><span class="n">comp</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">t</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">th_sources</span> <span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">temp_levels</span><span class="p">}</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_th_sinks</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">temp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="p">{(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="n">m</span><span class="o">.</span><span class="n">p_th_t_drain</span><span class="p">[</span><span class="n">comp</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">t</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">th_sinks</span> <span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">temp_levels</span><span class="p">}</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_storages</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">comp</span><span class="p">):</span> <span class="p">{(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="n">m</span><span class="o">.</span><span class="n">c_t</span><span class="p">[</span><span class="n">comp</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">t</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">storages</span><span class="p">}</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_others</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span>
+                <span class="o">**</span><span class="p">{</span><span class="sa">f</span><span class="s2">&quot;qmax_t: </span><span class="si">{</span><span class="n">st</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">temp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">st</span><span class="o">.</span><span class="n">qmax_t</span><span class="p">[</span><span class="n">temp</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">ti_components</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">st</span><span class="p">),</span> <span class="s1">&#39;p_inst&#39;</span><span class="p">]</span>
+                   <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">solar_thermal</span> <span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="n">st</span><span class="o">.</span><span class="n">temp_levels_feed</span><span class="p">},</span>
+                <span class="o">**</span><span class="p">{</span><span class="sa">f</span><span class="s2">&quot;pmax_t: </span><span class="si">{</span><span class="n">pv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">pv</span><span class="o">.</span><span class="n">potential</span><span class="o">.</span><span class="n">gen_ts_normalized</span> <span class="o">*</span>
+                                    <span class="bp">self</span><span class="o">.</span><span class="n">ti_components</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">pv</span><span class="p">),</span> <span class="s1">&#39;p_inst&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">pv</span><span class="o">.</span><span class="n">pmax_at_lifeend</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span>
+                   <span class="k">for</span> <span class="n">pv</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">pv</span> <span class="p">},</span>
+                <span class="o">**</span><span class="p">{},</span>
+            <span class="p">})</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">imp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">el_imports</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ts_others</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;elec. price: </span><span class="si">{</span><span class="n">imp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span>  <span class="n">imp</span><span class="o">.</span><span class="n">var_cost_t</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">yearly_sums</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+            <span class="s1">&#39;sums_el_sources&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_el_sources</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">cost_weights</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+            <span class="s1">&#39;sums_el_sinks&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_el_sinks</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">cost_weights</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+            <span class="s1">&#39;sums_th_sources&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_th_sources</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">cost_weights</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+            <span class="s1">&#39;sums_th_sinks&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_th_sinks</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">cost_weights</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+            <span class="s1">&#39;sums_others&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts_others</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="n">m</span><span class="o">.</span><span class="n">cost_weights</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+        <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key_facts</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_el_balance</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts_th_balance</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_init_ti_components</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="n">ConcreteModel</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ti_components</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">):</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">comp</span><span class="p">):</span> <span class="n">var</span><span class="p">[</span><span class="n">comp</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">var</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span>
+             <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">is_built</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">p_inst</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">c_inst</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">c_inst_l</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">inv_costs</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">fix_costs</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">var_costs</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">co2_costs</span><span class="p">,</span>
+              <span class="n">m</span><span class="o">.</span><span class="n">revenues</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">co2eq_balance</span><span class="p">]}</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ti_components</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s1">&#39;tot_costs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ti_components</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s1">&#39;costs&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span>
+                                                  <span class="bp">self</span><span class="o">.</span><span class="n">ti_components</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s1">&#39;revenues&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ti_components</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ti_components</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ti_components</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ti_components</span><span class="p">[</span>
+            <span class="p">[</span><span class="s1">&#39;is_built&#39;</span><span class="p">,</span> <span class="s1">&#39;p_inst&#39;</span><span class="p">,</span> <span class="s1">&#39;c_inst&#39;</span><span class="p">,</span> <span class="s1">&#39;c_inst_l&#39;</span><span class="p">,</span> <span class="s1">&#39;inv_costs&#39;</span><span class="p">,</span> <span class="s1">&#39;fix_costs&#39;</span><span class="p">,</span> <span class="s1">&#39;var_costs&#39;</span><span class="p">,</span> <span class="s1">&#39;co2_costs&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;revenues&#39;</span><span class="p">,</span> <span class="s1">&#39;tot_costs&#39;</span><span class="p">,</span> <span class="s1">&#39;co2eq_balance&#39;</span><span class="p">]]</span>
+
+<div class="viewcode-block" id="ScenarioResults.find_vals"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.ScenarioResults.find_vals">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">find_vals</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result_table_name</span><span class="p">,</span> <span class="n">column_val</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">row_val</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">|</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        filters for values in the result tables (of type pd.DataFrame), supports regex</span>
+<span class="sd">        :param result_table_name: needs to be an attribute of self</span>
+<span class="sd">        :param first_val: first value to be filtered for (in column names)</span>
+<span class="sd">        :param second_val: second value to be filtered for (in row names)</span>
+<span class="sd">        :return: filtered values</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">filtered</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result_table_name</span><span class="p">)</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="n">column_val</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">row_val</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">filtered</span> <span class="o">=</span> <span class="n">filtered</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="n">row_val</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">filtered</span></div>
+
+<div class="viewcode-block" id="ScenarioResults.get_ti_sum"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.ScenarioResults.get_ti_sum">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_ti_sum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_vals</span><span class="p">(</span><span class="s1">&#39;ti_components&#39;</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ScenarioResults.get_en_balance"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.ScenarioResults.get_en_balance">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_en_balance</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">en_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">src_sink</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">search_val</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">season</span><span class="p">:</span> <span class="n">Season</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Get the energy balance based on the specified energy type, source or sink,</span>
+<span class="sd">        search value, and an optional season. This method provides the sum of energy</span>
+<span class="sd">        values either for a specific season or throughout the year.</span>
+
+<span class="sd">        :param en_type: Type of energy. Must be either &#39;el&#39; (electric) or &#39;th&#39; (thermal).</span>
+<span class="sd">        :param src_sink: Determines whether to calculate for sources (&#39;src&#39;) or sinks</span>
+<span class="sd">            (&#39;sink&#39;). Must be either &#39;src&#39; or &#39;sink&#39;.</span>
+<span class="sd">        :param search_val: The search value used to filter data for calculation.</span>
+<span class="sd">        :param season: Optional. A season object that defines the time range for</span>
+<span class="sd">            seasonal calculations. If not provided, yearly values are used.</span>
+<span class="sd">        :return: The sum of energy values as a float based on the specified parameters.</span>
+<span class="sd">        :rtype: float</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">en_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;el&#39;</span><span class="p">,</span> <span class="s1">&#39;th&#39;</span><span class="p">],</span> <span class="s2">&quot;en_type must be &#39;el&#39; or &#39;th&#39;&quot;</span>
+        <span class="k">assert</span> <span class="n">src_sink</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="s1">&#39;sink&#39;</span><span class="p">],</span> <span class="s2">&quot;src_sink must be either &#39;src&#39; or &#39;sink&#39;&quot;</span>
+
+        <span class="n">col</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sums_</span><span class="si">{</span><span class="n">en_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="s1">&#39;sources&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">src_sink</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;src&#39;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;sinks&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="k">if</span> <span class="n">season</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_vals</span><span class="p">(</span><span class="s1">&#39;yearly_sums&#39;</span><span class="p">,</span> <span class="n">col</span><span class="p">,</span> <span class="n">search_val</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_ts</span><span class="p">(</span><span class="n">en_type</span><span class="p">,</span> <span class="n">src_sink</span><span class="p">,</span> <span class="n">search_val</span><span class="p">,</span> <span class="n">season</span><span class="o">=</span><span class="n">season</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="ScenarioResults.get_ts"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.ScenarioResults.get_ts">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_ts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">en_type</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">src_sink</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">search_val</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">season</span><span class="p">:</span> <span class="n">Season</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieves a time series DataFrame filtered by the given search value. The function</span>
+<span class="sd">        accesses the corresponding table for energy type (&#39;el&#39; or &#39;th&#39;) and source/sink,</span>
+<span class="sd">        and optionally filters by a specific season if provided.</span>
+
+<span class="sd">        :param en_type: A string specifying the energy type. Must be &#39;el&#39; or &#39;th&#39;.</span>
+<span class="sd">        :param src_sink: A string indicating whether to access source or sink data.</span>
+<span class="sd">            Must be either &#39;src&#39; or &#39;sink&#39;.</span>
+<span class="sd">        :param search_val: A string or regex pattern used to filter the time series data.</span>
+<span class="sd">        :param season: An optional `Season` object for filtering data by season.</span>
+<span class="sd">            Defaults to None to include all seasons.</span>
+<span class="sd">        :return: A filtered DataFrame based on the search value and optional season.</span>
+<span class="sd">        :rtype: pandas.DataFrame</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="n">en_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;el&#39;</span><span class="p">,</span> <span class="s1">&#39;th&#39;</span><span class="p">],</span> <span class="s2">&quot;en_type must be &#39;el&#39; or &#39;th&#39;&quot;</span>
+        <span class="k">assert</span> <span class="n">src_sink</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;src&#39;</span><span class="p">,</span> <span class="s1">&#39;sink&#39;</span><span class="p">],</span> <span class="s2">&quot;src_sink must be either &#39;src&#39; or &#39;sink&#39;&quot;</span>
+
+        <span class="n">res_table_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ts_</span><span class="si">{</span><span class="n">en_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="s1">&#39;sources&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">src_sink</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="s1">&#39;src&#39;</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;sinks&#39;</span><span class="si">}</span><span class="s2">&quot;</span>
+
+        <span class="n">ts_df</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">res_table_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">season</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">ts_df</span> <span class="o">=</span> <span class="n">ts_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">season</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">ts_df</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="n">search_val</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ScenarioResults.to_dict"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.ScenarioResults.to_dict">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span></div></div>
+
+
+<div class="viewcode-block" id="prepare_dummy_ts"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.data_formats.prepare_dummy_ts">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">prepare_dummy_ts</span><span class="p">(</span><span class="n">data_columns</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Timeseries</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    create a dummy instance for the Timeseries class</span>
+<span class="sd">    :param data_columns:</span>
+<span class="sd">    :param value:</span>
+<span class="sd">    :param freq:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">freq</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">freq</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">HOURLY</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">freq</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">QUARTER_HOURLY</span>
+
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="n">freq</span><span class="p">)</span>
+    <span class="n">ts</span><span class="p">[</span><span class="n">data_columns</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">return</span> <span class="n">ts</span></div>
+
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

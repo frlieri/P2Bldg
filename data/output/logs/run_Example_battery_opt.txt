@@ -1,0 +1,312 @@
+C:\Users\Erik\Documents\PycharmProjects\P2Home\src\run_battery_opt.py:127: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  start_str = date_row[i * 2]
+C:\Users\Erik\Documents\PycharmProjects\P2Home\src\run_battery_opt.py:128: FutureWarning: Series.__getitem__ treating keys as positions is deprecated. In a future version, integer keys will always be treated as labels (consistent with DataFrame behavior). To access a value by position, use `ser.iloc[pos]`
+  end_str = date_row[i * 2 + 1]
+running scenario:  Fixer Tarif ohne Speicher
+initializing model... 
+solving model...
+# ==========================================================
+# = Solver Results                                         =
+# ==========================================================
+# ----------------------------------------------------------
+#   Problem Information
+# ----------------------------------------------------------
+Problem: 
+- Lower bound: -.inf
+  Upper bound: .inf
+  Number of objectives: 1
+  Number of constraints: 0
+  Number of variables: 456815
+  Sense: unknown
+# ----------------------------------------------------------
+#   Solver Information
+# ----------------------------------------------------------
+Solver: 
+- Status: ok
+  Message: CPLEX 22.1.2\x3a optimal solution; objective 113491.373359381; 20108 simplex iterations; absmipgap=1.45519e-10, relmipgap=0
+  Termination condition: optimal
+  Id: 0
+# ----------------------------------------------------------
+#   Solution Information
+# ----------------------------------------------------------
+Solution: 
+- number of solutions: 0
+  number of solutions displayed: 0
+solving time:  0:03:33.735903
+Time invariant variables:
+                          is_built        p_inst  p_peak_hltf  c_inst  c_inst_l     inv_costs  fix_costs    var_costs      revenues     tot_costs  co2eq_balance
+ElDemand: el                  1.0  2.789242e+02          NaN     NaN       NaN  2.481776e-08        0.0          NaN           NaN  2.481776e-08            0.0
+ElExport: el_pv               1.0  1.000000e+06          NaN     NaN       NaN  8.897673e-05        0.0          NaN  40496.874954 -4.049687e+04            0.0
+ElImport: el_std              1.0  2.705749e+02          NaN     NaN       NaN  5.411498e+04        0.0  99873.26719           NaN  1.539882e+05            0.0
+ElNode: el_pv                 1.0  0.000000e+00          NaN     NaN       NaN  0.000000e+00        0.0          NaN           NaN  0.000000e+00            0.0
+ElStorage: battery            0.0  0.000000e+00          NaN     0.0       NaN  0.000000e+00        0.0      0.00000           NaN  0.000000e+00            0.0
+PV: pv                        1.0  2.721000e+03          NaN     NaN       NaN  0.000000e+00        0.0      0.00000           NaN  0.000000e+00        87072.0
+SolarPotentialDummy: pv       1.0  0.000000e+00          NaN     NaN       NaN  0.000000e+00        0.0          NaN           NaN  0.000000e+00            0.0
+sum                           6.0  1.003270e+06          0.0     0.0       0.0  5.411498e+04        0.0  99873.26719  40496.874954  1.134914e+05        87072.0
+Yearly energy sums:
+                      sums_el_sources  sums_el_sinks  sums_th_sources  sums_th_sinks
+ElDemand: el                    NaN  1000000.00000              NaN            NaN
+ElExport: el_pv                 NaN   532112.56252              NaN            NaN
+ElImport: el_std      698414.455871            NaN              NaN            NaN
+ElStorage: battery         0.000000        0.00000              NaN            NaN
+PV: pv                833698.106649            NaN              NaN            NaN
+Jährliche Kosten [T€/Jahr]                           113.491373
+Jährliche Kosten Strombezug [T€/Jahr]                153.988248
+Investitionskosten Speicher (Annuität) [T€/Jahr]       0.000000
+Jährliche Erlöse Direktvermarktung [T€/Jahr]          40.496875
+Jährliche Kosten Leistungspreis Strom [T€/Jahr]       54.114981
+Speicherkapazität [kWh]                                0.000000
+Jährlicher Strombezug [MWh]                          698.414456
+PV-Einspeisung [MWh]                                 532.112563
+Spitzenlast [kW]                                     270.574905
+Spitzenlast Hochlastzeitfenster [kW]                        NaN
+Benutzungsdauer [h/a]                               2581.224062
+running scenario:  Fixer Tarif mit Speicher (Eigenverbrauchsoptimierung)
+initializing model... 
+solving model...
+# ==========================================================
+# = Solver Results                                         =
+# ==========================================================
+# ----------------------------------------------------------
+#   Problem Information
+# ----------------------------------------------------------
+Problem: 
+- Lower bound: -.inf
+  Upper bound: .inf
+  Number of objectives: 1
+  Number of constraints: 0
+  Number of variables: 456815
+  Sense: unknown
+# ----------------------------------------------------------
+#   Solver Information
+# ----------------------------------------------------------
+Solver: 
+- Status: ok
+  Message: CPLEX 22.1.2\x3a optimal solution; objective 109488.422286922; 143 simplex iterations; absmipgap=6.69388e-10, relmipgap=0
+  Termination condition: optimal
+  Id: 0
+# ----------------------------------------------------------
+#   Solution Information
+# ----------------------------------------------------------
+Solution: 
+- number of solutions: 0
+  number of solutions displayed: 0
+solving time:  0:06:11.067467
+Time invariant variables:
+                          is_built        p_inst  p_peak_hltf     c_inst  c_inst_l     inv_costs  fix_costs     var_costs      revenues     tot_costs  co2eq_balance
+ElDemand: el                  1.0  2.789242e+02          NaN        NaN       NaN  2.481776e-08        0.0           NaN           NaN  2.481776e-08       0.000000
+ElExport: el_pv               1.0  1.000000e+06          NaN        NaN       NaN  8.897673e-05        0.0           NaN  38013.131191 -3.801313e+04       0.000000
+ElImport: el_std              1.0  2.364983e+02          NaN        NaN       NaN  4.729966e+04        0.0  96580.126097           NaN  1.438798e+05       0.000000
+ElNode: el_pv                 1.0  0.000000e+00          NaN        NaN       NaN  0.000000e+00        0.0           NaN           NaN  0.000000e+00       0.000000
+ElStorage: battery            1.0  1.000000e+06          NaN  56.027042       NaN  3.621772e+03        0.0      0.000000           NaN  3.621772e+03    1610.777462
+PV: pv                        1.0  2.721000e+03          NaN        NaN       NaN  0.000000e+00        0.0      0.000000           NaN  0.000000e+00   87072.000000
+SolarPotentialDummy: pv       1.0  0.000000e+00          NaN        NaN       NaN  0.000000e+00        0.0           NaN           NaN  0.000000e+00       0.000000
+sum                           7.0  2.003236e+06          0.0  56.027042       0.0  5.092143e+04        0.0  96580.126097  38013.131191  1.094884e+05   88682.777462
+Yearly energy sums:
+                      sums_el_sources   sums_el_sinks  sums_th_sources  sums_th_sinks
+ElDemand: el                    NaN  1000000.000000              NaN            NaN
+ElExport: el_pv                 NaN   511381.229978              NaN            NaN
+ElImport: el_std      675385.497179             NaN              NaN            NaN
+ElStorage: battery     21189.966940    24153.739752              NaN            NaN
+PV: pv                838959.505611             NaN              NaN            NaN
+Jährliche Kosten [T€/Jahr]                           109.488422
+Jährliche Kosten Strombezug [T€/Jahr]                143.879781
+Investitionskosten Speicher (Annuität) [T€/Jahr]       3.621772
+Jährliche Erlöse Direktvermarktung [T€/Jahr]          38.013131
+Jährliche Kosten Leistungspreis Strom [T€/Jahr]       47.299655
+Speicherkapazität [kWh]                               56.027042
+Jährlicher Strombezug [MWh]                          675.385497
+PV-Einspeisung [MWh]                                 511.381230
+Spitzenlast [kW]                                     236.498277
+Spitzenlast Hochlastzeitfenster [kW]                        NaN
+Benutzungsdauer [h/a]                               2855.773437
+running scenario:  Fixer Tarif mit Speicher + atypische Netznutzung
+initializing model... 
+solving model...
+# ==========================================================
+# = Solver Results                                         =
+# ==========================================================
+# ----------------------------------------------------------
+#   Problem Information
+# ----------------------------------------------------------
+Problem: 
+- Lower bound: -.inf
+  Upper bound: .inf
+  Number of objectives: 1
+  Number of constraints: 0
+  Number of variables: 456816
+  Sense: unknown
+# ----------------------------------------------------------
+#   Solver Information
+# ----------------------------------------------------------
+Solver: 
+- Status: ok
+  Message: CPLEX 22.1.2\x3a optimal solution; objective 58702.8444422779; 142 simplex iterations; absmipgap=5.09317e-11, relmipgap=0
+  Termination condition: optimal
+  Id: 0
+# ----------------------------------------------------------
+#   Solution Information
+# ----------------------------------------------------------
+Solution: 
+- number of solutions: 0
+  number of solutions displayed: 0
+solving time:  0:06:34.165701
+Time invariant variables:
+                          is_built        p_inst  p_peak_hltf  c_inst  c_inst_l     inv_costs  fix_costs      var_costs      revenues     tot_costs  co2eq_balance
+ElDemand: el                  1.0  2.789242e+02          NaN     NaN       NaN  2.481776e-08        0.0            NaN           NaN  2.481776e-08            0.0
+ElExport: el_pv               1.0  1.000000e+06          NaN     NaN       NaN  8.897673e-05        0.0            NaN  54174.285465 -5.417429e+04            0.0
+ElImport: el_std              1.0  3.157402e+02          0.0     NaN       NaN  0.000000e+00        0.0  112877.129818           NaN  1.128771e+05            0.0
+ElNode: el_pv                 1.0  0.000000e+00          NaN     NaN       NaN  0.000000e+00        0.0            NaN           NaN  0.000000e+00            0.0
+ElStorage: battery            1.0  1.000000e+06          NaN     0.0       NaN  0.000000e+00        0.0       0.000000           NaN  0.000000e+00            0.0
+PV: pv                        1.0  2.721000e+03          NaN     NaN       NaN  0.000000e+00        0.0       0.000000           NaN  0.000000e+00        87072.0
+SolarPotentialDummy: pv       1.0  0.000000e+00          NaN     NaN       NaN  0.000000e+00        0.0            NaN           NaN  0.000000e+00            0.0
+sum                           7.0  2.003316e+06          0.0     0.0       0.0  8.900155e-05        0.0  112877.129818  54174.285465  5.870284e+04        87072.0
+Yearly energy sums:
+                      sums_el_sources   sums_el_sinks  sums_th_sources  sums_th_sinks
+ElDemand: el                    NaN  1000000.000000              NaN            NaN
+ElExport: el_pv                 NaN   623048.664815              NaN            NaN
+ElImport: el_std      789350.558166             NaN              NaN            NaN
+ElStorage: battery         0.000000        0.000000              NaN            NaN
+PV: pv                833698.106649             NaN              NaN            NaN
+Jährliche Kosten [T€/Jahr]                            58.702844
+Jährliche Kosten Strombezug [T€/Jahr]                112.877130
+Investitionskosten Speicher (Annuität) [T€/Jahr]       0.000000
+Jährliche Erlöse Direktvermarktung [T€/Jahr]          54.174285
+Jährliche Kosten Leistungspreis Strom [T€/Jahr]        0.000000
+Speicherkapazität [kWh]                                0.000000
+Jährlicher Strombezug [MWh]                          789.350558
+PV-Einspeisung [MWh]                                 623.048665
+Spitzenlast [kW]                                     315.740223
+Spitzenlast Hochlastzeitfenster [kW]                   0.000000
+Benutzungsdauer [h/a]                               2500.000000
+running scenario:  Day Ahead 2024 mit Speicher
+initializing model... 
+solving model...
+# ==========================================================
+# = Solver Results                                         =
+# ==========================================================
+# ----------------------------------------------------------
+#   Problem Information
+# ----------------------------------------------------------
+Problem: 
+- Lower bound: -.inf
+  Upper bound: .inf
+  Number of objectives: 1
+  Number of constraints: 0
+  Number of variables: 456815
+  Sense: unknown
+# ----------------------------------------------------------
+#   Solver Information
+# ----------------------------------------------------------
+Solver: 
+- Status: ok
+  Message: CPLEX 22.1.2\x3a optimal solution; objective 112882.070952174; 149 simplex iterations; absmipgap=1.45519e-10, relmipgap=0
+  Termination condition: optimal
+  Id: 0
+# ----------------------------------------------------------
+#   Solution Information
+# ----------------------------------------------------------
+Solution: 
+- number of solutions: 0
+  number of solutions displayed: 0
+solving time:  0:06:03.419896
+Time invariant variables:
+                          is_built        p_inst  p_peak_hltf      c_inst  c_inst_l     inv_costs  fix_costs     var_costs      revenues     tot_costs  co2eq_balance
+ElDemand: el                  1.0  2.789242e+02          NaN         NaN       NaN  2.481776e-08        0.0           NaN           NaN  2.481776e-08       0.000000
+ElExport: el_pv               1.0  1.000000e+06          NaN         NaN       NaN  8.897673e-05        0.0           NaN  24843.582012 -2.484358e+04       0.000000
+ElImport: el_std              1.0  2.160148e+02          NaN         NaN       NaN  4.320295e+04        0.0  82572.287417           NaN  1.257752e+05       0.000000
+ElNode: el_pv                 1.0  0.000000e+00          NaN         NaN       NaN  0.000000e+00        0.0           NaN           NaN  0.000000e+00       0.000000
+ElStorage: battery            1.0  1.000000e+06          NaN  184.867036       NaN  1.195041e+04        0.0      0.000000           NaN  1.195041e+04    5314.927297
+PV: pv                        1.0  2.721000e+03          NaN         NaN       NaN  0.000000e+00        0.0      0.000000           NaN  0.000000e+00   87072.000000
+SolarPotentialDummy: pv       1.0  0.000000e+00          NaN         NaN       NaN  0.000000e+00        0.0           NaN           NaN  0.000000e+00       0.000000
+sum                           7.0  2.003216e+06          0.0  184.867036       0.0  5.515337e+04        0.0  82572.287417  24843.582012  1.128821e+05   92386.927297
+Yearly energy sums:
+                      sums_el_sources   sums_el_sinks  sums_th_sources  sums_th_sinks
+ElDemand: el                    NaN  1000000.000000              NaN            NaN
+ElExport: el_pv                 NaN   428649.827881              NaN            NaN
+ElImport: el_std      596374.355649             NaN              NaN            NaN
+ElStorage: battery     93149.446934   106222.007004              NaN            NaN
+PV: pv                845348.032302             NaN              NaN            NaN
+Jährliche Kosten [T€/Jahr]                           112.882071
+Jährliche Kosten Strombezug [T€/Jahr]                125.775241
+Investitionskosten Speicher (Annuität) [T€/Jahr]      11.950412
+Jährliche Erlöse Direktvermarktung [T€/Jahr]          24.843582
+Jährliche Kosten Leistungspreis Strom [T€/Jahr]       43.202953
+Speicherkapazität [kWh]                              184.867036
+Jährlicher Strombezug [MWh]                          596.374356
+PV-Einspeisung [MWh]                                 428.649828
+Spitzenlast [kW]                                     216.014767
+Spitzenlast Hochlastzeitfenster [kW]                        NaN
+Benutzungsdauer [h/a]                               2760.803643
+running scenario:  Day Ahead 2024 + atypische Netznutzung mit Speicher
+initializing model... 
+solving model...
+# ==========================================================
+# = Solver Results                                         =
+# ==========================================================
+# ----------------------------------------------------------
+#   Problem Information
+# ----------------------------------------------------------
+Problem: 
+- Lower bound: -.inf
+  Upper bound: .inf
+  Number of objectives: 1
+  Number of constraints: 0
+  Number of variables: 456816
+  Sense: unknown
+# ----------------------------------------------------------
+#   Solver Information
+# ----------------------------------------------------------
+Solver: 
+- Status: ok
+  Message: CPLEX 22.1.2\x3a optimal solution; objective 65685.1622422775; 194 simplex iterations; absmipgap=5.82077e-11, relmipgap=0
+  Termination condition: optimal
+  Id: 0
+# ----------------------------------------------------------
+#   Solution Information
+# ----------------------------------------------------------
+Solution: 
+- number of solutions: 0
+  number of solutions displayed: 0
+solving time:  0:08:49.295253
+Time invariant variables:
+                          is_built        p_inst  p_peak_hltf    c_inst  c_inst_l     inv_costs  fix_costs     var_costs      revenues     tot_costs  co2eq_balance
+ElDemand: el                  1.0  2.789242e+02          NaN       NaN       NaN  2.481776e-08        0.0           NaN           NaN  2.481776e-08       0.000000
+ElExport: el_pv               1.0  1.000000e+06          NaN       NaN       NaN  8.897673e-05        0.0           NaN  26081.707958 -2.608171e+04       0.000000
+ElImport: el_std              1.0  2.507745e+02          0.0       NaN       NaN  0.000000e+00        0.0  91126.889507           NaN  9.112689e+04       0.000000
+ElNode: el_pv                 1.0  0.000000e+00          NaN       NaN       NaN  0.000000e+00        0.0           NaN           NaN  0.000000e+00       0.000000
+ElStorage: battery            1.0  1.000000e+06          NaN  9.900187       NaN  6.399806e+02        0.0      0.000000           NaN  6.399806e+02     284.630385
+PV: pv                        1.0  2.721000e+03          NaN       NaN       NaN  0.000000e+00        0.0      0.000000           NaN  0.000000e+00   87072.000000
+SolarPotentialDummy: pv       1.0  0.000000e+00          NaN       NaN       NaN  0.000000e+00        0.0           NaN           NaN  0.000000e+00       0.000000
+sum                           7.0  2.003251e+06          0.0  9.900187       0.0  6.399807e+02        0.0  91126.889507  26081.707958  6.568516e+04   87356.630385
+Yearly energy sums:
+                      sums_el_sources   sums_el_sinks  sums_th_sources  sums_th_sinks
+ElDemand: el                    NaN  1000000.000000              NaN            NaN
+ElExport: el_pv                 NaN   459609.861617              NaN            NaN
+ElImport: el_std      626936.326414             NaN              NaN            NaN
+ElStorage: battery      5730.073672     6531.235305              NaN            NaN
+PV: pv                833474.696835             NaN              NaN            NaN
+Jährliche Kosten [T€/Jahr]                            65.685162
+Jährliche Kosten Strombezug [T€/Jahr]                 91.126890
+Investitionskosten Speicher (Annuität) [T€/Jahr]       0.639981
+Jährliche Erlöse Direktvermarktung [T€/Jahr]          26.081708
+Jährliche Kosten Leistungspreis Strom [T€/Jahr]        0.000000
+Speicherkapazität [kWh]                                9.900187
+Jährlicher Strombezug [MWh]                          626.936326
+PV-Einspeisung [MWh]                                 459.609862
+Spitzenlast [kW]                                     250.774531
+Spitzenlast Hochlastzeitfenster [kW]                   0.000000
+Benutzungsdauer [h/a]                               2500.000000
+dumped  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/last_results.pkl
+                                                  Fixer Tarif ohne Speicher  Fixer Tarif mit Speicher (Eigenverbrauchsoptimierung)  Fixer Tarif mit Speicher + atypische Netznutzung  Day Ahead 2024 mit Speicher  Day Ahead 2024 + atypische Netznutzung mit Speicher
+Jährliche Kosten [T€/Jahr]                                       113.491373                                             109.488422                                         58.702844                   112.882071                                            65.685162
+Jährliche Kosten Strombezug [T€/Jahr]                            153.988248                                             143.879781                                        112.877130                   125.775241                                            91.126890
+Investitionskosten Speicher (Annuität) [T€/Jahr]                   0.000000                                               3.621772                                          0.000000                    11.950412                                             0.639981
+Jährliche Erlöse Direktvermarktung [T€/Jahr]                      40.496875                                              38.013131                                         54.174285                    24.843582                                            26.081708
+Jährliche Kosten Leistungspreis Strom [T€/Jahr]                   54.114981                                              47.299655                                          0.000000                    43.202953                                             0.000000
+Speicherkapazität [kWh]                                            0.000000                                              56.027042                                          0.000000                   184.867036                                             9.900187
+Jährlicher Strombezug [MWh]                                      698.414456                                             675.385497                                        789.350558                   596.374356                                           626.936326
+PV-Einspeisung [MWh]                                             532.112563                                             511.381230                                        623.048665                   428.649828                                           459.609862
+Spitzenlast [kW]                                                 270.574905                                             236.498277                                        315.740223                   216.014767                                           250.774531
+Spitzenlast Hochlastzeitfenster [kW]                                    NaN                                                    NaN                                          0.000000                          NaN                                             0.000000
+Benutzungsdauer [h/a]                                           2581.224062                                            2855.773437                                       2500.000000                  2760.803643                                          2500.000000

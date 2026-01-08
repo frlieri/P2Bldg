@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>helper module &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="model package" href="model.html" />
+    <link rel="prev" title="export package" href="export.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="const.html">const module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html">data_preparation package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="export.html">export package</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">helper module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#helper.Tee"><code class="docutils literal notranslate"><span class="pre">Tee</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#helper.Tee.flush"><code class="docutils literal notranslate"><span class="pre">Tee.flush()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#helper.Tee.write"><code class="docutils literal notranslate"><span class="pre">Tee.write()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.calc_for_blocks_of_n"><code class="docutils literal notranslate"><span class="pre">calc_for_blocks_of_n()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.calc_hours_in_period"><code class="docutils literal notranslate"><span class="pre">calc_hours_in_period()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.calc_th_demand_summary"><code class="docutils literal notranslate"><span class="pre">calc_th_demand_summary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.check_if_values_outside_range"><code class="docutils literal notranslate"><span class="pre">check_if_values_outside_range()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.check_if_zero_or_nan"><code class="docutils literal notranslate"><span class="pre">check_if_zero_or_nan()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.create_climate_data_dump_id"><code class="docutils literal notranslate"><span class="pre">create_climate_data_dump_id()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.create_result_folder"><code class="docutils literal notranslate"><span class="pre">create_result_folder()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.create_ts_data_dump_id"><code class="docutils literal notranslate"><span class="pre">create_ts_data_dump_id()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.create_ts_multiindex"><code class="docutils literal notranslate"><span class="pre">create_ts_multiindex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.date_within_period"><code class="docutils literal notranslate"><span class="pre">date_within_period()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.day_of_year"><code class="docutils literal notranslate"><span class="pre">day_of_year()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.dump_pickle"><code class="docutils literal notranslate"><span class="pre">dump_pickle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.get_country_state_city_for_coordinates"><code class="docutils literal notranslate"><span class="pre">get_country_state_city_for_coordinates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.get_holidays"><code class="docutils literal notranslate"><span class="pre">get_holidays()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.get_holidays_from_lib"><code class="docutils literal notranslate"><span class="pre">get_holidays_from_lib()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.get_hour_from_multiindex"><code class="docutils literal notranslate"><span class="pre">get_hour_from_multiindex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.get_season"><code class="docutils literal notranslate"><span class="pre">get_season()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.get_state_abbr_for_state_name"><code class="docutils literal notranslate"><span class="pre">get_state_abbr_for_state_name()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.get_typeday"><code class="docutils literal notranslate"><span class="pre">get_typeday()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.get_var_t"><code class="docutils literal notranslate"><span class="pre">get_var_t()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.hour_within_period"><code class="docutils literal notranslate"><span class="pre">hour_within_period()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.identify_blocks"><code class="docutils literal notranslate"><span class="pre">identify_blocks()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.linear_extrapolate_all_columns"><code class="docutils literal notranslate"><span class="pre">linear_extrapolate_all_columns()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.load_pickle"><code class="docutils literal notranslate"><span class="pre">load_pickle()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.match_str_with_enum"><code class="docutils literal notranslate"><span class="pre">match_str_with_enum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.mm_dd_str_to_datetime"><code class="docutils literal notranslate"><span class="pre">mm_dd_str_to_datetime()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.normalize_wrt_sum"><code class="docutils literal notranslate"><span class="pre">normalize_wrt_sum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.reformat_string_w_umlauts"><code class="docutils literal notranslate"><span class="pre">reformat_string_w_umlauts()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.tuple_list_from_hour_periods"><code class="docutils literal notranslate"><span class="pre">tuple_list_from_hour_periods()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#helper.yield_pos_of_next_higher_number_in_ordered_list"><code class="docutils literal notranslate"><span class="pre">yield_pos_of_next_higher_number_in_ordered_list()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_battery_opt.html">run_battery_opt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_building_opt.html">run_building_opt module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+      <li class="breadcrumb-item active">helper module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/helper.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-helper">
+<span id="helper-module"></span><h1>helper module<a class="headerlink" href="#module-helper" title="Permalink to this heading"></a></h1>
+<p>src/helper.py</p>
+<p>Utility functions used across the project for date/time handling, timeseries
+processing, geographic lookups, holiday and typeday determination, basic
+numeric checks, serialization helpers, and small data transformations.</p>
+<p>Main responsibilities:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Date and season helpers:</dt><dd><ul>
+<li><p>parsing and converting MM-DD strings to datetimes,</p></li>
+<li><p>determining day-of-year, season, and typeday (workday/saturday/sunday/holiday),</p></li>
+<li><p>checking whether a date or hour falls within a given period.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Timeseries and aggregation utilities:</dt><dd><ul>
+<li><p>block-wise aggregation, linear extrapolation of DataFrame columns,</p></li>
+<li><p>creation of reduced-timeseries MultiIndex and extraction of hour values,</p></li>
+<li><p>identification of contiguous blocks in binary series and conversion of
+hour-period strings to tuple lists.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Geographic and holiday support:</dt><dd><ul>
+<li><p>reverse geocoding coordinates to (country, state, city),</p></li>
+<li><p>fetching holidays using the <cite>holidays</cite> package with fallbacks,</p></li>
+<li><p>string reformatting for German umlauts and mapping to project enums.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>Data validation and IO helpers:</dt><dd><ul>
+<li><p>normalization with respect to sum, range checks, zero/NaN checks,</p></li>
+<li><p>dump/load pickles to the project precalc folder, and result folder creation.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Dependencies and notes:</p>
+<ul class="simple">
+<li><p>Relies on pandas, geopy (Nominatim), holidays, and project constants from
+<cite>src.const</cite>. Many functions expect the project constants to be properly
+configured (e.g., <cite>LATITUDE</cite>, <cite>LONGITUDE</cite>, <cite>MODELED_YEAR</cite>, <cite>PRECALC_FOLDER</cite>).</p></li>
+<li><p>Designed for small, testable utility tasks; not intended as a replacement for
+specialized libraries for heavy data processing.</p></li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="helper.Tee">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">Tee</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">streams</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#Tee"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.Tee" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Class to write to multiple streams simultaneously, e.g., to console and a file.
+This class allows writing output to multiple streams at once. It can be used to
+duplicate output to both the console and a file, or any other combination of
+writable streams.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>streams</strong> (<em>list</em>) – Variable number of stream objects to write to.</p>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="helper.Tee.flush">
+<span class="sig-name descname"><span class="pre">flush</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#Tee.flush"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.Tee.flush" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="helper.Tee.write">
+<span class="sig-name descname"><span class="pre">write</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#Tee.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.Tee.write" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.calc_for_blocks_of_n">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">calc_for_blocks_of_n</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df:</span> <span class="pre">(&lt;class</span> <span class="pre">'pandas.core.frame.DataFrame'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'pandas.core.series.Series'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">block_size=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func='mean'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/helper.html#calc_for_blocks_of_n"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.calc_for_blocks_of_n" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate aggregated values for blocks of specified size from a pandas DataFrame or Series.</p>
+<p>This function divides the input data into blocks of a given size and applies an
+aggregation function to each block. The aggregated values are then aligned to
+the original index of the input data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>df</strong> – The input data to process, either a pandas DataFrame or Series.</p></li>
+<li><p><strong>block_size</strong> (<em>int</em><em>, </em><em>optional</em>) – The size of each block for grouping, defaults to 24.</p></li>
+<li><p><strong>func</strong> (<em>str</em><em> or </em><em>callable</em><em>, </em><em>optional</em>) – The aggregation function to apply to each block. Can be a string
+representing a common pandas aggregation function (e.g., ‘mean’, ‘sum’) or
+a callable function, defaults to ‘mean’.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pandas Series containing the aggregated values aligned to the
+original index structure of the input data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.calc_hours_in_period">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">calc_hours_in_period</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">period_tuple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/helper.html#calc_hours_in_period"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.calc_hours_in_period" title="Permalink to this definition"></a></dt>
+<dd><p>calculate the hours of a period given as (start hour, end hour)
+:param period_tuple: (start hour: int|float, end hour: int|float)
+:return: period length: int</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.calc_th_demand_summary">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">calc_th_demand_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dem</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">imp</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_factors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#calc_th_demand_summary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.calc_th_demand_summary" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the thermal demand summary for room heating and domestic hot water (DHW).
+This function computes thermal losses, gains, and demand factors based on the input
+data and applies cost factors to generate a detailed summary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dem</strong> – Dictionary containing the thermal room heating and DHW demand data.</p></li>
+<li><p><strong>imp</strong> – Dictionary containing the impact data for solar and internal heat gains.</p></li>
+<li><p><strong>cost_factors</strong> – Series containing cost factors to scale the computed values.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A DataFrame with detailed thermal demand summary including transmission
+losses, ventilation losses, solar heat gains, internal heat gains, DHW, and
+aggregated sums.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.check_if_values_outside_range">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">check_if_values_outside_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#check_if_values_outside_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.check_if_values_outside_range" title="Permalink to this definition"></a></dt>
+<dd><p>Checks if the values in the provided pandas Series are outside of the specified range.</p>
+<p>This function examines whether any of the values in the given pandas Series are
+outside the defined minimum and maximum range. If any value falls below the
+minimum or exceeds the maximum, an assertion error is raised, indicating that
+values in the Series are out of the acceptable range.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>s</strong> (<em>pd.Series</em>) – A pandas Series to be checked for out-of-range conditions.</p></li>
+<li><p><strong>min</strong> (<em>int</em><em>, </em><em>optional</em>) – The minimum acceptable value for elements in the Series
+(inclusive). Defaults to 0.</p></li>
+<li><p><strong>max</strong> (<em>int</em><em>, </em><em>optional</em>) – The maximum acceptable value for elements in the Series
+(inclusive). Defaults to 10 ** 9.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – If any value in the Series is outside the specified
+[min, max] range.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.check_if_zero_or_nan">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">check_if_zero_or_nan</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">val</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/helper.html#check_if_zero_or_nan"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.check_if_zero_or_nan" title="Permalink to this definition"></a></dt>
+<dd><p>Checks if the given value is either zero or NaN.</p>
+<p>This function evaluates whether the provided value is equal to 0.0 or is a
+string representation of ‘nan’. It returns a boolean reflecting the result
+of this evaluation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>val</strong> (<em>Any</em>) – The value to be checked</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the value is either 0.0 or ‘nan’, otherwise False</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.create_climate_data_dump_id">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">create_climate_data_dump_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#create_climate_data_dump_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.create_climate_data_dump_id" title="Permalink to this definition"></a></dt>
+<dd><p>Generates a unique identifier for a climate data dump based on pre-defined constants.
+The identifier combines geographic and temporal attributes to ensure uniqueness.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A string representing the unique climate data dump identifier.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.create_result_folder">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">create_result_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">proj_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">top_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'C:\\Users\\Erik\\PycharmProjects\\P2Bldg/data/output/results'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#create_result_folder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.create_result_folder" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a result folder for a given project and organizes it in a specified top directory.</p>
+<p>This function generates a unique folder name for a project by appending the current
+timestamp to the project’s name. If the folder does not exist, it is created. The function
+returns the path to the newly created folder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>proj_name</strong> (<em>str</em>) – Name of the project used to create a uniquely named folder.</p></li>
+<li><p><strong>top_folder</strong> (<em>str</em><em>, </em><em>optional</em>) – The base directory where the result folder will be created. Defaults
+to a predefined directory within the workspace.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The full path to the newly created result folder.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.create_ts_data_dump_id">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">create_ts_data_dump_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#create_ts_data_dump_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.create_ts_data_dump_id" title="Permalink to this definition"></a></dt>
+<dd><p>Generates a unique identifier for a timeseries data dump based on geographic
+position, modeled year, and reduction settings.</p>
+<p>The function creates an identifier string composed of predefined constants
+representing latitude, longitude, modeled year, and optionally includes a tag
+to signify timeseries reduction if that setting is applied.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A string representing the unique identifier for the timeseries data
+dump.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.create_ts_multiindex">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">create_ts_multiindex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nr_of_days_in_red_ts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_ts_reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">MultiIndex</span></span></span><a class="reference internal" href="_modules/helper.html#create_ts_multiindex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.create_ts_multiindex" title="Permalink to this definition"></a></dt>
+<dd><p>create a pandas Multiindex of the format (Season, timestep) for calculations with reduced timeseries
+:param nr_of_days_in_red_ts: number of days per season in reduced timeseries
+:return: pd.Multiindex</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.date_within_period">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">date_within_period</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">period_tuple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#date_within_period"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.date_within_period" title="Permalink to this definition"></a></dt>
+<dd><p>check if date is within a period of a year (e.g. season), not year specific
+:param period_tuple: (start, end) start and end are str objects of format ‘mm-dd’
+:param d:
+:return: bool whether d lies within period</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.day_of_year">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">day_of_year</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DatetimeIndex</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">datetime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#day_of_year"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.day_of_year" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the day of the year for a given date or set of dates.</p>
+<p>This function determines the day of the year for a given date (<cite>datetime</cite> object)
+or for a Pandas <cite>DatetimeIndex</cite>. It raises an error when the input is of an
+unsupported type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>pd.DatetimeIndex</em><em> | </em><em>datetime</em>) – The input date or set of dates. It must be either a single
+<cite>datetime</cite> object or a Pandas <cite>DatetimeIndex</cite>.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The day of the year corresponding to the input date(s). For
+a <cite>datetime</cite> object, it returns an integer representing the day of
+the year (e.g., 1 for January 1st). For a <cite>DatetimeIndex</cite>, it
+returns a Pandas Series or an array-like object of integers.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int | pd.Series</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>ValueError</strong> – If the input type is neither a <cite>datetime</cite> object
+nor a Pandas <cite>DatetimeIndex</cite>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.dump_pickle">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">dump_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#dump_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.dump_pickle" title="Permalink to this definition"></a></dt>
+<dd><p>Dumps the given data into a pickle file located in a predefined folder with the
+specified filename. This function serializes the data and writes it into a file
+using the Python <cite>pickle</cite> module. The resulting file is stored with the <cite>.pkl</cite>
+extension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fname</strong> (<em>str</em>) – The name of the file (without extension) to save the serialized
+data to.</p></li>
+<li><p><strong>data</strong> – The data object to serialize and dump into the file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.get_country_state_city_for_coordinates">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">get_country_state_city_for_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude:</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude:</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'int'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'float'&gt;))</span> <span class="pre">-&gt;</span> <span class="pre">(&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'str'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'str'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#get_country_state_city_for_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.get_country_state_city_for_coordinates" title="Permalink to this definition"></a></dt>
+<dd><p>Get the country, state, and city for the provided geographical coordinates.</p>
+<p>This function takes geographical coordinates (latitude and longitude) and uses a
+geo-coding service to determine the respective country, state, and city for the provided
+location. It returns these as a tuple.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>latitude</strong> – Latitude of the location as a string, integer, or float.</p></li>
+<li><p><strong>longitude</strong> – Longitude of the location as a string, integer, or float.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing the country, state, and city as strings.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.get_holidays">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">get_holidays</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">years</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/helper.html#get_holidays"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.get_holidays" title="Permalink to this definition"></a></dt>
+<dd><p>Retrieves a list of holidays for specified years. If no years are provided,
+it uses a default range based on a modeled year constant. Holidays are
+determined based on the geographical information of the system, with
+specific state-dependent holidays fetched if possible. If this fails,
+a set of default holidays is used, including New Year’s Day, Christmas Day,
+and Boxing Day.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>years</strong> – A list of integer years for which holidays will be fetched.
+Defaults to None, in which case the modeled year constant is used.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A list of <cite>date</cite> objects representing the holidays for the
+specified years or the default holidays.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.get_holidays_from_lib">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">get_holidays_from_lib</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">years</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">State.BAYERN</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/helper.html#get_holidays_from_lib"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.get_holidays_from_lib" title="Permalink to this definition"></a></dt>
+<dd><p>use holidays package to retrieve a list of holidays for a given state</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.get_hour_from_multiindex">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">get_hour_from_multiindex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ind</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">MultiIndex</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="reference internal" href="_modules/helper.html#get_hour_from_multiindex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.get_hour_from_multiindex" title="Permalink to this definition"></a></dt>
+<dd><p>returns the hours for the Multi-Index (Season, timestep) of a reduced timeseries
+:param: ind: pd.Mulit-Index of the format (Season, timestep)
+:return: list</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.get_season">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">get_season</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#get_season"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.get_season" title="Permalink to this definition"></a></dt>
+<dd><p>Determines the season corresponding to the given date based on predefined seasonal
+periods. The function checks whether the given date falls within the defined periods
+for Winter, Summer, or Transition. If the date does not match any defined period, an
+AssertionError is raised.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>d</strong> (<em>datetime</em>) – The date for which the season needs to be determined.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The season value corresponding to the date</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>AssertionError</strong> – If the date does not fall into any defined seasonal period.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.get_state_abbr_for_state_name">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">get_state_abbr_for_state_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">state</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/helper.html#get_state_abbr_for_state_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.get_state_abbr_for_state_name" title="Permalink to this definition"></a></dt>
+<dd><p>Fetches the abbreviation for a given state name by matching it against an enumeration
+after preprocessing and formatting it.</p>
+<p>The function retrieves the state name corresponding to coordinates, reformats the
+state name to handle capitalization, special characters, and underscores, and then
+matches the formatted state name with the predefined enumeration to find its
+abbreviation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state</strong> (<em>str</em>) – The name of the state whose abbreviation is to be fetched.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The abbreviation of the state as a string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.get_typeday">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">get_typeday</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">datetime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">holidays</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[datetime.date(2023,</span> <span class="pre">1,</span> <span class="pre">1),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">4,</span> <span class="pre">7),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">4,</span> <span class="pre">10),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">5,</span> <span class="pre">1),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">5,</span> <span class="pre">18),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">5,</span> <span class="pre">29),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">10,</span> <span class="pre">3),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">12,</span> <span class="pre">25),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">12,</span> <span class="pre">26),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">1,</span> <span class="pre">6),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">6,</span> <span class="pre">8),</span> <span class="pre">datetime.date(2023,</span> <span class="pre">11,</span> <span class="pre">1)]</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#get_typeday"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.get_typeday" title="Permalink to this definition"></a></dt>
+<dd><p>Determine the type of day (Sunday, Saturday, or Workday) for a given date.</p>
+<p>This function takes a specific date and an optional list of holiday dates
+and returns the type of the day based on whether it falls on a weekend or
+is a holiday.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>d</strong> (<em>datetime</em>) – The date to evaluate.</p></li>
+<li><p><strong>holidays</strong> (<em>set</em>) – A collection of holiday dates. If the given date matches one
+of these dates, it will be treated as a Sunday. Defaults to HOLIDAYS.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Numeric representation of the day type: Sunday, Saturday, or Workday.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.get_var_t">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">get_var_t</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var_t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#get_var_t"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.get_var_t" title="Permalink to this definition"></a></dt>
+<dd><p>Retrieve or process a variable based on its type.</p>
+<p>This function determines the type of the input variable <code class="docutils literal notranslate"><span class="pre">var_t</span></code> and processes or retrieves
+its value accordingly. If <code class="docutils literal notranslate"><span class="pre">var_t</span></code> is a pandas Series, it retrieves the value at the
+specified index (<code class="docutils literal notranslate"><span class="pre">args</span></code>). If it is of type float or int, the value is directly returned.
+An error is raised if the type is not among the supported types.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>var_t</strong> (<em>Union</em><em>[</em><em>pandas.Series</em><em>, </em><em>float</em><em>, </em><em>int</em><em>]</em>) – Input variable to be processed. Can be a pandas Series, a float, or an int.</p></li>
+<li><p><strong>args</strong> – Index or key to access the data in <code class="docutils literal notranslate"><span class="pre">var_t</span></code> when it is a pandas Series.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The processed value of <code class="docutils literal notranslate"><span class="pre">var_t</span></code> as determined by its type.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Union[float, int]</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>TypeError</strong> – If <code class="docutils literal notranslate"><span class="pre">var_t</span></code> is not of type pandas Series, float, or int.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.hour_within_period">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">hour_within_period</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">period_tuple</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">tuple</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hour</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/helper.html#hour_within_period"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.hour_within_period" title="Permalink to this definition"></a></dt>
+<dd><p>check whether an hour is within a given period, e.g. hour 7 is within [4,8] –&gt; True
+:param period_tuple: tuple or list of two integers
+:param hour: integer
+:return: boolean</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.identify_blocks">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">identify_blocks</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">series</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/helper.html#identify_blocks"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.identify_blocks" title="Permalink to this definition"></a></dt>
+<dd><p>Identify contiguous blocks of 1s in a pandas Series.</p>
+<section id="parameters">
+<h2>Parameters<a class="headerlink" href="#parameters" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>series<span class="classifier">pd.Series</span></dt><dd><p>A pandas Series containing 0s and 1s.</p>
+</dd>
+</dl>
+</section>
+<section id="returns">
+<h2>Returns<a class="headerlink" href="#returns" title="Permalink to this heading"></a></h2>
+<dl class="simple">
+<dt>dict</dt><dd><p>A dictionary {block_number: [indices]} representing each block of 1s.</p>
+</dd>
+</dl>
+</section>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.linear_extrapolate_all_columns">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">linear_extrapolate_all_columns</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_x</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#linear_extrapolate_all_columns"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.linear_extrapolate_all_columns" title="Permalink to this definition"></a></dt>
+<dd><p>Linearly extrapolates to estimate new y values for all columns, using the DataFrame index as x values.</p>
+<dl class="simple">
+<dt>Parameters:</dt><dd><p>df (pd.DataFrame): DataFrame containing the data with x values as the index.
+new_x (float): The new x value for which y values will be extrapolated.</p>
+</dd>
+<dt>Returns:</dt><dd><p>pd.Series: A Series with extrapolated values for each column.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.load_pickle">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">load_pickle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'C:\\Users\\Erik\\PycharmProjects\\P2Bldg/data/resources/precalc/'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#load_pickle"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.load_pickle" title="Permalink to this definition"></a></dt>
+<dd><p>Loads a pickle file from a specified folder and filename. The method constructs
+the file path by combining the folder path with the filename and ‘.pkl’
+extension, then deserializes the file content into a Python object using the
+pickle module.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fname</strong> (<em>str</em>) – Name of the pickle file (without extension) to be loaded.</p></li>
+<li><p><strong>folder</strong> (<em>str</em>) – Folder path where the pickle file is located. Defaults to
+<cite>const.PRECALC_FOLDER</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The deserialized Python object from the pickle file.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.match_str_with_enum">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">match_str_with_enum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">search_str:</span> <span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enum:</span> <span class="pre">~enum.Enum</span> <span class="pre">=</span> <span class="pre">&lt;enum</span> <span class="pre">'State'&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#match_str_with_enum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.match_str_with_enum" title="Permalink to this definition"></a></dt>
+<dd><p>Matches a string with an enumeration and retrieves the corresponding value from the enum.</p>
+<p>This function facilitates mapping a string representation of an enum name
+to its corresponding value in the provided enumeration. It employs a
+dictionary comprehension to construct a mapping of enum names to values,
+and retrieves the value associated with the provided string key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>search_str</strong> – The name of the enumeration to be matched.</p></li>
+<li><p><strong>enum</strong> – The enumeration from which the value is fetched. Defaults
+to const.State.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The value of the enum corresponding to the provided
+<code class="docutils literal notranslate"><span class="pre">search_str</span></code>.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Any</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.mm_dd_str_to_datetime">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">mm_dd_str_to_datetime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2023</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#mm_dd_str_to_datetime"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.mm_dd_str_to_datetime" title="Permalink to this definition"></a></dt>
+<dd><p>Converts a date string in MM-DD format into a complete datetime object by appending
+the provided year. The function parses the newly created string and returns it as a
+datetime object. If no year is provided, a default year from <cite>const.MODELED_YEAR</cite> is
+used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>d_str</strong> (<em>str</em>) – Date string in MM-DD format to be converted.</p></li>
+<li><p><strong>year</strong> (<em>int</em>) – Year to be prepended to the date string. Defaults to <cite>const.MODELED_YEAR</cite>.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A datetime object created by combining the given year and date string.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>datetime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.normalize_wrt_sum">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">normalize_wrt_sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">s</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/helper.html#normalize_wrt_sum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.normalize_wrt_sum" title="Permalink to this definition"></a></dt>
+<dd><p>Normalize a pandas Series with respect to its sum.</p>
+<p>This function takes a pandas Series and normalizes each element by dividing it
+by the sum of all elements in the Series. The result is a Series where the
+values add up to 1, unless the input Series contains only zeros.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>s</strong> (<em>pd.Series</em>) – A pandas Series to be normalized.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A normalized pandas Series where the values sum to 1.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pd.Series</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.reformat_string_w_umlauts">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">reformat_string_w_umlauts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#reformat_string_w_umlauts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.reformat_string_w_umlauts" title="Permalink to this definition"></a></dt>
+<dd><p>Reformats a given string by replacing German umlauts and the ‘ß’ character
+with their respective transliterations. This function uses a mapping of
+special characters to substitute ‘ä’ with ‘ae’, ‘ü’ with ‘ue’, ‘ö’ with ‘oe’,
+and ‘ß’ with ‘ss’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>string</strong> (<em>str</em>) – Input string to be reformatted. It may contain German umlauts
+or the ‘ß’ character to be replaced.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Reformatted string with all applicable characters substituted based on
+the defined mapping.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.tuple_list_from_hour_periods">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">tuple_list_from_hour_periods</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hh_str</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">tuple</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/helper.html#tuple_list_from_hour_periods"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.tuple_list_from_hour_periods" title="Permalink to this definition"></a></dt>
+<dd><p>convert a string of e.g. format “HH-HH,HH-HH” to [(HH,HH),(HH,HH)]
+:param hh_str: string with hour periods
+:return: list of tuples</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="helper.yield_pos_of_next_higher_number_in_ordered_list">
+<span class="sig-prename descclassname"><span class="pre">helper.</span></span><span class="sig-name descname"><span class="pre">yield_pos_of_next_higher_number_in_ordered_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ordered_list:</span> <span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">number:</span> <span class="pre">(&lt;class</span> <span class="pre">'float'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'int'&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/helper.html#yield_pos_of_next_higher_number_in_ordered_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#helper.yield_pos_of_next_higher_number_in_ordered_list" title="Permalink to this definition"></a></dt>
+<dd><p>Yield the position of the next higher (or equal) number in the ordered list compared to the given number.</p>
+<p>This function iterates through an ordered list and identifies the position at which a number that is
+greater than or equal to the input number occurs. If no such number exists, it returns the position
+of the last element in the list. The input list must be ordered to ensure correct functionality.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ordered_list</strong> – A list of numbers that is expected to be sorted in ascending order.</p></li>
+<li><p><strong>number</strong> – A number (float or int) to search for the next higher or equal value in the
+given ordered list.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Position (integer index) of the closest number in the list that is greater than or
+equal to the given number. If no such number is found, returns the position of the last
+element in the list.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="export.html" class="btn btn-neutral float-left" title="export package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="model.html" class="btn btn-neutral float-right" title="model package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

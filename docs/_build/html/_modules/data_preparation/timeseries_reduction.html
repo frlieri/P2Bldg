@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>data_preparation.timeseries_reduction &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">data_preparation.timeseries_reduction</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for data_preparation.timeseries_reduction</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">src/data_preparation/timeseries_reduction.py</span>
+
+<span class="sd">Utilities to prepare, aggregate and reduce time-series inputs used in building and</span>
+<span class="sd">battery optimization workflows. This module contains functions to analyze climate</span>
+<span class="sd">data and to assemble either full-resolution or reduced reference-week profiles</span>
+<span class="sd">for downstream modelling.</span>
+
+<span class="sd">Main responsibilities:</span>
+
+<span class="sd">- climate_data_analysis(...):</span>
+<span class="sd">    - Fetches or loads cached PVGIS climate data, computes daily aggregates</span>
+<span class="sd">      (temperature averages, min/max, solar yield) and derived metrics</span>
+<span class="sd">      (heating/cooling degree days).</span>
+<span class="sd">    - Produces aggregated views by year, month, week and season, includes</span>
+<span class="sd">      relative metrics and summary statistics, and optionally writes results to</span>
+<span class="sd">      an Excel file.</span>
+<span class="sd">    - Caches computed analysis via the project&#39;s pickle helpers.</span>
+
+<span class="sd">- prepare_ts_profiles(...):</span>
+<span class="sd">    - Builds model-ready input tables from a dictionary of Timeseries objects.</span>
+<span class="sd">    - Supports two modes: full-resolution (no reduction) and reduced reference-</span>
+<span class="sd">      week mode (per-season representative weeks with cost factors).</span>
+<span class="sd">    - When reduction is enabled it selects representative weeks based on climate</span>
+<span class="sd">      similarity metrics, assembles per-season reduced MultiIndex frames and</span>
+<span class="sd">      fills them with climate, load, price and CO2 columns.</span>
+<span class="sd">    - Returns a DataFrame of prepared/reduced inputs and a Series/DataFrame of</span>
+<span class="sd">      selected reference weeks.</span>
+
+<span class="sd">Behavior and notes:</span>
+
+<span class="sd">- Integrates with project constants (`src.const`) and Timeseries classes</span>
+<span class="sd">  (`src.data_preparation.data_formats`), relies on PVGIS climate fetchers and</span>
+<span class="sd">  precomputed pickles for caching.</span>
+<span class="sd">- Expects Timeseries inputs to have correct resolution (`TS_PER_HOUR * 24`).</span>
+<span class="sd">- Caching and file I/O use `dump_pickle` / `load_pickle` helpers; callers should</span>
+<span class="sd">  ensure correct `results_folder` when writing Excel outputs.</span>
+<span class="sd">- Designed to be deterministic and reproducible for scenario runs; reduction</span>
+<span class="sd">  logic stores selected weeks and reduced timeseries for reuse.</span>
+
+<span class="sd">Dependencies:</span>
+
+<span class="sd">- pandas, project `Timeseries` utilities, PVGIS climate helpers, and export</span>
+<span class="sd">  utilities for optional xlsx output.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src</span><span class="w"> </span><span class="kn">import</span> <span class="n">const</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.const</span><span class="w"> </span><span class="kn">import</span> <span class="n">Season</span><span class="p">,</span> <span class="n">InputData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.data_preparation.demand_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">CO2ElecCols</span><span class="p">,</span> <span class="n">ElPriceCols</span><span class="p">,</span> <span class="n">DHWCols</span><span class="p">,</span> <span class="n">ElLoadCols</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.data_preparation.pvgis_climate_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_pvgis_hourly_data</span><span class="p">,</span> <span class="n">PvgisDataCols</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.data_preparation.data_formats</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeseriesCols</span><span class="p">,</span> <span class="n">Timeseries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.helper</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">dump_pickle</span><span class="p">,</span> <span class="n">create_ts_data_dump_id</span><span class="p">,</span> <span class="n">create_ts_multiindex</span><span class="p">,</span> <span class="n">load_pickle</span><span class="p">,</span>
+                             <span class="n">create_climate_data_dump_id</span><span class="p">)</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.export.export_results</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClimateDataCols</span><span class="p">,</span> <span class="n">write_climate_data_xlsx_analysis</span>
+
+
+<div class="viewcode-block" id="climate_data_analysis"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.timeseries_reduction.climate_data_analysis">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">climate_data_analysis</span><span class="p">(</span><span class="n">write_xlsx</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">results_folder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Performs climate data analysis by processing and aggregating climate-related data. It calculates key</span>
+<span class="sd">    metrics such as temperature averages, extremes, solar yield, cooling and heating degree days, and</span>
+<span class="sd">    aggregates them across different temporal levels such as years, seasons, months, and weeks, providing</span>
+<span class="sd">    insights into climate trends.</span>
+
+<span class="sd">    :param write_xlsx: A boolean flag determining whether the resulting analysis should be saved</span>
+<span class="sd">        as an Excel file.</span>
+<span class="sd">    :param results_folder: A string specifying the directory in which the Excel file is to</span>
+<span class="sd">        be saved; required if `write_xlsx` is set to True.</span>
+<span class="sd">    :return: A dictionary where keys are aggregation levels (e.g., &#39;years&#39;, &#39;weeks&#39;, &#39;seasons&#39;) or</span>
+<span class="sd">        summary types, and values are pandas DataFrames containing the aggregation results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">write_xlsx</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">results_folder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;results_folder needs to be given if write_xlsx is True&quot;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;retrieving climate data...&quot;</span><span class="p">)</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">climate_data_analysis</span> <span class="o">=</span> <span class="n">load_pickle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">create_climate_data_dump_id</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+        <span class="n">daily_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+
+        <span class="n">pvgis_hourly_ts</span> <span class="o">=</span> <span class="n">get_pvgis_hourly_data</span><span class="p">(</span>
+            <span class="n">start_year</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">CLIMATE_DATA_YEARS</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">end_year</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">CLIMATE_DATA_YEARS</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># Temp. avg./min./max.</span>
+        <span class="n">daily_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">TEMP_AVG</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pvgis_hourly_ts</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">TSDay</span><span class="p">)[</span><span class="n">PvgisDataCols</span><span class="o">.</span><span class="n">Air_temp</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+        <span class="n">daily_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">TEMP_MIN</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pvgis_hourly_ts</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">TSDay</span><span class="p">)[</span><span class="n">PvgisDataCols</span><span class="o">.</span><span class="n">Air_temp</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="n">daily_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">TEMP_MAX</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pvgis_hourly_ts</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">TSDay</span><span class="p">)[</span><span class="n">PvgisDataCols</span><span class="o">.</span><span class="n">Air_temp</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+
+        <span class="c1"># solar yield</span>
+        <span class="n">daily_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">pvgis_hourly_ts</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">TSDay</span><span class="p">)[</span><span class="n">PvgisDataCols</span><span class="o">.</span><span class="n">P_el_t</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+
+        <span class="c1"># calculate heating degree days</span>
+        <span class="n">heating_threshold</span> <span class="o">=</span> <span class="mi">15</span>
+        <span class="n">heating_temp</span> <span class="o">=</span> <span class="mi">18</span>
+        <span class="n">daily_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">HDD_SUM</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">daily_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">heating_temp</span> <span class="o">-</span> <span class="n">x</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">TEMP_AVG</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">TEMP_AVG</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">heating_threshold</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># calculate cooling degree days</span>
+        <span class="n">cooling_threshold</span> <span class="o">=</span> <span class="mi">24</span>
+        <span class="n">cooling_temp</span> <span class="o">=</span> <span class="mi">21</span>
+        <span class="n">daily_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">CDD_SUM</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">daily_df</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span>
+            <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">TEMP_AVG</span><span class="p">]</span> <span class="o">-</span> <span class="n">cooling_temp</span>
+            <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">TEMP_AVG</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">cooling_threshold</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">daily_ts</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">(</span><span class="n">daily_df</span><span class="p">,</span> <span class="n">start_year</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">CLIMATE_DATA_YEARS</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">end_year</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">CLIMATE_DATA_YEARS</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                              <span class="n">freq</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">TSStepSize</span><span class="o">.</span><span class="n">DAILY</span><span class="p">)</span>
+
+        <span class="n">climate_data_analysis</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">aggr</span> <span class="ow">in</span> <span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Year</span><span class="p">,</span>
+                     <span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Year</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Month</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">],</span>
+                     <span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Year</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Week</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">],</span>
+                     <span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Year</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">]]:</span>
+
+            <span class="c1"># apply custom aggregation functions for groups</span>
+            <span class="n">agg_map</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">TEMP_AVG</span><span class="p">:</span> <span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+                <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">TEMP_MIN</span><span class="p">:</span> <span class="s2">&quot;min&quot;</span><span class="p">,</span>
+                <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">TEMP_MAX</span><span class="p">:</span> <span class="s2">&quot;max&quot;</span><span class="p">,</span>
+                <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+                <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">HDD_SUM</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+                <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">CDD_SUM</span><span class="p">:</span> <span class="s2">&quot;sum&quot;</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">aggr_df</span> <span class="o">=</span> <span class="n">daily_ts</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">aggr</span><span class="p">)</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">agg_map</span><span class="p">)</span>
+            <span class="n">aggr_df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="n">col</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">columns</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">aggr</span> <span class="o">==</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Year</span><span class="p">:</span>
+                <span class="c1"># calculate relative values to avg. over years</span>
+                <span class="k">def</span><span class="w"> </span><span class="nf">rel_val_if_mean_not_zero</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="mf">0.0</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">return</span> <span class="n">s</span><span class="o">/</span><span class="n">s</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+                <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM_REL</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">rel_val_if_mean_not_zero</span><span class="p">(</span>
+                    <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM</span><span class="p">])</span>
+                <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">HDD_SUM_REL</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">rel_val_if_mean_not_zero</span><span class="p">(</span>
+                    <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">HDD_SUM</span><span class="p">])</span>
+                <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">CDD_SUM_REL</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">rel_val_if_mean_not_zero</span><span class="p">(</span>
+                    <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">CDD_SUM</span><span class="p">])</span>
+                <span class="c1"># add average, min, max and standard deviation over all years</span>
+                <span class="n">aggr_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;AVG.&#39;</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                <span class="n">aggr_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;MIN.&#39;</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="n">aggr_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;MAX.&#39;</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="n">aggr_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;STD. DEV.&#39;</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+                <span class="n">climate_data_analysis</span><span class="p">[</span><span class="s1">&#39;years&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span>
+
+            <span class="k">elif</span> <span class="n">aggr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Week</span> <span class="ow">or</span> <span class="n">aggr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Month</span><span class="p">:</span>
+                <span class="c1"># add weekly / monthly values</span>
+                <span class="n">climate_data_analysis</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">aggr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span>
+                <span class="c1"># add average, min, max and standard deviation for each week/month over all years</span>
+                <span class="n">metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;AVG.&#39;</span><span class="p">,</span> <span class="s1">&#39;MIN.&#39;</span><span class="p">,</span> <span class="s1">&#39;MAX.&#39;</span><span class="p">,</span> <span class="s1">&#39;STD. DEV.&#39;</span><span class="p">]</span>
+                <span class="n">summary_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                    <span class="n">columns</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">([</span><span class="n">metrics</span><span class="p">,</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">columns</span><span class="p">])</span>
+                <span class="p">)</span>
+                <span class="n">summary_df</span><span class="p">[</span><span class="s1">&#39;AVG.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="p">[</span><span class="n">aggr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">aggr</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                <span class="n">summary_df</span><span class="p">[</span><span class="s1">&#39;MIN.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="p">[</span><span class="n">aggr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">aggr</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="n">summary_df</span><span class="p">[</span><span class="s1">&#39;MAX.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="p">[</span><span class="n">aggr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">aggr</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="n">summary_df</span><span class="p">[</span><span class="s1">&#39;STD. DEV.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="p">[</span><span class="n">aggr</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">aggr</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+
+                <span class="n">agg_map</span> <span class="o">=</span> <span class="p">{(</span><span class="n">metric</span><span class="p">,</span> <span class="n">col</span><span class="o">.</span><span class="n">value</span><span class="p">):</span> <span class="n">func</span> <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metrics</span> <span class="k">for</span> <span class="n">col</span><span class="p">,</span> <span class="n">func</span> <span class="ow">in</span> <span class="n">agg_map</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+                <span class="n">summary_df</span> <span class="o">=</span> <span class="n">summary_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">aggr</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">agg</span><span class="p">(</span><span class="n">agg_map</span><span class="p">)</span>
+
+                <span class="n">climate_data_analysis</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">aggr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s1">s summary&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary_df</span>
+
+            <span class="k">elif</span> <span class="n">aggr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">:</span>
+                <span class="c1"># add season values</span>
+                <span class="n">weeks_per_season</span> <span class="o">=</span> <span class="p">(</span><span class="n">daily_ts</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Year</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">])</span>
+                                    <span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM</span><span class="p">]</span><span class="o">.</span><span class="n">count</span><span class="p">()</span> <span class="o">/</span> <span class="mi">7</span><span class="p">)</span>
+                <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM_WEEKLY</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM</span><span class="p">]</span> <span class="o">/</span> <span class="n">weeks_per_season</span>
+                <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">HDD_WEEKLY</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">HDD_SUM</span><span class="p">]</span> <span class="o">/</span> <span class="n">weeks_per_season</span>
+                <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">CDD_WEEKLY</span><span class="o">.</span><span class="n">value</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">CDD_SUM</span><span class="p">]</span> <span class="o">/</span> <span class="n">weeks_per_season</span>
+                <span class="n">climate_data_analysis</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;seasons&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span>
+                <span class="c1"># add average, min, max and standard deviation for each season over all years</span>
+                <span class="n">summary_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                    <span class="n">columns</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_product</span><span class="p">([[</span><span class="s1">&#39;AVG.&#39;</span><span class="p">,</span> <span class="s1">&#39;MIN.&#39;</span><span class="p">,</span> <span class="s1">&#39;MAX.&#39;</span><span class="p">,</span> <span class="s1">&#39;STD. DEV.&#39;</span><span class="p">],</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">columns</span><span class="p">])</span>
+                <span class="p">)</span>
+                <span class="n">summary_df</span><span class="p">[</span><span class="s1">&#39;AVG.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                <span class="n">summary_df</span><span class="p">[</span><span class="s1">&#39;MIN.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">)</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+                <span class="n">summary_df</span><span class="p">[</span><span class="s1">&#39;MAX.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+                <span class="n">summary_df</span><span class="p">[</span><span class="s1">&#39;STD. DEV.&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">aggr_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">)</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+                <span class="n">climate_data_analysis</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;seasons summary&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary_df</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid aggregation.&quot;</span><span class="p">)</span>
+
+    <span class="n">dump_pickle</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">create_climate_data_dump_id</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">climate_data_analysis</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">write_xlsx</span><span class="p">:</span>
+        <span class="n">write_climate_data_xlsx_analysis</span><span class="p">(</span><span class="n">climate_data_analysis</span><span class="p">,</span> <span class="n">results_folder</span><span class="o">=</span><span class="n">results_folder</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">climate_data_analysis</span></div>
+
+
+<div class="viewcode-block" id="prepare_ts_profiles"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.timeseries_reduction.prepare_ts_profiles">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">prepare_ts_profiles</span><span class="p">(</span><span class="n">ts_inputs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">climate_data</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sel_weeks</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="n">apply_ts_reduction</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ts_red_climate_data</span><span class="p">:</span> <span class="nb">dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Prepare time series profiles by either reducing them to reference weeks or using the full data set. The function can</span>
+<span class="sd">    handle various time series data, including climate data, load profiles, and other relevant datasets. Depending on</span>
+<span class="sd">    the `apply_ts_reduction` flag, this function either reduces the input time series for computational optimization or</span>
+<span class="sd">    processes it fully. It also aligns timeseries data with the required time resolution constraints.</span>
+
+<span class="sd">    :param ts_inputs: A dictionary of time series input data for a whole year, categorized by type.</span>
+<span class="sd">        Each input time series must have the correct resolution.</span>
+<span class="sd">    :type ts_inputs: dict</span>
+<span class="sd">    :param climate_data: Optional climate data dictionary, which may be used to compute reduced</span>
+<span class="sd">        time series if `sel_weeks` or `ts_red_climate_data` is not provided.</span>
+<span class="sd">        Default is None.</span>
+<span class="sd">    :type climate_data: dict, optional</span>
+<span class="sd">    :param sel_weeks: Optional DataFrame indicating selected reference weeks for timeseries reduction.</span>
+<span class="sd">        If provided, this overrides the need to calculate the reference weeks from `climate_data`.</span>
+<span class="sd">        Default is None.</span>
+<span class="sd">    :type sel_weeks: pd.DataFrame, optional</span>
+<span class="sd">    :param apply_ts_reduction: Flag indicating whether to apply timeseries reduction. If None, a default value</span>
+<span class="sd">        is fetched from the constants. Default is None.</span>
+<span class="sd">    :type apply_ts_reduction: bool, optional</span>
+<span class="sd">    :param ts_red_climate_data: Optional pre-calculated reduced climate data. If provided, it is used instead of</span>
+<span class="sd">        deriving reduced data and reference weeks from scratch. Default is None.</span>
+<span class="sd">    :type ts_red_climate_data: dict, optional</span>
+<span class="sd">    :return: A tuple containing a DataFrame of processed or reduced timeseries inputs (e.g., load profiles, climate data,</span>
+<span class="sd">        etc.) indexed appropriately and a Series giving the selected reference weeks. Both</span>
+<span class="sd">        outputs are formatted for compatibility with downstream modeling or analysis tasks.</span>
+<span class="sd">    :rtype: tuple[pd.DataFrame, pd.Series]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;preparing timeseries profiles...&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">apply_ts_reduction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">apply_ts_reduction</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">APPLY_TIMESERIES_REDUCTION</span>
+
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">([</span><span class="n">ts</span><span class="o">.</span><span class="n">ts_per_day</span> <span class="o">==</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span> <span class="o">*</span> <span class="mi">24</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">ts_inputs</span><span class="o">.</span><span class="n">values</span><span class="p">()]),</span> \
+        <span class="sa">f</span><span class="s2">&quot;All timeseries need to have the correct resolution&quot;</span>
+
+    <span class="c1"># case 1: no timeseries reduction</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">apply_ts_reduction</span><span class="p">:</span>
+
+        <span class="n">t_idx</span> <span class="o">=</span> <span class="n">create_ts_multiindex</span><span class="p">(</span><span class="n">apply_ts_reduction</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ts_red_inputs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">t_idx</span><span class="p">)</span>
+
+        <span class="c1"># climate data from pvgis</span>
+        <span class="n">pvgis_cols</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">PvgisData</span><span class="p">]</span><span class="o">.</span><span class="n">data_columns</span>
+        <span class="n">ts_red_inputs</span><span class="p">[</span><span class="n">pvgis_cols</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">PvgisData</span><span class="p">][</span><span class="n">pvgis_cols</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+        <span class="c1"># add load and other data</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ts_red_inputs</span><span class="p">[</span><span class="n">ElLoadCols</span><span class="o">.</span><span class="n">TOTAL_HH</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">ElDemand</span><span class="p">][</span><span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">ElDemand</span><span class="p">]</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">ts_red_inputs</span><span class="p">[</span><span class="n">ElLoadCols</span><span class="o">.</span><span class="n">TOTAL_EV_STAT</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">StatEmobDemand</span><span class="p">][</span><span class="n">ElLoadCols</span><span class="o">.</span><span class="n">TOTAL_EV_STAT</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">FlexEmobDemand</span><span class="p">]</span><span class="o">.</span><span class="n">data_columns</span><span class="p">:</span>
+                <span class="n">ts_red_inputs</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">FlexEmobDemand</span><span class="p">][</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">ElPrice</span><span class="p">]</span><span class="o">.</span><span class="n">data_columns</span><span class="p">:</span>
+                <span class="n">ts_red_inputs</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">ElPrice</span><span class="p">][</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">ts_red_inputs</span><span class="p">[</span><span class="n">DHWCols</span><span class="o">.</span><span class="n">Load</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">DhwDdemand</span><span class="p">][</span><span class="n">DHWCols</span><span class="o">.</span><span class="n">Load</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="n">ts_red_inputs</span><span class="p">[</span><span class="n">CO2ElecCols</span><span class="o">.</span><span class="n">Co2eq_lca</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">CO2perKwhEl</span><span class="p">][</span><span class="n">CO2ElecCols</span><span class="o">.</span><span class="n">Co2eq_lca</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="c1"># reduce data size</span>
+        <span class="n">ts_red_inputs</span> <span class="o">=</span> <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">,</span> <span class="n">downcast</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">)</span>
+
+        <span class="c1"># dummy parameters (needed for timeseries reduction, here only for compatibility)</span>
+        <span class="n">ts_red_inputs</span><span class="p">[</span><span class="s1">&#39;cost_factors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="c1"># case 2: timeseries reduction to reference weeks assigned for each season</span>
+    <span class="k">else</span><span class="p">:</span>
+
+        <span class="k">if</span> <span class="n">sel_weeks</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">ts_red_climate_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">climate_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> \
+                <span class="s2">&quot;if ts_red_climate_data and sel_weeks are not given, climate_data needs to be given&quot;</span>
+
+        <span class="c1"># prepare empty indexed dataframes to be filled with reduced timeseries data</span>
+        <span class="n">reduced_t_idx</span> <span class="o">=</span> <span class="n">create_ts_multiindex</span><span class="p">(</span><span class="n">apply_ts_reduction</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">ts_red_inputs</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">reduced_t_idx</span><span class="p">)</span>
+
+        <span class="c1"># if reduced timeseries for climate data have already been calculated previously, use them, else calculate</span>
+        <span class="k">if</span> <span class="n">ts_red_climate_data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">sel_weeks</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">weekly</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+                <span class="n">weekly</span><span class="p">[</span><span class="s1">&#39;solar yield&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">climate_data</span><span class="p">[</span><span class="s1">&#39;weeks&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span><span class="p">][</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM</span><span class="p">]</span>
+                <span class="n">weekly</span><span class="p">[</span><span class="s1">&#39;HDD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">climate_data</span><span class="p">[</span><span class="s1">&#39;weeks&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span><span class="p">][</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">HDD_SUM</span><span class="p">]</span>
+                <span class="n">weekly</span><span class="p">[</span><span class="s1">&#39;el. price&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">ElPrice</span><span class="p">]</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Week</span><span class="p">,</span> <span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">])[</span>
+                        <span class="n">ElPriceCols</span><span class="o">.</span><span class="n">Wholesale</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span>
+
+                <span class="c1"># reference can be avg. of modelled year or avg. in climate data</span>
+                <span class="n">weekly_ref</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+                <span class="n">weekly_ref</span><span class="p">[</span><span class="s1">&#39;solar yield&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">climate_data</span><span class="p">[</span><span class="s1">&#39;seasons summary&#39;</span><span class="p">][</span>
+                    <span class="p">(</span><span class="s1">&#39;AVG.&#39;</span><span class="p">,</span> <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM_WEEKLY</span><span class="p">)]</span>
+                <span class="n">weekly_ref</span><span class="p">[</span><span class="s1">&#39;HDD&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">climate_data</span><span class="p">[</span><span class="s1">&#39;seasons summary&#39;</span><span class="p">][(</span><span class="s1">&#39;AVG.&#39;</span><span class="p">,</span> <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">HDD_WEEKLY</span><span class="p">)]</span>
+                <span class="n">weekly_ref</span><span class="p">[</span><span class="s1">&#39;el. price&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weekly</span><span class="p">[</span><span class="s1">&#39;el. price&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">])</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+
+                <span class="c1"># go through weekly values, drop weeks with two seasons and calculate values relative to reference</span>
+                <span class="n">last_week</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">weekly</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+                    <span class="n">week</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">seas</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">week</span> <span class="o">==</span> <span class="n">last_week</span><span class="p">:</span>
+                        <span class="n">weekly</span> <span class="o">=</span> <span class="n">weekly</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">week</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">weekly</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">weekly</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">/</span> <span class="n">weekly_ref</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">seas</span><span class="p">]</span>
+
+                    <span class="n">last_week</span> <span class="o">=</span> <span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="c1"># calculate weighted mean squared error</span>
+                <span class="n">weights</span> <span class="o">=</span> <span class="n">weekly_ref</span> <span class="o">/</span> <span class="n">weekly_ref</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+                <span class="n">weekly</span><span class="p">[</span><span class="s1">&#39;Error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">weekly</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="s2">&quot;season&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+                <span class="c1"># for each season select week with least error</span>
+                <span class="n">sel_weeks</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+                <span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;nr&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">weekly</span><span class="p">[</span><span class="s1">&#39;Error&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">)</span><span class="o">.</span><span class="n">idxmin</span><span class="p">()</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="c1"># cost factors giving the number of weeks in a season are calculated</span>
+                <span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;cost_factor&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">climate_data</span><span class="p">[</span><span class="s1">&#39;seasons summary&#39;</span><span class="p">][(</span><span class="s1">&#39;AVG.&#39;</span><span class="p">,</span> <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM</span><span class="p">)]</span> <span class="o">/</span>
+                            <span class="n">climate_data</span><span class="p">[</span><span class="s1">&#39;seasons summary&#39;</span><span class="p">][(</span><span class="s1">&#39;AVG.&#39;</span><span class="p">,</span> <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM_WEEKLY</span><span class="p">)])</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Reference weeks selected: </span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">sel_weeks</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+
+                <span class="c1"># add sel weeks to climate data</span>
+                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">P_SOLAR_SUM</span><span class="p">,</span> <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">HDD_SUM</span><span class="p">,</span> <span class="n">ClimateDataCols</span><span class="o">.</span><span class="n">CDD_SUM</span><span class="p">]:</span>
+                    <span class="n">sel</span> <span class="o">=</span> <span class="n">climate_data</span><span class="p">[</span><span class="s1">&#39;weeks&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;nr&#39;</span><span class="p">]][</span><span class="n">col</span><span class="p">]</span>
+                    <span class="n">sel</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">sel</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">levels</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="n">climate_data</span><span class="p">[</span><span class="s1">&#39;seasons summary&#39;</span><span class="p">][(</span><span class="s1">&#39;SEL. WEEK&#39;</span><span class="p">,</span> <span class="n">col</span><span class="o">.</span><span class="n">value</span><span class="p">)]</span> <span class="o">=</span> <span class="n">sel</span>
+
+                <span class="n">dump_pickle</span><span class="p">(</span><span class="n">create_climate_data_dump_id</span><span class="p">(),</span> <span class="n">climate_data</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">seas</span> <span class="ow">in</span> <span class="n">Season</span><span class="p">:</span>
+                <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">seas</span><span class="p">,</span> <span class="n">reduced_t_idx</span><span class="o">.</span><span class="n">levels</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">PvgisData</span><span class="p">]</span><span class="o">.</span><span class="n">data_columns</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">PvgisData</span><span class="p">]</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">weeks</span><span class="o">=</span><span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;nr&#39;</span><span class="p">][</span><span class="n">seas</span><span class="p">],</span> <span class="n">data_only</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span><span class="o">.</span><span class="n">values</span>
+                <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">loc</span><span class="p">[(</span><span class="n">seas</span><span class="p">,</span> <span class="n">reduced_t_idx</span><span class="o">.</span><span class="n">levels</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="s1">&#39;cost_factors&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;cost_factor&#39;</span><span class="p">][</span><span class="n">seas</span><span class="p">]</span>
+
+            <span class="c1"># store reduced timeseries for climate data for later use</span>
+            <span class="n">ts_red_climate_data</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;ts_red_inputs&#39;</span><span class="p">:</span> <span class="n">ts_red_inputs</span><span class="p">,</span>
+                <span class="s1">&#39;sel_weeks&#39;</span><span class="p">:</span> <span class="n">sel_weeks</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="n">dump_pickle</span><span class="p">(</span><span class="n">create_ts_data_dump_id</span><span class="p">(),</span> <span class="n">ts_red_climate_data</span><span class="p">)</span>
+
+
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ts_red_inputs</span> <span class="o">=</span> <span class="n">ts_red_climate_data</span><span class="p">[</span><span class="s1">&#39;ts_red_inputs&#39;</span><span class="p">]</span>
+            <span class="n">sel_weeks</span> <span class="o">=</span> <span class="n">ts_red_climate_data</span><span class="p">[</span><span class="s1">&#39;sel_weeks&#39;</span><span class="p">]</span>
+
+        <span class="c1"># complete reduced timeseries profiles with load data and others</span>
+        <span class="k">for</span> <span class="n">seas</span> <span class="ow">in</span> <span class="n">Season</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">idx</span> <span class="o">=</span> <span class="p">(</span><span class="n">seas</span><span class="p">,</span> <span class="n">reduced_t_idx</span><span class="o">.</span><span class="n">levels</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">ElLoadCols</span><span class="o">.</span><span class="n">TOTAL_HH</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">ElDemand</span><span class="p">]</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">weeks</span><span class="o">=</span><span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;nr&#39;</span><span class="p">][</span><span class="n">seas</span><span class="p">],</span> <span class="n">data_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span>
+                <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">ElLoadCols</span><span class="o">.</span><span class="n">TOTAL_EV_STAT</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">StatEmobDemand</span><span class="p">]</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">weeks</span><span class="o">=</span><span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;nr&#39;</span><span class="p">][</span><span class="n">seas</span><span class="p">],</span> <span class="n">data_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">ElLoadCols</span><span class="o">.</span><span class="n">TOTAL_EV_STAT</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">FlexEmobDemand</span><span class="p">]</span><span class="o">.</span><span class="n">data_columns</span><span class="p">:</span>
+                    <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">FlexEmobDemand</span><span class="p">]</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">weeks</span><span class="o">=</span><span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;nr&#39;</span><span class="p">][</span><span class="n">seas</span><span class="p">],</span> <span class="n">data_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+                <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">ElPrice</span><span class="p">]</span><span class="o">.</span><span class="n">data_columns</span><span class="p">:</span>
+                    <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">ElPrice</span><span class="p">]</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                        <span class="n">weeks</span><span class="o">=</span><span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;nr&#39;</span><span class="p">][</span><span class="n">seas</span><span class="p">],</span> <span class="n">data_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+                <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">CO2ElecCols</span><span class="o">.</span><span class="n">Co2eq_lca</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">CO2perKwhEl</span><span class="p">]</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                        <span class="n">weeks</span><span class="o">=</span><span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;nr&#39;</span><span class="p">][</span><span class="n">seas</span><span class="p">],</span> <span class="n">data_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">CO2ElecCols</span><span class="o">.</span><span class="n">Co2eq_lca</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+                <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="n">DHWCols</span><span class="o">.</span><span class="n">Load</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_inputs</span><span class="p">[</span><span class="n">InputData</span><span class="o">.</span><span class="n">DhwDdemand</span><span class="p">]</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                    <span class="n">weeks</span><span class="o">=</span><span class="n">sel_weeks</span><span class="p">[</span><span class="s1">&#39;nr&#39;</span><span class="p">][</span><span class="n">seas</span><span class="p">],</span> <span class="n">data_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="n">DHWCols</span><span class="o">.</span><span class="n">Load</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+    <span class="c1"># reduce data size</span>
+    <span class="n">ts_red_inputs</span> <span class="o">=</span> <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">,</span> <span class="n">downcast</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">ts_red_inputs</span><span class="p">,</span> <span class="n">sel_weeks</span></div>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

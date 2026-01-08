@@ -1,0 +1,331 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>const &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=8d563738"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">const</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for const</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;const.py</span>
+
+<span class="sd">This module centralizes project-wide constants, enumerations and configuration</span>
+<span class="sd">values used across the building and battery optimization codebase.</span>
+
+<span class="sd">Contents and responsibilities:</span>
+
+<span class="sd">- Environment and paths:</span>
+<span class="sd">    - Sets essential environment variables (e.g. `NEOS_EMAIL`) and defines</span>
+<span class="sd">      precomputed data paths derived from `PATH_TO_WD`.</span>
+<span class="sd">- Enumerations:</span>
+<span class="sd">    - Defines typed enums for input data keys, timeseries step sizes, column</span>
+<span class="sd">      names, German states, seasons and typeday categories.</span>
+<span class="sd">- Timeseries and modeling defaults:</span>
+<span class="sd">    - Default resolution and modeled year, timeseries reduction settings,</span>
+<span class="sd">      hours in a year and TS per hour constants.</span>
+<span class="sd">- Economic and lifetime parameters:</span>
+<span class="sd">    - Nominal and real interest rates, inflation, project duration.</span>
+<span class="sd">- Limits and location defaults:</span>
+<span class="sd">    - Large numeric caps for sizing and geographic defaults (latitude,</span>
+<span class="sd">      longitude, modeled temperature).</span>
+<span class="sd">- Building and household base data:</span>
+<span class="sd">    - Default household count, reference temperatures, heating area/volume,</span>
+<span class="sd">      ventilation and internal gains.</span>
+<span class="sd">- Technology specifications:</span>
+<span class="sd">    - Preloads technology lookup tables (e.g. `COP_TABLE`) and solar thermal</span>
+<span class="sd">      collector performance specs used by model components.</span>
+
+<span class="sd">Notes:</span>
+
+<span class="sd">- Values here are intended as project defaults and may be overridden by</span>
+<span class="sd">  scenario inputs or external configuration files.</span>
+<span class="sd">- The module imports CSV resources from the repository; ensure `PATH_TO_WD`</span>
+<span class="sd">  is set correctly and resource files exist.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">PATH_TO_WD</span>
+
+
+<span class="n">PRECALC_FOLDER</span> <span class="o">=</span> <span class="n">PATH_TO_WD</span> <span class="o">+</span> <span class="s2">&quot;/data/resources/precalc/&quot;</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;NEOS_EMAIL&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;froehlicherik@gmail.com&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">InputData</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">PvgisData</span> <span class="o">=</span> <span class="s1">&#39;pvgis_data&#39;</span>
+    <span class="n">DhwDdemand</span> <span class="o">=</span> <span class="s1">&#39;dhw_load&#39;</span>
+    <span class="n">ElDemand</span> <span class="o">=</span> <span class="s1">&#39;el_load&#39;</span>
+    <span class="n">StatEmobDemand</span> <span class="o">=</span> <span class="s1">&#39;ev_load_fix&#39;</span>
+    <span class="n">FlexEmobDemand</span> <span class="o">=</span> <span class="s1">&#39;ev_load_flex&#39;</span>
+    <span class="n">CO2perKwhEl</span> <span class="o">=</span> <span class="s1">&#39;CO2_per_kwh_el&#39;</span>
+    <span class="n">ElPrice</span> <span class="o">=</span> <span class="s1">&#39;el_price_EUR_per_kWh&#39;</span>
+    <span class="n">CostFactors</span> <span class="o">=</span> <span class="s1">&#39;cost_factors&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TSStepSize</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">HOURLY</span> <span class="o">=</span> <span class="s1">&#39;1h&#39;</span>
+    <span class="n">QUARTER_HOURLY</span> <span class="o">=</span> <span class="s1">&#39;15min&#39;</span>
+    <span class="n">DAILY</span> <span class="o">=</span> <span class="s1">&#39;24h&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TimeseriesCols</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">Step</span> <span class="o">=</span> <span class="s1">&#39;timestep&#39;</span>
+    <span class="n">TSDay</span> <span class="o">=</span> <span class="s1">&#39;day_of_ts&#39;</span>
+    <span class="n">DTime</span> <span class="o">=</span> <span class="s1">&#39;datetime&#39;</span>
+    <span class="n">Hour</span> <span class="o">=</span> <span class="s1">&#39;hour&#39;</span>
+    <span class="n">Yday</span> <span class="o">=</span> <span class="s1">&#39;day_of_year&#39;</span>
+    <span class="n">Week</span> <span class="o">=</span> <span class="s1">&#39;week&#39;</span>
+    <span class="n">Month</span> <span class="o">=</span> <span class="s1">&#39;month&#39;</span>
+    <span class="n">Year</span> <span class="o">=</span> <span class="s1">&#39;year&#39;</span>
+    <span class="n">Typeday</span> <span class="o">=</span> <span class="s1">&#39;typeday&#39;</span>
+    <span class="n">Season</span> <span class="o">=</span> <span class="s1">&#39;season&#39;</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">State</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">BAYERN</span> <span class="o">=</span> <span class="s1">&#39;BY&#39;</span>
+    <span class="n">BADEN_WUERTTEMBERG</span> <span class="o">=</span> <span class="s1">&#39;BW&#39;</span>
+    <span class="n">BERLIN</span> <span class="o">=</span> <span class="s1">&#39;BE&#39;</span>
+    <span class="n">BRANDENBURG</span> <span class="o">=</span> <span class="s1">&#39;BB&#39;</span>
+    <span class="n">BYP</span> <span class="o">=</span> <span class="s1">&#39;BYP&#39;</span>
+    <span class="n">BREMEN</span> <span class="o">=</span> <span class="s1">&#39;HB&#39;</span>
+    <span class="n">HESSEN</span> <span class="o">=</span> <span class="s1">&#39;HE&#39;</span>
+    <span class="n">HAMBURG</span> <span class="o">=</span> <span class="s1">&#39;HH&#39;</span>
+    <span class="n">MECKLENBURG_VORPOMMERN</span> <span class="o">=</span> <span class="s1">&#39;MV&#39;</span>
+    <span class="n">NIEDERSACHSEN</span> <span class="o">=</span> <span class="s1">&#39;NI&#39;</span>
+    <span class="n">NORDRHEIN_WESTFALEN</span> <span class="o">=</span> <span class="s1">&#39;NW&#39;</span>
+    <span class="n">RHEINLAND_PFALZ</span> <span class="o">=</span> <span class="s1">&#39;RP&#39;</span>
+    <span class="n">SCHLESWIG_HOLSTEIN</span> <span class="o">=</span> <span class="s1">&#39;SH&#39;</span>
+    <span class="n">SAARLAND</span> <span class="o">=</span> <span class="s1">&#39;SL&#39;</span>
+    <span class="n">SACHSEN</span> <span class="o">=</span> <span class="s1">&#39;SN&#39;</span>
+    <span class="n">SACHSEN_ANHALT</span> <span class="o">=</span> <span class="s1">&#39;ST&#39;</span>
+    <span class="n">THUERINGEN</span> <span class="o">=</span> <span class="s1">&#39;TH&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Season</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">Summer</span> <span class="o">=</span> <span class="s1">&#39;summer&#39;</span>
+    <span class="n">Transition</span> <span class="o">=</span> <span class="s1">&#39;transition&#39;</span>
+    <span class="n">Winter</span> <span class="o">=</span> <span class="s1">&#39;winter&#39;</span>
+
+<span class="n">SEASON_PERIODS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># format: [(start, end), ...] -- &#39;mm-dd&#39;</span>
+    <span class="n">Season</span><span class="o">.</span><span class="n">Summer</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[(</span><span class="s1">&#39;05-15&#39;</span><span class="p">,</span> <span class="s1">&#39;09-14&#39;</span><span class="p">)],</span>
+    <span class="n">Season</span><span class="o">.</span><span class="n">Winter</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[(</span><span class="s1">&#39;11-01&#39;</span><span class="p">,</span> <span class="s1">&#39;03-20&#39;</span><span class="p">)],</span>
+    <span class="n">Season</span><span class="o">.</span><span class="n">Transition</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="p">[(</span><span class="s1">&#39;09-15&#39;</span><span class="p">,</span> <span class="s1">&#39;10-31&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;03-21&#39;</span><span class="p">,</span> <span class="s1">&#39;05-14&#39;</span><span class="p">)]</span>
+<span class="p">}</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">Typeday</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">Workday</span> <span class="o">=</span> <span class="s1">&#39;workday&#39;</span>
+    <span class="n">Saturday</span> <span class="o">=</span> <span class="s1">&#39;saturday&#39;</span>
+    <span class="n">Sunday</span> <span class="o">=</span> <span class="s1">&#39;sunday&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">TS_RES</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">HOURLY</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="n">QUARTER_HOURLY</span> <span class="o">=</span> <span class="mi">4</span>
+
+
+<span class="n">COUNTRY</span> <span class="o">=</span> <span class="s1">&#39;DE&#39;</span>
+<span class="n">STATE</span> <span class="o">=</span> <span class="n">State</span><span class="o">.</span><span class="n">BAYERN</span>
+
+<span class="n">HOURS_IN_YEAR</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8760</span>
+<span class="n">TS_PER_HOUR</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">TS_RES</span><span class="o">.</span><span class="n">HOURLY</span><span class="o">.</span><span class="n">value</span>
+<span class="n">MODELED_YEAR</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2023</span>
+
+<span class="c1"># Timeseries reduction</span>
+<span class="n">CLIMATE_DATA_YEARS</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">2005</span><span class="p">,</span> <span class="mi">2023</span><span class="p">]</span>
+<span class="n">APPLY_TIMESERIES_REDUCTION</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+
+
+<span class="c1"># KALKULATIONSZINS</span>
+<span class="n">NOMINAL_INTEREST_RATE</span> <span class="o">=</span> <span class="mf">0.04</span>
+<span class="n">INFLATION_RATE</span> <span class="o">=</span> <span class="mf">0.02</span>
+<span class="n">REAL_INTEREST_RATE</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">NOMINAL_INTEREST_RATE</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">INFLATION_RATE</span><span class="p">)</span> <span class="o">-</span><span class="mi">1</span>
+
+<span class="c1"># Laufzeit in Jahren</span>
+<span class="n">DURATION</span> <span class="o">=</span> <span class="mi">30</span>
+
+<span class="n">MAX_AREA</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span>
+<span class="n">MAX_P</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span>
+<span class="n">MAX_C</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="mi">6</span>
+<span class="n">MAX_C_in_l</span> <span class="o">=</span> <span class="mi">10</span><span class="o">**</span><span class="mi">9</span>
+
+<span class="c1"># location</span>
+<span class="n">LATITUDE</span><span class="p">,</span> <span class="n">LONGITUDE</span> <span class="o">=</span> <span class="mf">48.163</span><span class="p">,</span> <span class="mf">11.510</span>
+<span class="n">TEMP_EARTH</span> <span class="o">=</span> <span class="mi">10</span>
+
+
+<span class="c1"># HOUSEHOLD DATA</span>
+<span class="n">NR_OF_HOUSEHOLDS</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="n">T_OUT_REF</span> <span class="o">=</span> <span class="o">-</span><span class="mi">14</span>
+<span class="n">NOM_TEMP_INDOOR</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">NIGHT_TEMP_INDOOR</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">HEATING_THRESHOLD</span> <span class="o">=</span> <span class="mi">16</span>
+<span class="n">YEARLY_EL_CONSUMPTION_kWh</span> <span class="o">=</span> <span class="mi">5500</span>
+
+<span class="c1"># BUILDING DATA</span>
+<span class="n">HEATING_AREA_m2</span> <span class="o">=</span> <span class="mi">231</span>
+<span class="c1"># V_e</span>
+<span class="n">HEATING_VOLUME_m3</span> <span class="o">=</span> <span class="mi">611</span>
+<span class="c1">#  V_L = (0.76 EFH, 0.8 MFH) * V_e</span>
+<span class="n">VENT_RATE</span> <span class="o">=</span> <span class="mf">0.8</span> <span class="o">*</span> <span class="n">HEATING_VOLUME_m3</span>
+<span class="c1">#  n_L = n_Lüft (0.5, 0.4 with ventilator) * (1 - WRG (75-90%)) + n_infiltration (0,04 @n_Lüft=0.5)</span>
+<span class="n">AIR_CHANGE</span> <span class="o">=</span> <span class="mf">0.54</span>
+<span class="c1"># Q_I = t_HP (185 - 225 d/a) * Qdot_I (EFH 50Wh/(m2d), MFH 100) * A_EB (heated area)</span>
+<span class="n">INTERNAL_GAINS</span> <span class="o">=</span> <span class="mf">0.1</span><span class="o">/</span><span class="mi">24</span> <span class="o">*</span> <span class="n">HEATING_AREA_m2</span>
+
+<span class="n">TH_CAP_WATER_Wh_per_kg_K</span> <span class="o">=</span> <span class="mf">1.163</span>
+
+
+<span class="c1"># Optional parameters if peak load tariffs are applied (Hochlastzeitfenster atypische Netznutzung)</span>
+<span class="n">HLTF_PEAK_LOAD_LIMIT</span> <span class="o">=</span> <span class="mf">0.8</span>
+
+
+<span class="c1"># TECHNOLOGY DATA</span>
+
+<span class="c1"># Heat pump (HP)</span>
+<span class="n">COP_TABLE</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;air-water&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">PATH_TO_WD</span> <span class="o">+</span> <span class="s1">&#39;/data/resources/HP_Specs/vitocal_250A_specs.csv&#39;</span><span class="p">,</span>
+                             <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span>
+    <span class="s1">&#39;air-air&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">PATH_TO_WD</span> <span class="o">+</span> <span class="s1">&#39;/data/resources/HP_Specs/bosch_ClimateClass8000i.csv&#39;</span><span class="p">,</span>
+                           <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;;&#39;</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">index_col</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">]),</span>
+<span class="p">}</span>
+
+<span class="c1"># Solar thermal</span>
+<span class="c1"># according to Quaschning</span>
+<div class="viewcode-block" id="STCollectorType">
+<a class="viewcode-back" href="../const.html#const.STCollectorType">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">STCollectorType</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">ABSORBER</span> <span class="o">=</span> <span class="s1">&#39;absorber&#39;</span>
+    <span class="n">FLATPLATE_SINGLECOVER_NONSEL</span> <span class="o">=</span> <span class="s1">&#39;flatplate_singlecover_nonsel&#39;</span>
+    <span class="n">FLATPLATE_SINGLECOVER_SEL</span> <span class="o">=</span> <span class="s1">&#39;flatplate_singlecover_sel&#39;</span>
+    <span class="n">FLATPLATE_DOUBLECOVER_SEL</span> <span class="o">=</span> <span class="s1">&#39;flatplate_singlecover_nonsel&#39;</span>
+    <span class="n">VACUUMTUBE</span> <span class="o">=</span> <span class="s1">&#39;vacuumtube&#39;</span></div>
+
+
+
+<span class="n">STCollectorSpecs</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">STCollectorType</span><span class="o">.</span><span class="n">ABSORBER</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;eta0&#39;</span><span class="p">:</span> <span class="mf">0.91</span><span class="p">,</span>
+        <span class="s1">&#39;a1&#39;</span><span class="p">:</span> <span class="mf">12.0</span><span class="p">,</span>
+        <span class="s1">&#39;a2&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">STCollectorType</span><span class="o">.</span><span class="n">FLATPLATE_SINGLECOVER_NONSEL</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;eta0&#39;</span><span class="p">:</span> <span class="mf">0.86</span><span class="p">,</span>
+        <span class="s1">&#39;a1&#39;</span><span class="p">:</span> <span class="mf">6.1</span><span class="p">,</span>
+        <span class="s1">&#39;a2&#39;</span><span class="p">:</span> <span class="mf">0.025</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">STCollectorType</span><span class="o">.</span><span class="n">FLATPLATE_SINGLECOVER_SEL</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;eta0&#39;</span><span class="p">:</span> <span class="mf">0.81</span><span class="p">,</span>
+        <span class="s1">&#39;a1&#39;</span><span class="p">:</span> <span class="mf">3.8</span><span class="p">,</span>
+        <span class="s1">&#39;a2&#39;</span><span class="p">:</span> <span class="mf">0.009</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">STCollectorType</span><span class="o">.</span><span class="n">FLATPLATE_DOUBLECOVER_SEL</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;eta0&#39;</span><span class="p">:</span> <span class="mf">0.73</span><span class="p">,</span>
+        <span class="s1">&#39;a1&#39;</span><span class="p">:</span> <span class="mf">1.7</span><span class="p">,</span>
+        <span class="s1">&#39;a2&#39;</span><span class="p">:</span> <span class="mf">0.016</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">STCollectorType</span><span class="o">.</span><span class="n">VACUUMTUBE</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;eta0&#39;</span><span class="p">:</span> <span class="mf">0.80</span><span class="p">,</span>
+        <span class="s1">&#39;a1&#39;</span><span class="p">:</span> <span class="mf">1.1</span><span class="p">,</span>
+        <span class="s1">&#39;a2&#39;</span><span class="p">:</span> <span class="mf">0.008</span><span class="p">,</span>
+    <span class="p">},</span>
+<span class="p">}</span>
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

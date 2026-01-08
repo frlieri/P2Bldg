@@ -1,0 +1,337 @@
+C:\Users\Erik\Documents\PycharmProjects\P2Home\venv_win2\Lib\site-packages\openpyxl\worksheet\_reader.py:329: UserWarning: Data Validation extension is not supported and will be removed
+  warn(msg)
+C:\Users\Erik\Documents\PycharmProjects\P2Home\venv_win2\Lib\site-packages\openpyxl\worksheet\_reader.py:329: UserWarning: Data Validation extension is not supported and will be removed
+  warn(msg)
+C:\Users\Erik\Documents\PycharmProjects\P2Home\venv_win2\Lib\site-packages\openpyxl\worksheet\_reader.py:329: UserWarning: Data Validation extension is not supported and will be removed
+  warn(msg)
+C:\Users\Erik\Documents\PycharmProjects\P2Home\src\data_preparation\data_formats.py:568: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value 'True' has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
+  sce_data.loc[var] = bool(sce_data[var])
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/InputData.xlsx
+running scenario BAU...
+retrieving climate data...
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+dumped  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/ClimateDataAnalysis_48.4_11.738.xlsx
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/ClimateDataAnalysis_48.4_11.738.xlsx
+C:\Users\Erik\Documents\PycharmProjects\P2Home\src\data_preparation\demand_data.py:429: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value '0.7692307692307693' has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
+  stat_demands.df.loc[idx, f"{ev}_load"] = ch_energy/ch_period_len
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks.pkl
+DHW demand: 
+      min        max       avg       sum
+DHW  0.0  17.078655  0.852867  7471.112
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/synpro_el_hh_normalized.pkl
+preparing timeseries profiles...
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_50_225_.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_50_45_.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_90_225_01020100.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_90_135_.pkl
+Electrical demand in kWh:  7921.7065
+Thermal demand in kWh: 
+ trans_loss        55672.255503
+vent_loss         12030.267790
+solar_gains      -22312.148438
+internal_gains   -13513.124237
+dhw                7328.016602
+roomheat_sum      48774.889060
+sum               56102.905597
+Reference heat load: 25.652026937264218 kW
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/ClimateDataAnalysis_48.4_11.738.xlsx
+updated C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/ClimateDataAnalysis_48.4_11.738.xlsx
+initializing model... 
+solving model...
+# ==========================================================
+# = Solver Results                                         =
+# ==========================================================
+# ----------------------------------------------------------
+#   Problem Information
+# ----------------------------------------------------------
+Problem: 
+- Lower bound: -.inf
+  Upper bound: .inf
+  Number of objectives: 1
+  Number of constraints: 0
+  Number of variables: 74392
+  Sense: unknown
+# ----------------------------------------------------------
+#   Solver Information
+# ----------------------------------------------------------
+Solver: 
+- Status: ok
+  Message: CPLEX 22.1.2\x3a optimal solution; objective 16249.1606162657; 4521 simplex iterations
+  Termination condition: optimal
+  Id: 0
+# ----------------------------------------------------------
+#   Solution Information
+# ----------------------------------------------------------
+Solution: 
+- number of solutions: 0
+  number of solutions displayed: 0
+solving time:  0:00:42.150117
+dumped  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/last_scenario_results.pkl
+C:\Users\Erik\Documents\PycharmProjects\P2Home\src\export\export_results.py:680: RuntimeWarning: invalid value encountered in scalar divide
+  heat_cons_share = res.get_en_balance('el', 'src', 'el_pv-el_hp') / total_pv_es_cons
+C:\Users\Erik\Documents\PycharmProjects\P2Home\src\export\export_results.py:681: RuntimeWarning: invalid value encountered in scalar divide
+  ev_cons_share = res.get_en_balance('el', 'src', 'el_pv-el_emob') / total_pv_es_cons
+C:\Users\Erik\Documents\PycharmProjects\P2Home\src\export\export_results.py:712: RuntimeWarning: invalid value encountered in scalar divide
+  key_facts[SmryCols.GREEN_CHARGE_SHARE.value] = 1 - (grey_stored_el/res.get_en_balance('el', 'sink', 'ElStorage'))
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/OutputDetailed_BAU.xlsx
+scenario runtime  0:01:45.025540
+running scenario PV + WP...
+retrieving climate data...
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+dumped  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+C:\Users\Erik\Documents\PycharmProjects\P2Home\src\data_preparation\demand_data.py:429: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value '0.7692307692307693' has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
+  stat_demands.df.loc[idx, f"{ev}_load"] = ch_energy/ch_period_len
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks.pkl
+DHW demand: 
+      min        max       avg       sum
+DHW  0.0  17.078655  0.852867  7471.112
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/synpro_el_hh_normalized.pkl
+preparing timeseries profiles...
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_50_225_.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_50_45_.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_90_225_01020100.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_90_135_.pkl
+Electrical demand in kWh:  7921.7065
+Thermal demand in kWh: 
+ trans_loss        55672.255503
+vent_loss         12030.267790
+solar_gains      -22312.148438
+internal_gains   -13513.124237
+dhw                7328.016602
+roomheat_sum      48774.889060
+sum               56102.905597
+Reference heat load: 25.652026937264218 kW
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/ClimateDataAnalysis_48.4_11.738.xlsx
+updated C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/ClimateDataAnalysis_48.4_11.738.xlsx
+initializing model... 
+solving model...
+# ==========================================================
+# = Solver Results                                         =
+# ==========================================================
+# ----------------------------------------------------------
+#   Problem Information
+# ----------------------------------------------------------
+Problem: 
+- Lower bound: -.inf
+  Upper bound: .inf
+  Number of objectives: 1
+  Number of constraints: 0
+  Number of variables: 74392
+  Sense: unknown
+# ----------------------------------------------------------
+#   Solver Information
+# ----------------------------------------------------------
+Solver: 
+- Status: ok
+  Message: CPLEX 22.1.2\x3a optimal solution within tolerance; objective 13042.7935037896; 10619 simplex iterations; absmipgap=1.18759, relmipgap=9.10535e-05
+  Termination condition: optimal
+  Id: 0
+# ----------------------------------------------------------
+#   Solution Information
+# ----------------------------------------------------------
+Solution: 
+- number of solutions: 0
+  number of solutions displayed: 0
+solving time:  0:00:44.280671
+dumped  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/last_scenario_results.pkl
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/OutputDetailed_PV + WP.xlsx
+scenario runtime  0:01:36.880833
+running scenario Refurbished...
+retrieving climate data...
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+dumped  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+C:\Users\Erik\Documents\PycharmProjects\P2Home\src\data_preparation\demand_data.py:429: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value '0.7692307692307693' has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
+  stat_demands.df.loc[idx, f"{ev}_load"] = ch_energy/ch_period_len
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks.pkl
+DHW demand: 
+      min        max       avg       sum
+DHW  0.0  17.078655  0.852867  7471.112
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/synpro_el_hh_normalized.pkl
+preparing timeseries profiles...
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_50_225_.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_50_45_.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_90_225_01020100.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_90_135_.pkl
+Electrical demand in kWh:  7921.7065
+Thermal demand in kWh: 
+ trans_loss        55672.255503
+vent_loss         12030.267790
+solar_gains      -22312.148438
+internal_gains   -13513.124237
+dhw                7328.016602
+roomheat_sum      48774.889060
+sum               56102.905597
+Reference heat load: 25.652026937264218 kW
+Reference heat load with refurb1: 16.67381750922174 kW
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/ClimateDataAnalysis_48.4_11.738.xlsx
+updated C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/ClimateDataAnalysis_48.4_11.738.xlsx
+initializing model... 
+solving model...
+# ==========================================================
+# = Solver Results                                         =
+# ==========================================================
+# ----------------------------------------------------------
+#   Problem Information
+# ----------------------------------------------------------
+Problem: 
+- Lower bound: -.inf
+  Upper bound: .inf
+  Number of objectives: 1
+  Number of constraints: 0
+  Number of variables: 74398
+  Sense: unknown
+# ----------------------------------------------------------
+#   Solver Information
+# ----------------------------------------------------------
+Solver: 
+- Status: ok
+  Message: CPLEX 22.1.2\x3a optimal solution; objective 13174.2137403143; 3650 simplex iterations; absmipgap=5.45697e-12, relmipgap=0
+  Termination condition: optimal
+  Id: 0
+# ----------------------------------------------------------
+#   Solution Information
+# ----------------------------------------------------------
+Solution: 
+- number of solutions: 0
+  number of solutions displayed: 0
+solving time:  0:00:48.937703
+dumped  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/last_scenario_results.pkl
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/OutputDetailed_Refurbished.xlsx
+scenario runtime  0:01:37.108002
+running scenario Flex...
+retrieving climate data...
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+dumped  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+C:\Users\Erik\Documents\PycharmProjects\P2Home\src\data_preparation\demand_data.py:429: FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. Value '0.7692307692307693' has dtype incompatible with int64, please explicitly cast to a compatible dtype first.
+  stat_demands.df.loc[idx, f"{ev}_load"] = ch_energy/ch_period_len
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks.pkl
+DHW demand: 
+      min        max       avg       sum
+DHW  0.0  17.078655  0.852867  7471.112
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/synpro_el_hh_normalized.pkl
+preparing timeseries profiles...
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_50_225_.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_50_45_.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_90_225_01020100.pkl
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2023_ts_sel_weeks_solar_pot_90_135_.pkl
+Electrical demand in kWh:  7921.7065
+Thermal demand in kWh: 
+ trans_loss        55672.255503
+vent_loss         12030.267790
+solar_gains      -22312.148438
+internal_gains   -13513.124237
+dhw                7328.016602
+roomheat_sum      48774.889060
+sum               56102.905597
+Reference heat load: 25.652026937264218 kW
+Reference heat load with refurb1: 16.67381750922174 kW
+loaded  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/48.4_11.738_2005-2023_climate_summary.pkl
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/ClimateDataAnalysis_48.4_11.738.xlsx
+updated C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/ClimateDataAnalysis_48.4_11.738.xlsx
+initializing model... 
+solving model...
+# ==========================================================
+# = Solver Results                                         =
+# ==========================================================
+# ----------------------------------------------------------
+#   Problem Information
+# ----------------------------------------------------------
+Problem: 
+- Lower bound: -.inf
+  Upper bound: .inf
+  Number of objectives: 1
+  Number of constraints: 0
+  Number of variables: 74398
+  Sense: unknown
+# ----------------------------------------------------------
+#   Solver Information
+# ----------------------------------------------------------
+Solver: 
+- Status: ok
+  Message: CPLEX 22.1.2\x3a optimal solution; objective 11702.7497476975; 5360 simplex iterations
+  Termination condition: optimal
+  Id: 0
+# ----------------------------------------------------------
+#   Solution Information
+# ----------------------------------------------------------
+Solution: 
+- number of solutions: 0
+  number of solutions displayed: 0
+solving time:  0:01:00.308334
+dumped  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/last_scenario_results.pkl
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/OutputDetailed_Flex.xlsx
+scenario runtime  0:01:52.511416
+dumped  C:\Users\Erik\Documents\PycharmProjects\P2Home/data/resources/precalc/last_results.pkl
+wrote C:\Users\Erik\Documents\PycharmProjects\P2Home/data/output/results/Example_building_opt_20260105-1904/OutputSummary.xlsx
+                                                          BAU        PV + WP    Refurbished           Flex
+COSTS                                                                                                     
+Total costs (annuity) [€/a]                      16249.160616   13042.793504    13174.21374   11702.749748
+OPEX total [€/a]                                 12666.619225    7160.015635    5664.861884    5743.619214
+CO2 costs [€/a]                                   3582.526875      782.01539     603.663157     779.719947
+CAPEX (annuity) [€/a]                                0.014516    6111.549323    7932.718564    6241.059954
+CAPEX (present values) [€]                           0.434132  182779.316138  237245.385339  186652.616218
+CAPEX PV (present values) [€]                             0.0   41927.764513   41927.764513   41927.764513
+CAPEX Battery Storage (present values) [€]                0.0   25276.440529   25276.440529   43936.644968
+CAPEX Refurbishment (present values) [€]                  0.0            0.0        80000.0            0.0
+CAPEX Heating (present values) [€]                    0.42214  115575.097604   90041.166806  100788.188748
+Electricity costs household [€/a]                 3372.597383    1721.451839    1749.879172    1052.332925
+Electricity costs heat [€/a]                              0.0    3911.625745    2410.309603    3444.114824
+Electricity costs e-mob [€/a]                     1685.628814    1021.544455     991.158008     716.346617
+Fuel costs [€/a]                                  7608.393028            0.0            0.0            0.0
+Feed-in revenues [€/a]                                   -0.0    -505.393422    -513.514932    -530.824684
+INSTALLED CAPACITIES                                                                                      
+PV [kWp]                                                  0.0           21.2           21.2           21.2
+Heatpump [kW_th]                                          0.0      25.652027      12.766219      18.985176
+Air Conditioning [kW_th]                                  0.0            0.0            0.0            0.0
+Direct Electric Heater [kW_th]                            0.0            0.0      12.885808       6.666851
+Boiler [kW_th]                                      28.161446            0.0            0.0            0.0
+Battery Storage [kWh]                                     0.0      26.642939      26.642939      50.003179
+Buffer storage [l]                                        0.0     295.816517     299.588544     192.285464
+Buffer storage energy @dT=10°C [kWh_th]                   0.0       3.440346       3.484215        2.23628
+Hot water storage [l]                                     0.0     533.758847     466.121528     298.663654
+Hot water storage energy @dT=55°C [kWh_th]                0.0      34.141885      29.815464      19.104021
+Thermal inertia used [kWh_th]                       16.666667      16.666667      16.666667      16.666667
+YEARLY ENERGY BALANCES                                                                                    
+PV generation [kWh]                                       0.0   18624.244418    19131.64019    19131.64019
+PV curtailment [kWh]                                      0.0     507.396207       0.000435       0.000435
+PV generation used [kWh]                                  0.0   11029.149226   11001.162602   11981.740914
+Excess PV generation Feed-in [kWh]                       -0.0   -7595.095192   -8130.477588   -7149.899276
+Electricity import Household [kWh]                 7921.70681    3204.148112    3285.369062    1292.379785
+Electricity import Heating [kWh]                          0.0   11176.073556    6886.598866   13160.140034
+Electricity import e-mobility [kWh]               4816.082324    2918.698442    2831.880021    2366.438247
+Electricity demand Household [kWh]                 7921.70681     7921.70681     7921.70681     7921.70681
+Electricity demand Heatpump [kWh]                         0.0   15590.280202   10889.752527   15554.757184
+Electricity demand Air Conditioning [kWh]                 0.0            0.0            0.0            0.0
+Electricity demand Direct Electric Heater [kWh]           0.0            0.0     377.468889     358.536426
+Electricity demand for heating total [kWh]                0.0   15590.280202   11267.221417   15913.293609
+Electricity demand for e-mobility [kWh]           4816.082324    4816.082324    4816.082324     4920.57097
+Electricity demand total [kWh]                   12737.789134   28703.258504   24379.717747   29504.954467
+Thermal demand roomheat                          67702.523293   67702.523293   44006.640141   67702.523293
+Thermal demand hot water                           7328.01654     7328.01654     7328.01654     7328.01654
+Thermal demand total                             75030.539833   75030.539833    51334.65668   75030.539833
+Thermal generation Boiler [kWh]                  54345.664485            0.0            0.0            0.0
+Thermal generation Heatpump [kWh]                         0.0   55113.855167   37942.917412   55038.400008
+Thermal generation Air Conditioning [kWh]                 0.0            0.0            0.0            0.0
+Thermal generation Direct Electric Heater [kWh]           0.0            0.0        339.722     322.682783
+PV generation used for heating [kWh]                      NaN    4414.206645    4380.622551    5292.498762
+PV generation used for charging EVs [kWh]                 NaN    1897.383882    1984.202303    1860.433077
+PV generation used for household [kWh]                    NaN    4717.558698    4636.337748    4828.809075
+OTHER PARAMETERS                                                                                          
+Self-sufficiency ratio (autarky)                          0.0       0.384247       0.451242       0.406093
+Self-consumption ratio                                   None       0.592193       0.575025       0.626279
+Self-sufficiency electrical heat generation              None       0.283138       0.388794       0.332583
+Self-sufficiency EV charging                              NaN       0.393968       0.411995       0.378093
+Self-sufficiency household                                NaN       0.595523        0.58527       0.609567
+Share of green el. charge into battery                    NaN            1.0            1.0       0.553265
+COP (yearly average)                                     None       3.535142       3.484277       3.538364
+SCOP Winter                                              None       3.331302       3.290931        3.32935
+Battery cycles                                           None    2788.768143    2789.039494    2788.736787
+Specific PV generation [kWh/kWp]                         None     902.435879     902.435879     902.435879
+LCOE PV generation                                       None       0.078917       0.076824       0.076824
+LCOE self generation                                     None       0.167773       0.167461       0.207375
+LCOE total demand                                    0.435166       0.319766       0.307165       0.282418
+LCOH                                                    0.197       0.162576       0.167768       0.151608

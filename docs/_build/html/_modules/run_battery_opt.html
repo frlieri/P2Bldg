@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>run_battery_opt &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">run_battery_opt</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for run_battery_opt</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">src/run_battery_opt.py</span>
+
+<span class="sd">This module executes the optimization for battery storage systems and related components.</span>
+<span class="sd">It reads inputs from an Excel workbook, prepares time series including high-load time</span>
+<span class="sd">windows (Hochlastzeitfenster HLZF), constructs components (PV, storage, nodes, import/export, demand),</span>
+<span class="sd">initializes and solves a Pyomo ConcreteModel, and exports results.</span>
+
+<span class="sd">Main responsibilities:</span>
+
+<span class="sd">- run_optimization(components, cost_weight_factors, co2_price):</span>
+<span class="sd">    Validates components, creates the Pyomo model, solves it (e.g., via NEOS/CPLEX</span>
+<span class="sd">    or a local solver), logs infeasible constraints, and returns the solved ConcreteModel.</span>
+
+<span class="sd">- apply_hlzf_windows(hlzf_df, df_target, year=2024):</span>
+<span class="sd">    Marks time steps in the provided time series that fall within defined high-load windows (Hochlastzeitfenster)</span>
+<span class="sd">    per season and daily intervals.</span>
+
+<span class="sd">- write_results(m):</span>
+<span class="sd">    Extracts time-series and time-invariant outputs from the solved model, computes KPIs,</span>
+<span class="sd">    and returns a results dictionary containing DataFrames and summary metrics.</span>
+
+<span class="sd">Script entrypoint (when run as __main__):</span>
+
+<span class="sd">- Sets relevant constants and environment variables (e.g., NEOS_EMAIL, TS_PER_HOUR).</span>
+<span class="sd">- Loads `Example_battery_opt.xlsx`, prepares time series and HLZF markers.</span>
+<span class="sd">- Defines scenarios, potentials, technologies, storages and nodes.</span>
+<span class="sd">- Runs the optimization for each scenario, saves results (pickle, Excel) and writes a summary.</span>
+
+<span class="sd">Notes:</span>
+
+<span class="sd">- Optimization is performed for whole year without timeseries reduction in 15min steps.</span>
+<span class="sd">- Using the NEOS service requires a valid email address set in the environment.</span>
+<span class="sd">- The module depends on project-specific component, model and helper functions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">redirect_stdout</span><span class="p">,</span> <span class="n">redirect_stderr</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyomo.util.infeasible</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_infeasible_constraints</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyomo.environ</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConcreteModel</span><span class="p">,</span> <span class="n">SolverManagerFactory</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.const</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.model.components</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.helper</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_pickle</span><span class="p">,</span> <span class="n">dump_pickle</span><span class="p">,</span> <span class="n">Tee</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.model.pyomo_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">check_components</span><span class="p">,</span> <span class="n">init_pyomo_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.export.analysis_plots</span><span class="w"> </span><span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.model.economics</span><span class="w"> </span><span class="kn">import</span> <span class="n">calc_present_value</span>
+
+
+<div class="viewcode-block" id="run_optimization"><a class="viewcode-back" href="../run_battery_opt.html#run_battery_opt.run_optimization">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">run_optimization</span><span class="p">(</span><span class="n">components</span><span class="p">,</span> <span class="n">cost_weight_factors</span><span class="p">,</span> <span class="n">co2_price</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ConcreteModel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Runs an optimization process for the given components and cost parameters using</span>
+<span class="sd">    a Pyomo model. The function initializes a Pyomo ConcreteModel, solves it using</span>
+<span class="sd">    the specified solver, logs errors if necessary, and reports the solving time.</span>
+
+<span class="sd">    :param components: List of system components to be optimized.</span>
+<span class="sd">    :type components: list</span>
+<span class="sd">    :param cost_weight_factors: Dictionary mapping cost categories to their weights.</span>
+<span class="sd">    :type cost_weight_factors: dict</span>
+<span class="sd">    :param co2_price: Price of CO2 emissions to incorporate into the optimization model.</span>
+<span class="sd">    :type co2_price: float</span>
+<span class="sd">    :return: A Pyomo ConcreteModel instance representing the solved optimization model.</span>
+<span class="sd">    :rtype: ConcreteModel</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">check_components</span><span class="p">(</span><span class="n">components</span><span class="p">)</span>
+
+    <span class="n">start</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="c1"># create pyomo Concrete Model</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">init_pyomo_model</span><span class="p">(</span><span class="n">components</span><span class="p">,</span> <span class="n">cost_weight_factors</span><span class="o">=</span><span class="n">cost_weight_factors</span><span class="p">,</span> <span class="n">co2_price</span><span class="o">=</span><span class="n">co2_price</span><span class="p">)</span>
+    <span class="c1"># solve</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;solving model...&#39;</span><span class="p">)</span>
+
+    <span class="c1"># use online solver: https://neos-server.org/neos/solvers/index.html</span>
+    <span class="n">solver_manager</span> <span class="o">=</span> <span class="n">SolverManagerFactory</span><span class="p">(</span><span class="s1">&#39;neos&#39;</span><span class="p">)</span>
+    <span class="n">solver_manager</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">solver</span><span class="o">=</span><span class="s2">&quot;cplex&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write</span><span class="p">()</span>
+
+    <span class="c1"># # use local solver: glpk</span>
+    <span class="c1"># SolverFactory(&#39;glpk&#39;).solve(m).write()</span>
+
+    <span class="c1"># log errors if needed</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="s1">&#39;infeasile.log&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+    <span class="n">log_infeasible_constraints</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">log_expression</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">log_variables</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;solving time: &quot;</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">m</span></div>
+
+
+<div class="viewcode-block" id="apply_hlzf_windows"><a class="viewcode-back" href="../run_battery_opt.html#run_battery_opt.apply_hlzf_windows">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">apply_hlzf_windows</span><span class="p">(</span><span class="n">hlzf_df</span><span class="p">,</span> <span class="n">df_target</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2024</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply HLZF (High Load Zone Factor) calculation to a given dataframe based on seasonal</span>
+<span class="sd">    time ranges and daily time intervals.</span>
+
+<span class="sd">    The function processes data to identify specific periods within each season. These</span>
+<span class="sd">    periods are defined by start and end dates, extracted from the input `hlzf_df`. For each</span>
+<span class="sd">    season, start and end times for specific intervals are iterated over. The function updates</span>
+<span class="sd">    a target column in the provided dataframe, marking rows that fall within the defined</span>
+<span class="sd">    timeframes.</span>
+
+<span class="sd">    :param hlzf_df: A pandas DataFrame containing seasonal date and time intervals.</span>
+<span class="sd">        - The first row includes season start and end dates.</span>
+<span class="sd">        - Rows starting from index 3 provide start and end times for the high load time</span>
+<span class="sd">          intervals across the respective seasons.</span>
+<span class="sd">    :param df_target: A pandas DataFrame containing datetime-indexed data. The index is</span>
+<span class="sd">        expected to represent datetime objects, which are used for filtering data according</span>
+<span class="sd">        to the seasonal time periods and intervals.</span>
+<span class="sd">    :param year: An integer representing the year for which to calculate the seasonal</span>
+<span class="sd">        time ranges. Defaults to 2024.</span>
+<span class="sd">    :return: A pandas Series indicating rows that match the high load time conditions.</span>
+<span class="sd">        The series (&quot;HLZF&quot;) is binary, where 1 represents a match with the defined time</span>
+<span class="sd">        periods and 0 represents no match.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Mapping der Saisonnamen auf die Spalten</span>
+    <span class="n">seasons</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Frühling&#39;</span><span class="p">,</span> <span class="s1">&#39;Sommer&#39;</span><span class="p">,</span> <span class="s1">&#39;Herbst&#39;</span><span class="p">,</span> <span class="s1">&#39;Winter&#39;</span><span class="p">]</span>
+    <span class="n">season_date_ranges</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Zeile 1 im HLZF-DF enthält die Saison-Zeiträume (Anfang/Ende)</span>
+    <span class="n">date_row</span> <span class="o">=</span> <span class="n">hlzf_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="c1"># Hole Start- und Enddaten jeder Saison</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">season</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seasons</span><span class="p">):</span>
+        <span class="n">start_str</span> <span class="o">=</span> <span class="n">date_row</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="n">end_str</span> <span class="o">=</span> <span class="n">date_row</span><span class="p">[</span><span class="n">i</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Parsing mit Dummy-Jahr</span>
+        <span class="n">start_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">start_str</span><span class="si">}{</span><span class="n">year</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">.%m.%Y&quot;</span><span class="p">)</span>
+        <span class="n">end_date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">end_str</span><span class="si">}{</span><span class="n">year</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%d</span><span class="s2">.%m.%Y&quot;</span><span class="p">)</span>
+        <span class="n">season_date_ranges</span><span class="p">[</span><span class="n">season</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span><span class="p">)</span>
+
+    <span class="c1"># Zeilen ab Index 3 enthalten HLZF-Start-/Endzeiten je Saison</span>
+    <span class="n">df_target</span><span class="p">[</span><span class="s2">&quot;HLZF&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">for</span> <span class="n">season_idx</span><span class="p">,</span> <span class="n">season</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seasons</span><span class="p">):</span>
+        <span class="n">start_col</span> <span class="o">=</span> <span class="n">season_idx</span> <span class="o">*</span> <span class="mi">2</span>
+        <span class="n">end_col</span> <span class="o">=</span> <span class="n">season_idx</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">start_date</span><span class="p">,</span> <span class="n">end_date</span> <span class="o">=</span> <span class="n">season_date_ranges</span><span class="p">[</span><span class="n">season</span><span class="p">]</span>
+
+        <span class="c1"># Filter df_target für die Saisonperiode</span>
+        <span class="k">if</span> <span class="n">season</span> <span class="o">==</span> <span class="s1">&#39;Winter&#39;</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="p">((</span><span class="n">df_target</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">start_date</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df_target</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="n">datetime</span><span class="p">(</span><span class="n">year</span><span class="p">,</span><span class="mi">12</span><span class="p">,</span><span class="mi">31</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)))</span>
+                <span class="o">|</span><span class="p">((</span><span class="n">df_target</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">datetime</span><span class="p">(</span><span class="n">year</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">))</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df_target</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="n">end_date</span><span class="p">))</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">df_target</span><span class="o">.</span><span class="n">index</span> <span class="o">&gt;=</span> <span class="n">start_date</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">df_target</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;=</span> <span class="n">end_date</span><span class="p">)</span>
+        <span class="n">season_df</span> <span class="o">=</span> <span class="n">df_target</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+
+        <span class="c1"># Iteriere über HLZF-Zeilen</span>
+        <span class="k">for</span> <span class="n">row_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">hlzf_df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="n">start_time_str</span> <span class="o">=</span> <span class="n">hlzf_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">row_idx</span><span class="p">,</span> <span class="n">start_col</span><span class="p">]</span>
+            <span class="n">end_time_str</span> <span class="o">=</span> <span class="n">hlzf_df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">row_idx</span><span class="p">,</span> <span class="n">end_col</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">start_time_str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">pd</span><span class="o">.</span><span class="n">notna</span><span class="p">(</span><span class="n">end_time_str</span><span class="p">):</span>
+                <span class="n">start_time</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">start_time_str</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;%H:%M:%S&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="n">end_time</span> <span class="o">=</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">end_time_str</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;%H:%M:%S&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="mi">15</span><span class="p">))</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+                <span class="c1"># Erstelle Maske für Zeiten in jedem Tag</span>
+                <span class="n">time_mask</span> <span class="o">=</span> <span class="n">season_df</span><span class="o">.</span><span class="n">between_time</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="n">end_time</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+                <span class="n">df_target</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">time_mask</span><span class="p">,</span> <span class="s1">&#39;HLZF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+    <span class="k">return</span> <span class="n">df_target</span><span class="p">[</span><span class="s1">&#39;HLZF&#39;</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="write_results"><a class="viewcode-back" href="../run_battery_opt.html#run_battery_opt.write_results">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_results</span><span class="p">(</span><span class="n">m</span><span class="p">:</span> <span class="n">ConcreteModel</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates detailed results and summaries based on the provided optimization model. The function processes time-series</span>
+<span class="sd">    and time-invariant data from the model, creates summarized data structures like DataFrames, calculates key</span>
+<span class="sd">    performance indicators (KPIs), and prints formatted outputs to aid in analysis. It is specifically designed for</span>
+<span class="sd">    energy systems modeling and assumes the `ConcreteModel` instance contains particular variables and parameters.</span>
+
+<span class="sd">    :param m: The ConcreteModel instance containing optimization results and parameter definitions.</span>
+<span class="sd">    :type m: ConcreteModel</span>
+<span class="sd">    :return: A dictionary containing detailed results and summaries:</span>
+<span class="sd">             - &#39;ts_el_sources&#39;: Time-series data of electricity sources as a DataFrame.</span>
+<span class="sd">             - &#39;ts_el_sinks&#39;: Time-series data of electricity sinks as a DataFrame.</span>
+<span class="sd">             - &#39;ts_th_sources&#39;: Time-series data of thermal sources as a DataFrame.</span>
+<span class="sd">             - &#39;ts_th_sinks&#39;: Time-series data of thermal sinks as a DataFrame.</span>
+<span class="sd">             - &#39;ts_storages&#39;: Time-series data of storages as a DataFrame.</span>
+<span class="sd">             - &#39;ti_components&#39;: Time-invariant variables such as installed capacity, costs, and CO2 balance as a DataFrame.</span>
+<span class="sd">             - &#39;sums&#39;: Summed-up yearly values for energy sources and sinks, scaled to hours, as a DataFrame.</span>
+<span class="sd">             - &#39;key_facts&#39;: Key performance indicators as a Pandas Series.</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s1">&#39;ts_el_sources&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">comp</span><span class="p">):</span> <span class="p">{(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="n">m</span><span class="o">.</span><span class="n">p_el_t_feed</span><span class="p">[</span><span class="n">comp</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">t</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">el_sources</span><span class="p">})</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+        <span class="s1">&#39;ts_el_sinks&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">comp</span><span class="p">):</span> <span class="p">{(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="n">m</span><span class="o">.</span><span class="n">p_el_t_drain</span><span class="p">[</span><span class="n">comp</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">t</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">el_sinks</span><span class="p">})</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+        <span class="s1">&#39;ts_th_sources&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">temp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="p">{(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="n">m</span><span class="o">.</span><span class="n">p_th_t_feed</span><span class="p">[</span><span class="n">comp</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">t</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">th_sources</span> <span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">temp_levels</span><span class="p">})</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+        <span class="s1">&#39;ts_th_sinks&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">comp</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">temp</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="p">{(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="n">m</span><span class="o">.</span><span class="n">p_th_t_drain</span><span class="p">[</span><span class="n">comp</span><span class="p">,</span> <span class="n">temp</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">t</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">th_sinks</span> <span class="k">for</span> <span class="n">temp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">temp_levels</span><span class="p">})</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+        <span class="s1">&#39;ts_storages&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">comp</span><span class="p">):</span> <span class="p">{(</span><span class="n">s</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span> <span class="n">m</span><span class="o">.</span><span class="n">c_t</span><span class="p">[</span><span class="n">comp</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">s</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">t</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">storages</span><span class="p">})</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+        <span class="s1">&#39;ti_components&#39;</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+            <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">var</span><span class="p">):</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">comp</span><span class="p">):</span> <span class="n">var</span><span class="p">[</span><span class="n">comp</span><span class="p">]</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">components</span> <span class="k">if</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">var</span><span class="p">}</span>
+             <span class="k">for</span> <span class="n">var</span> <span class="ow">in</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">is_built</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">p_inst</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">p_peak_hltf</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">c_inst</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">c_inst_l</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">inv_costs</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">fix_costs</span><span class="p">,</span>
+                         <span class="n">m</span><span class="o">.</span><span class="n">var_costs</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">revenues</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">co2eq_balance</span><span class="p">]}</span>
+        <span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+    <span class="p">}</span>
+    <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="s1">&#39;tot_costs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s1">&#39;costs&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span>
+                                                    <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s1">&#39;revenues&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">][</span>
+        <span class="p">[</span><span class="s1">&#39;is_built&#39;</span><span class="p">,</span> <span class="s1">&#39;p_inst&#39;</span><span class="p">,</span> <span class="s1">&#39;p_peak_hltf&#39;</span><span class="p">,</span> <span class="s1">&#39;c_inst&#39;</span><span class="p">,</span> <span class="s1">&#39;c_inst_l&#39;</span><span class="p">,</span> <span class="s1">&#39;inv_costs&#39;</span><span class="p">,</span> <span class="s1">&#39;fix_costs&#39;</span><span class="p">,</span><span class="s1">&#39;var_costs&#39;</span><span class="p">,</span> <span class="s1">&#39;revenues&#39;</span><span class="p">,</span>
+         <span class="s1">&#39;tot_costs&#39;</span><span class="p">,</span> <span class="s1">&#39;co2eq_balance&#39;</span><span class="p">]]</span>
+
+    <span class="n">results</span><span class="p">[</span><span class="s1">&#39;sums&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+            <span class="s1">&#39;sums_el_sources&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;ts_el_sources&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span><span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+            <span class="s1">&#39;sums_el_sinks&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;ts_el_sinks&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span><span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+            <span class="s1">&#39;sums_th_sources&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;ts_th_sources&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span><span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+            <span class="s1">&#39;sums_th_sinks&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">results</span><span class="p">[</span><span class="s1">&#39;ts_th_sinks&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span><span class="p">)</span><span class="o">.</span><span class="n">sort_index</span><span class="p">(),</span>
+        <span class="p">})</span>
+
+    <span class="n">key_facts</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">()</span>
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Jährliche Kosten [T€/Jahr]&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span> <span class="s1">&#39;tot_costs&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">3</span>
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Jährliche Kosten Strombezug [T€/Jahr]&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;ElImport: el_std&#39;</span><span class="p">,</span> <span class="s1">&#39;tot_costs&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">3</span>
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Investitionskosten Speicher (Annuität) [T€/Jahr]&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;ElStorage: battery&#39;</span><span class="p">,</span> <span class="s1">&#39;inv_costs&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">3</span>
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Jährliche Erlöse Direktvermarktung [T€/Jahr]&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;ElExport: el_pv&#39;</span><span class="p">,</span> <span class="s1">&#39;revenues&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">3</span>
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Jährliche Kosten Leistungspreis Strom [T€/Jahr]&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;ElImport: el_std&#39;</span><span class="p">,</span> <span class="s1">&#39;inv_costs&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">3</span>
+
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Speicherkapazität [kWh]&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;ElStorage: battery&#39;</span><span class="p">,</span> <span class="s1">&#39;c_inst&#39;</span><span class="p">]</span>
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Jährlicher Strombezug [MWh]&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;sums&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;ElImport: el_std&#39;</span><span class="p">,</span> <span class="s1">&#39;sums_el_sources&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">10</span><span class="o">**</span><span class="mi">3</span>
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;PV-Einspeisung [MWh]&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;sums&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;ElExport: el_pv&#39;</span><span class="p">,</span> <span class="s1">&#39;sums_el_sinks&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">3</span>
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Spitzenlast [kW]&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;ElImport: el_std&#39;</span><span class="p">,</span> <span class="s1">&#39;p_inst&#39;</span><span class="p">]</span>
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Spitzenlast Hochlastzeitfenster [kW]&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="s1">&#39;ElImport: el_std&#39;</span><span class="p">,</span> <span class="s1">&#39;p_peak_hltf&#39;</span><span class="p">]</span>
+    <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Benutzungsdauer [h/a]&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Jährlicher Strombezug [MWh]&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="mi">10</span><span class="o">**</span><span class="mi">3</span>
+                                          <span class="o">/</span> <span class="n">key_facts</span><span class="p">[</span><span class="s1">&#39;Spitzenlast [kW]&#39;</span><span class="p">])</span>
+
+
+    <span class="c1"># key_facts[&#39;full_load_hours&#39;] = results[&#39;ti_components&#39;].loc[&#39;ElImport&#39;]</span>
+    <span class="c1"># key_facts[&#39;pvgen&#39;] = results[&#39;sums&#39;][&#39;sums_el_sources&#39;].filter(regex=&#39;PV&#39;).sum().sum()</span>
+    <span class="n">results</span><span class="p">[</span><span class="s1">&#39;key_facts&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">key_facts</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Time invariant variables:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;ti_components&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Yearly energy sums:</span><span class="se">\n</span><span class="s2"> &quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">[</span><span class="s1">&#39;sums&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">key_facts</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">results</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+
+    <span class="n">proj_name</span> <span class="o">=</span> <span class="s2">&quot;Example_battery_opt&quot;</span>
+    <span class="c1"># set up logging to file and console with tee</span>
+    <span class="n">out_path</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">PATH_TO_WD</span><span class="si">}</span><span class="s1">/data/output/logs/run_</span><span class="si">{</span><span class="n">proj_name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">.txt&#39;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">out_file</span><span class="p">:</span>
+        <span class="n">tee</span> <span class="o">=</span> <span class="n">Tee</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">out_file</span><span class="p">)</span>
+        <span class="k">with</span> <span class="n">redirect_stdout</span><span class="p">(</span><span class="n">tee</span><span class="p">),</span> <span class="n">redirect_stderr</span><span class="p">(</span><span class="n">tee</span><span class="p">):</span>
+
+            <span class="c1"># start main routine</span>
+            <span class="n">const</span><span class="o">.</span><span class="n">APPLY_TIMESERIES_REDUCTION</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_RES</span><span class="o">.</span><span class="n">QUARTER_HOURLY</span><span class="o">.</span><span class="n">value</span>
+
+
+            <span class="c1"># PREPARE INPUT DATA</span>
+            <span class="n">fpath</span> <span class="o">=</span> <span class="n">PATH_TO_WD</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;/data/input/</span><span class="si">{</span><span class="n">proj_name</span><span class="si">}</span><span class="s2">.xlsx&quot;</span>
+            <span class="n">input_sheets</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_excel</span><span class="p">(</span>
+                <span class="n">fpath</span><span class="p">,</span>
+                <span class="n">sheet_name</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">,</span> <span class="s1">&#39;Hochlastzeitfenster&#39;</span><span class="p">,</span> <span class="s1">&#39;Zeitreihen&#39;</span><span class="p">],</span>
+                <span class="n">header</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="n">index_col</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Wert&#39;</span><span class="p">]</span>
+            <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">][</span><span class="mi">4</span><span class="p">:]</span>
+            <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+            <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">][</span><span class="s1">&#39;HLZF&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">apply_hlzf_windows</span><span class="p">(</span>
+                <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Hochlastzeitfenster&#39;</span><span class="p">],</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">))</span>
+
+            <span class="c1"># adjust index to fit optimization problem</span>
+            <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span>
+                <span class="p">[(</span><span class="mi">2024</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">366</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span><span class="p">)]</span>
+            <span class="p">)</span>
+
+            <span class="c1"># SET INPUT PARAMETERS</span>
+            <span class="n">scenarios</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;Fixer Tarif ohne Speicher&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;Speicher&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s1">&#39;Dyn. Tarif&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s1">&#39;Atyp. NN&#39;</span><span class="p">:</span> <span class="mi">0</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;Fixer Tarif mit Speicher (Eigenverbrauchsoptimierung)&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;Speicher&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s1">&#39;Dyn. Tarif&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s1">&#39;Atyp. NN&#39;</span><span class="p">:</span> <span class="mi">0</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;Fixer Tarif mit Speicher + atypische Netznutzung&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;Speicher&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s1">&#39;Dyn. Tarif&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s1">&#39;Atyp. NN&#39;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;Day Ahead 2024 mit Speicher&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;Speicher&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s1">&#39;Dyn. Tarif&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s1">&#39;Atyp. NN&#39;</span><span class="p">:</span> <span class="mi">0</span>
+                <span class="p">},</span>
+                <span class="s2">&quot;Day Ahead 2024 + atypische Netznutzung mit Speicher&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s1">&#39;Speicher&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s1">&#39;Dyn. Tarif&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+                    <span class="s1">&#39;Atyp. NN&#39;</span><span class="p">:</span> <span class="mi">1</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Kalkulationszins&#39;</span><span class="p">]</span>
+
+
+            <span class="c1"># potentials</span>
+            <span class="n">pv_cap</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Leistung PV [kWp]&#39;</span><span class="p">]</span>
+            <span class="n">potentials</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="sa">f</span><span class="s1">&#39;pv&#39;</span><span class="p">:</span> <span class="n">SolarPotentialDummy</span><span class="p">(</span><span class="s1">&#39;pv&#39;</span><span class="p">,</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">][</span><span class="s1">&#39;PV-Erzeugung [kW]&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">pv_cap</span><span class="p">)</span>
+            <span class="p">}</span>
+
+            <span class="n">dem</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;el&#39;</span><span class="p">:</span> <span class="n">ElDemand</span><span class="p">(</span><span class="s1">&#39;el&#39;</span><span class="p">,</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">][</span><span class="s1">&#39;Lastgang [kW]&#39;</span><span class="p">]),</span>
+            <span class="p">}</span>
+
+
+            <span class="c1"># input_xlsx[&#39;Zeitreihen&#39;][&#39;Day-Ahead Preise [€/MWh]&#39;]</span>
+            <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">sce</span> <span class="ow">in</span> <span class="n">scenarios</span><span class="p">:</span>
+
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;running scenario: &quot;</span><span class="p">,</span> <span class="n">sce</span><span class="p">)</span>
+
+                <span class="n">sce_params</span> <span class="o">=</span> <span class="n">scenarios</span><span class="p">[</span><span class="n">sce</span><span class="p">]</span>
+
+                <span class="k">if</span> <span class="n">sce_params</span><span class="p">[</span><span class="s1">&#39;Dyn. Tarif&#39;</span><span class="p">]:</span>
+                    <span class="n">el_price_euro_per_kwh</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="o">+</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Netzentgelte Arbeitspreis [ct./kWh]&#39;</span><span class="p">]</span>
+                        <span class="o">+</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Abgaben [ct./kWh]&#39;</span><span class="p">]</span>
+                    <span class="p">)</span> <span class="o">/</span> <span class="mi">100</span> <span class="o">+</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">][</span><span class="s1">&#39;Day-Ahead Preise [€/MWh]&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">1000</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">el_price_euro_per_kwh</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Arbeitspreis Beschaffung [ct./kWh]&#39;</span><span class="p">]</span>
+                        <span class="o">+</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Netzentgelte Arbeitspreis [ct./kWh]&#39;</span><span class="p">]</span>
+                        <span class="o">+</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Abgaben [ct./kWh]&#39;</span><span class="p">]</span>
+                    <span class="p">)</span> <span class="o">/</span> <span class="mi">100</span>
+
+
+                <span class="n">el_price_euro_per_kw</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Netzentgelte Leistungspreis [€/kW]&#39;</span><span class="p">]</span>
+                <span class="n">feed_in_price_euro_per_kwh</span> <span class="o">=</span> <span class="o">-</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">][</span><span class="s1">&#39;Day-Ahead Preise [€/MWh]&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">1000</span>
+                <span class="c1"># feed_in_price_euro_per_kwh = -0.02</span>
+
+                <span class="n">imp</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;el_std&#39;</span><span class="p">:</span> <span class="n">ElImport</span><span class="p">(</span>
+                        <span class="s1">&#39;el_std&#39;</span><span class="p">,</span>
+                        <span class="n">var_cost_t</span><span class="o">=</span><span class="n">el_price_euro_per_kwh</span><span class="p">,</span>
+                        <span class="n">fix_cost_yearly</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                        <span class="n">co2eq_per_kwh_t</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                        <span class="n">inv_cost</span><span class="o">=</span><span class="n">calc_present_value</span><span class="p">(</span><span class="n">el_price_euro_per_kw</span><span class="p">,</span>
+                                                    <span class="n">duration</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">DURATION</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span><span class="p">),</span>
+                        <span class="n">lifetime</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">DURATION</span><span class="p">,</span>
+                        <span class="n">atypical_consumption</span><span class="o">=</span><span class="n">sce_params</span><span class="p">[</span><span class="s1">&#39;Atyp. NN&#39;</span><span class="p">],</span>
+                        <span class="n">peak_load_timesteps</span><span class="o">=</span><span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">][</span><span class="s1">&#39;HLZF&#39;</span><span class="p">],</span>
+                        <span class="n">t_full_min</span><span class="o">=</span><span class="mi">2500</span> <span class="k">if</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Benutzungsdauer größer 2500h&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span><span class="p">),</span>
+                <span class="p">}</span>
+                <span class="n">exp</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;el_pv&#39;</span><span class="p">:</span> <span class="n">ElExport</span><span class="p">(</span><span class="s1">&#39;el_pv&#39;</span><span class="p">,</span> <span class="n">var_cost_t</span><span class="o">=</span><span class="n">feed_in_price_euro_per_kwh</span><span class="p">),</span>
+                <span class="p">}</span>
+                <span class="c1"># technologies</span>
+                <span class="n">inv_cost</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Investitionskosten PV gesamt [€]&#39;</span><span class="p">]</span>
+                <span class="n">pv</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;pv&#39;</span><span class="p">:</span> <span class="n">PV</span><span class="p">(</span>
+                        <span class="s1">&#39;pv&#39;</span><span class="p">,</span>
+                        <span class="n">potentials</span><span class="p">[</span><span class="s1">&#39;pv&#39;</span><span class="p">],</span>
+                        <span class="n">inv_cost</span><span class="o">=</span><span class="mf">0.0</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">inv_cost</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span> <span class="k">else</span> <span class="n">inv_cost</span><span class="p">,</span>
+                        <span class="n">lifetime</span><span class="o">=</span><span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Lebensdauer PV [Jahre]&#39;</span><span class="p">],</span>
+                        <span class="n">p_max</span><span class="o">=</span><span class="n">pv_cap</span><span class="p">,</span>
+                        <span class="n">pmax_at_lifeend</span><span class="o">=</span><span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;PV Degradationsfaktor EOL&#39;</span><span class="p">],</span>
+                        <span class="n">is_built</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                <span class="p">}</span>
+
+                <span class="c1"># in and out losses together make up round trip losses</span>
+                <span class="n">in_out_eff</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Effizienz (Round trip)&#39;</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span>
+                <span class="n">lifetime</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Lebensdauer BS [Jahre]&#39;</span><span class="p">]</span>
+                <span class="n">max_cycles</span> <span class="o">=</span> <span class="mi">365</span> <span class="o">*</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Zyklen pro Tag&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">lifetime</span>
+                <span class="n">max_cap</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Kapazität BS [kWh]&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.01</span>
+                <span class="n">min_cap</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Kapazität BS [kWh]&#39;</span><span class="p">]</span>
+                <span class="n">max_p</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Leistung Wechselrichter BS [kW]&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.01</span>
+                <span class="n">min_p</span> <span class="o">=</span> <span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Leistung Wechselrichter BS [kW]&#39;</span><span class="p">]</span>
+
+                <span class="n">storages</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;battery&#39;</span><span class="p">:</span> <span class="n">ElStorage</span><span class="p">(</span>
+                        <span class="s1">&#39;battery&#39;</span><span class="p">,</span>
+                        <span class="n">fix_cost_inv</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">inv_cost</span><span class="o">=</span><span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Investitionskosten BS [€/kWh]&#39;</span><span class="p">],</span>
+                        <span class="n">lifetime</span><span class="o">=</span><span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;Lebensdauer BS [Jahre]&#39;</span><span class="p">],</span>
+                        <span class="n">c_max</span><span class="o">=</span><span class="n">MAX_C</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">max_cap</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span> <span class="k">else</span> <span class="n">max_cap</span><span class="p">,</span>
+                        <span class="n">c_min</span><span class="o">=</span><span class="mf">0.0</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">min_cap</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span> <span class="k">else</span> <span class="n">min_cap</span><span class="p">,</span>
+                        <span class="n">p_max</span><span class="o">=</span><span class="n">MAX_P</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">max_p</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span> <span class="k">else</span> <span class="n">max_p</span><span class="p">,</span>
+                        <span class="n">p_min</span><span class="o">=</span><span class="mf">0.0</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">min_p</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span> <span class="k">else</span> <span class="n">min_p</span><span class="p">,</span>
+                        <span class="n">c_rate_max</span><span class="o">=</span><span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Techno-oekonomische Daten&#39;</span><span class="p">][</span><span class="s1">&#39;max. C-rate&#39;</span><span class="p">],</span>
+                        <span class="n">eff_in</span><span class="o">=</span><span class="n">in_out_eff</span><span class="p">,</span>
+                        <span class="n">eff_out</span><span class="o">=</span><span class="n">in_out_eff</span><span class="p">,</span>
+                        <span class="n">max_cycles</span><span class="o">=</span><span class="n">max_cycles</span><span class="p">,</span>
+                        <span class="n">is_built</span><span class="o">=</span><span class="n">sce_params</span><span class="p">[</span><span class="s1">&#39;Speicher&#39;</span><span class="p">],</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+
+                <span class="c1"># nodes</span>
+                <span class="n">nodes</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;el_pv&#39;</span><span class="p">:</span> <span class="n">ElNode</span><span class="p">(</span>
+                        <span class="s1">&#39;el_pv&#39;</span><span class="p">,</span>
+                        <span class="n">sources</span><span class="o">=</span><span class="p">[</span><span class="o">*</span><span class="n">pv</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">storages</span><span class="p">[</span><span class="s1">&#39;battery&#39;</span><span class="p">],</span> <span class="n">imp</span><span class="p">[</span><span class="s1">&#39;el_std&#39;</span><span class="p">],</span> <span class="p">],</span>
+                        <span class="n">sinks</span><span class="o">=</span><span class="p">[</span><span class="n">storages</span><span class="p">[</span><span class="s1">&#39;battery&#39;</span><span class="p">],</span> <span class="n">dem</span><span class="p">[</span><span class="s1">&#39;el&#39;</span><span class="p">],</span> <span class="n">exp</span><span class="p">[</span><span class="s1">&#39;el_pv&#39;</span><span class="p">]],</span>
+                    <span class="p">),</span>
+                <span class="p">}</span>
+
+                <span class="n">components</span> <span class="o">=</span> <span class="p">{</span>
+                    <span class="s1">&#39;potentials&#39;</span><span class="p">:</span> <span class="n">potentials</span><span class="p">,</span>
+                    <span class="s1">&#39;nodes&#39;</span><span class="p">:</span> <span class="n">nodes</span><span class="p">,</span>
+                    <span class="s1">&#39;links&#39;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s1">&#39;pv&#39;</span><span class="p">:</span> <span class="n">pv</span><span class="p">,</span>
+                    <span class="s1">&#39;solar_thermal&#39;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s1">&#39;storages&#39;</span><span class="p">:</span> <span class="n">storages</span><span class="p">,</span>
+                    <span class="s1">&#39;demand&#39;</span><span class="p">:</span> <span class="n">dem</span><span class="p">,</span>
+                    <span class="s1">&#39;import&#39;</span><span class="p">:</span> <span class="n">imp</span><span class="p">,</span>
+                    <span class="s1">&#39;export&#39;</span><span class="p">:</span> <span class="n">exp</span><span class="p">,</span>
+                    <span class="s1">&#39;heatpump&#39;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s1">&#39;deh&#39;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s1">&#39;refurbishments&#39;</span><span class="p">:</span> <span class="p">{},</span>
+                    <span class="s1">&#39;boiler&#39;</span><span class="p">:</span> <span class="p">{},</span>
+                <span class="p">}</span>
+
+                <span class="n">m</span> <span class="o">=</span> <span class="n">run_optimization</span><span class="p">(</span><span class="n">components</span><span class="p">,</span>
+                                     <span class="n">cost_weight_factors</span><span class="o">=</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">input_sheets</span><span class="p">[</span><span class="s1">&#39;Zeitreihen&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">),</span> <span class="c1"># dummy</span>
+                                     <span class="n">co2_price</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+                <span class="n">results</span><span class="p">[</span><span class="n">sce</span><span class="p">]</span> <span class="o">=</span> <span class="n">write_results</span><span class="p">(</span><span class="n">m</span><span class="p">)</span>
+
+            <span class="n">dump_pickle</span><span class="p">(</span><span class="s1">&#39;last_results&#39;</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+
+            <span class="n">res_summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+                <span class="p">{</span><span class="n">sce_name</span><span class="p">:</span> <span class="n">sce_res</span><span class="p">[</span><span class="s1">&#39;key_facts&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">sce_name</span><span class="p">,</span> <span class="n">sce_res</span> <span class="ow">in</span> <span class="n">results</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="p">)</span>
+            <span class="c1"># sys.stdout = cmd</span>
+            <span class="c1"># out_file.close()</span>
+            <span class="n">res_summary</span><span class="o">.</span><span class="n">to_excel</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">PATH_TO_WD</span><span class="si">}</span><span class="s1">/data/output/results/</span><span class="si">{</span><span class="n">proj_name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s2">&quot;%Y%m</span><span class="si">%d</span><span class="s2">-%H%M%S&quot;</span><span class="p">)</span><span class="si">}</span><span class="s1">.xlsx&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">res_summary</span><span class="o">.</span><span class="n">to_string</span><span class="p">())</span>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

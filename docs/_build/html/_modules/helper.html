@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>helper &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Module code</a></li>
+      <li class="breadcrumb-item active">helper</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for helper</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">src/helper.py</span>
+
+<span class="sd">Utility functions used across the project for date/time handling, timeseries</span>
+<span class="sd">processing, geographic lookups, holiday and typeday determination, basic</span>
+<span class="sd">numeric checks, serialization helpers, and small data transformations.</span>
+
+<span class="sd">Main responsibilities:</span>
+
+<span class="sd">- Date and season helpers:</span>
+<span class="sd">    - parsing and converting MM-DD strings to datetimes,</span>
+<span class="sd">    - determining day-of-year, season, and typeday (workday/saturday/sunday/holiday),</span>
+<span class="sd">    - checking whether a date or hour falls within a given period.</span>
+
+<span class="sd">- Timeseries and aggregation utilities:</span>
+<span class="sd">    - block-wise aggregation, linear extrapolation of DataFrame columns,</span>
+<span class="sd">    - creation of reduced-timeseries MultiIndex and extraction of hour values,</span>
+<span class="sd">    - identification of contiguous blocks in binary series and conversion of</span>
+<span class="sd">      hour-period strings to tuple lists.</span>
+
+<span class="sd">- Geographic and holiday support:</span>
+<span class="sd">    - reverse geocoding coordinates to (country, state, city),</span>
+<span class="sd">    - fetching holidays using the `holidays` package with fallbacks,</span>
+<span class="sd">    - string reformatting for German umlauts and mapping to project enums.</span>
+
+<span class="sd">- Data validation and IO helpers:</span>
+<span class="sd">    - normalization with respect to sum, range checks, zero/NaN checks,</span>
+<span class="sd">    - dump/load pickles to the project precalc folder, and result folder creation.</span>
+
+<span class="sd">Dependencies and notes:</span>
+
+<span class="sd">- Relies on pandas, geopy (Nominatim), holidays, and project constants from</span>
+<span class="sd">  `src.const`. Many functions expect the project constants to be properly</span>
+<span class="sd">  configured (e.g., `LATITUDE`, `LONGITUDE`, `MODELED_YEAR`, `PRECALC_FOLDER`).</span>
+<span class="sd">- Designed for small, testable utility tasks; not intended as a replacement for</span>
+<span class="sd">  specialized libraries for heavy data processing.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">date</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">holidays</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">geopy.geocoders</span><span class="w"> </span><span class="kn">import</span> <span class="n">Nominatim</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src</span><span class="w"> </span><span class="kn">import</span> <span class="n">const</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.const</span><span class="w"> </span><span class="kn">import</span> <span class="n">Typeday</span><span class="p">,</span> <span class="n">Season</span>
+
+<span class="n">geolocator</span> <span class="o">=</span> <span class="n">Nominatim</span><span class="p">(</span><span class="n">user_agent</span><span class="o">=</span><span class="s2">&quot;geoapi&quot;</span><span class="p">)</span>
+<span class="c1"># geolocator = Photon(user_agent=&quot;geoapi&quot;)</span>
+
+
+<div class="viewcode-block" id="Tee"><a class="viewcode-back" href="../helper.html#helper.Tee">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Tee</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class to write to multiple streams simultaneously, e.g., to console and a file.</span>
+<span class="sd">    This class allows writing output to multiple streams at once. It can be used to</span>
+<span class="sd">    duplicate output to both the console and a file, or any other combination of</span>
+<span class="sd">    writable streams.</span>
+
+<span class="sd">    :param streams: Variable number of stream objects to write to.</span>
+<span class="sd">    :type streams: list</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">streams</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">streams</span> <span class="o">=</span> <span class="n">streams</span>
+<div class="viewcode-block" id="Tee.write"><a class="viewcode-back" href="../helper.html#helper.Tee.write">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">streams</span><span class="p">:</span>
+            <span class="n">st</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">s</span><span class="p">)</span></div>
+<div class="viewcode-block" id="Tee.flush"><a class="viewcode-back" href="../helper.html#helper.Tee.flush">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">flush</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">streams</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">st</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                <span class="k">pass</span></div></div>
+
+
+<div class="viewcode-block" id="get_var_t"><a class="viewcode-back" href="../helper.html#helper.get_var_t">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_var_t</span><span class="p">(</span><span class="n">var_t</span><span class="p">,</span> <span class="n">args</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve or process a variable based on its type.</span>
+
+<span class="sd">    This function determines the type of the input variable ``var_t`` and processes or retrieves</span>
+<span class="sd">    its value accordingly. If ``var_t`` is a pandas Series, it retrieves the value at the</span>
+<span class="sd">    specified index (``args``). If it is of type float or int, the value is directly returned.</span>
+<span class="sd">    An error is raised if the type is not among the supported types.</span>
+
+<span class="sd">    :param var_t: Input variable to be processed. Can be a pandas Series, a float, or an int.</span>
+<span class="sd">    :type var_t: Union[pandas.Series, float, int]</span>
+<span class="sd">    :param args: Index or key to access the data in ``var_t`` when it is a pandas Series.</span>
+<span class="sd">    :return: The processed value of ``var_t`` as determined by its type.</span>
+<span class="sd">    :rtype: Union[float, int]</span>
+<span class="sd">    :raises TypeError: If ``var_t`` is not of type pandas Series, float, or int.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var_t</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">var_t</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var_t</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">var_t</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">var_t</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">var_t</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;var_t can be of type pd.Series or float or int&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="mm_dd_str_to_datetime"><a class="viewcode-back" href="../helper.html#helper.mm_dd_str_to_datetime">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">mm_dd_str_to_datetime</span><span class="p">(</span><span class="n">d_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">year</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a date string in MM-DD format into a complete datetime object by appending</span>
+<span class="sd">    the provided year. The function parses the newly created string and returns it as a</span>
+<span class="sd">    datetime object. If no year is provided, a default year from `const.MODELED_YEAR` is</span>
+<span class="sd">    used.</span>
+
+<span class="sd">    :param d_str: Date string in MM-DD format to be converted.</span>
+<span class="sd">    :type d_str: str</span>
+<span class="sd">    :param year: Year to be prepended to the date string. Defaults to `const.MODELED_YEAR`.</span>
+<span class="sd">    :type year: int</span>
+<span class="sd">    :return: A datetime object created by combining the given year and date string.</span>
+<span class="sd">    :rtype: datetime</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">d_str</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">d_str</span><span class="p">,</span> <span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">d</span></div>
+
+
+<div class="viewcode-block" id="day_of_year"><a class="viewcode-back" href="../helper.html#helper.day_of_year">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">day_of_year</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span> <span class="o">|</span> <span class="n">datetime</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate the day of the year for a given date or set of dates.</span>
+
+<span class="sd">    This function determines the day of the year for a given date (`datetime` object)</span>
+<span class="sd">    or for a Pandas `DatetimeIndex`. It raises an error when the input is of an</span>
+<span class="sd">    unsupported type.</span>
+
+<span class="sd">    :param d: The input date or set of dates. It must be either a single</span>
+<span class="sd">        `datetime` object or a Pandas `DatetimeIndex`.</span>
+<span class="sd">    :type d: pd.DatetimeIndex | datetime</span>
+<span class="sd">    :return: The day of the year corresponding to the input date(s). For</span>
+<span class="sd">        a `datetime` object, it returns an integer representing the day of</span>
+<span class="sd">        the year (e.g., 1 for January 1st). For a `DatetimeIndex`, it</span>
+<span class="sd">        returns a Pandas Series or an array-like object of integers.</span>
+<span class="sd">    :rtype: int | pd.Series</span>
+<span class="sd">    :raises ValueError: If the input type is neither a `datetime` object</span>
+<span class="sd">        nor a Pandas `DatetimeIndex`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">d</span><span class="o">.</span><span class="n">timetuple</span><span class="p">()</span><span class="o">.</span><span class="n">tm_yday</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DatetimeIndex</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">d</span><span class="o">.</span><span class="n">day_of_year</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">d</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="date_within_period"><a class="viewcode-back" href="../helper.html#helper.date_within_period">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">date_within_period</span><span class="p">(</span><span class="n">period_tuple</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="n">datetime</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    check if date is within a period of a year (e.g. season), not year specific</span>
+<span class="sd">    :param period_tuple: (start, end) start and end are str objects of format &#39;mm-dd&#39;</span>
+<span class="sd">    :param d:</span>
+<span class="sd">    :return: bool whether d lies within period</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">yday_p_start</span> <span class="o">=</span> <span class="n">day_of_year</span><span class="p">(</span><span class="n">mm_dd_str_to_datetime</span><span class="p">(</span><span class="n">period_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">yday_p_end</span> <span class="o">=</span> <span class="n">day_of_year</span><span class="p">(</span><span class="n">mm_dd_str_to_datetime</span><span class="p">(</span><span class="n">period_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="k">if</span> <span class="n">yday_p_end</span> <span class="o">&gt;</span> <span class="n">yday_p_start</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">day_of_year</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">yday_p_start</span> <span class="ow">and</span> <span class="n">day_of_year</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">yday_p_end</span>
+    <span class="k">elif</span> <span class="n">yday_p_end</span> <span class="o">&lt;</span> <span class="n">yday_p_start</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">day_of_year</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">yday_p_end</span> <span class="ow">or</span> <span class="n">day_of_year</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">yday_p_start</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">&quot;Period start and end are on the same date&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="hour_within_period"><a class="viewcode-back" href="../helper.html#helper.hour_within_period">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">hour_within_period</span><span class="p">(</span><span class="n">period_tuple</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">hour</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    check whether an hour is within a given period, e.g. hour 7 is within [4,8] --&gt; True</span>
+<span class="sd">    :param period_tuple: tuple or list of two integers</span>
+<span class="sd">    :param hour: integer</span>
+<span class="sd">    :return: boolean</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># type conversion if needed</span>
+    <span class="n">period_tuple</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">period_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">period_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+
+    <span class="k">if</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">hour</span> <span class="o">&gt;=</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">hour</span> <span class="o">&gt;=</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">hour</span> <span class="o">&lt;</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s2">&quot;Period start and end is the same hour&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="calc_hours_in_period"><a class="viewcode-back" href="../helper.html#helper.calc_hours_in_period">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_hours_in_period</span><span class="p">(</span><span class="n">period_tuple</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    calculate the hours of a period given as (start hour, end hour)</span>
+<span class="sd">    :param period_tuple: (start hour: int|float, end hour: int|float)</span>
+<span class="sd">    :return: period length: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="mi">24</span> <span class="o">-</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">period_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="get_holidays_from_lib"><a class="viewcode-back" href="../helper.html#helper.get_holidays_from_lib">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_holidays_from_lib</span><span class="p">(</span><span class="n">years</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">state</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">STATE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;use holidays package to retrieve a list of holidays for a given state&quot;&quot;&quot;</span>
+    <span class="n">state_abbr</span> <span class="o">=</span> <span class="n">get_state_abbr_for_state_name</span><span class="p">(</span><span class="n">state</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">holidays</span><span class="o">.</span><span class="n">country_holidays</span><span class="p">(</span><span class="n">country</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">COUNTRY</span><span class="p">,</span> <span class="n">years</span><span class="o">=</span><span class="n">years</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">state_abbr</span><span class="p">)</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="get_holidays"><a class="viewcode-back" href="../helper.html#helper.get_holidays">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_holidays</span><span class="p">(</span><span class="n">years</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieves a list of holidays for specified years. If no years are provided,</span>
+<span class="sd">    it uses a default range based on a modeled year constant. Holidays are</span>
+<span class="sd">    determined based on the geographical information of the system, with</span>
+<span class="sd">    specific state-dependent holidays fetched if possible. If this fails,</span>
+<span class="sd">    a set of default holidays is used, including New Year&#39;s Day, Christmas Day,</span>
+<span class="sd">    and Boxing Day.</span>
+
+<span class="sd">    :param years: A list of integer years for which holidays will be fetched.</span>
+<span class="sd">                  Defaults to None, in which case the modeled year constant is used.</span>
+<span class="sd">    :return: A list of `date` objects representing the holidays for the</span>
+<span class="sd">             specified years or the default holidays.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># get state-dependent information for typedays</span>
+    <span class="k">if</span> <span class="n">years</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">years</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span><span class="p">,</span> <span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_country_state_city_for_coordinates</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">,</span> <span class="n">const</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">)</span>
+        <span class="n">holidays</span> <span class="o">=</span> <span class="n">get_holidays_from_lib</span><span class="p">(</span><span class="n">years</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">STATE</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">holidays</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">years</span><span class="p">:</span>
+            <span class="n">holidays</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">date</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span> <span class="n">date</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">25</span><span class="p">),</span> <span class="n">date</span><span class="p">(</span><span class="n">year</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">26</span><span class="p">)]</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">holidays</span></div>
+
+
+<div class="viewcode-block" id="get_state_abbr_for_state_name"><a class="viewcode-back" href="../helper.html#helper.get_state_abbr_for_state_name">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_state_abbr_for_state_name</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fetches the abbreviation for a given state name by matching it against an enumeration</span>
+<span class="sd">    after preprocessing and formatting it.</span>
+
+<span class="sd">    The function retrieves the state name corresponding to coordinates, reformats the</span>
+<span class="sd">    state name to handle capitalization, special characters, and underscores, and then</span>
+<span class="sd">    matches the formatted state name with the predefined enumeration to find its</span>
+<span class="sd">    abbreviation.</span>
+
+<span class="sd">    :param state: The name of the state whose abbreviation is to be fetched.</span>
+<span class="sd">    :type state: str</span>
+<span class="sd">    :return: The abbreviation of the state as a string.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_country_state_city_for_coordinates</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">,</span> <span class="n">const</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">reformat_string_w_umlauts</span><span class="p">(</span><span class="n">state</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">match_str_with_enum</span><span class="p">(</span><span class="n">state</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_country_state_city_for_coordinates"><a class="viewcode-back" href="../helper.html#helper.get_country_state_city_for_coordinates">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_country_state_city_for_coordinates</span><span class="p">(</span><span class="n">latitude</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">),</span> <span class="n">longitude</span><span class="p">:</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">))</span> \
+        <span class="o">-&gt;</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the country, state, and city for the provided geographical coordinates.</span>
+
+<span class="sd">    This function takes geographical coordinates (latitude and longitude) and uses a</span>
+<span class="sd">    geo-coding service to determine the respective country, state, and city for the provided</span>
+<span class="sd">    location. It returns these as a tuple.</span>
+
+<span class="sd">    :param latitude: Latitude of the location as a string, integer, or float.</span>
+<span class="sd">    :param longitude: Longitude of the location as a string, integer, or float.</span>
+<span class="sd">    :return: A tuple containing the country, state, and city as strings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">coord</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">latitude</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">longitude</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">location</span> <span class="o">=</span> <span class="n">geolocator</span><span class="o">.</span><span class="n">reverse</span><span class="p">(</span><span class="n">coord</span><span class="p">,</span> <span class="n">exactly_one</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># # Photon</span>
+    <span class="c1"># properties = location.raw[&#39;properties&#39;]</span>
+    <span class="c1"># Nominatim</span>
+    <span class="n">properties</span> <span class="o">=</span> <span class="n">location</span><span class="o">.</span><span class="n">raw</span><span class="p">[</span><span class="s1">&#39;address&#39;</span><span class="p">]</span>
+    <span class="n">city</span> <span class="o">=</span> <span class="n">properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;city&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;state&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">country</span> <span class="o">=</span> <span class="n">properties</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;country&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">country</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">city</span></div>
+
+
+<div class="viewcode-block" id="reformat_string_w_umlauts"><a class="viewcode-back" href="../helper.html#helper.reformat_string_w_umlauts">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">reformat_string_w_umlauts</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Reformats a given string by replacing German umlauts and the &#39;ß&#39; character</span>
+<span class="sd">    with their respective transliterations. This function uses a mapping of</span>
+<span class="sd">    special characters to substitute &#39;ä&#39; with &#39;ae&#39;, &#39;ü&#39; with &#39;ue&#39;, &#39;ö&#39; with &#39;oe&#39;,</span>
+<span class="sd">    and &#39;ß&#39; with &#39;ss&#39;.</span>
+
+<span class="sd">    :param string: Input string to be reformatted. It may contain German umlauts</span>
+<span class="sd">        or the &#39;ß&#39; character to be replaced.</span>
+<span class="sd">    :type string: str</span>
+<span class="sd">    :return: Reformatted string with all applicable characters substituted based on</span>
+<span class="sd">        the defined mapping.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">special_char_map</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;ä&#39;</span><span class="p">):</span> <span class="s1">&#39;ae&#39;</span><span class="p">,</span>
+        <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;ü&#39;</span><span class="p">):</span> <span class="s1">&#39;ue&#39;</span><span class="p">,</span>
+        <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;ö&#39;</span><span class="p">):</span> <span class="s1">&#39;oe&#39;</span><span class="p">,</span>
+        <span class="nb">ord</span><span class="p">(</span><span class="s1">&#39;ß&#39;</span><span class="p">):</span> <span class="s1">&#39;ss&#39;</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">string</span><span class="o">.</span><span class="n">translate</span><span class="p">(</span><span class="n">special_char_map</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="match_str_with_enum"><a class="viewcode-back" href="../helper.html#helper.match_str_with_enum">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">match_str_with_enum</span><span class="p">(</span><span class="n">search_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">enum</span><span class="p">:</span> <span class="n">Enum</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">State</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Matches a string with an enumeration and retrieves the corresponding value from the enum.</span>
+
+<span class="sd">    This function facilitates mapping a string representation of an enum name</span>
+<span class="sd">    to its corresponding value in the provided enumeration. It employs a</span>
+<span class="sd">    dictionary comprehension to construct a mapping of enum names to values,</span>
+<span class="sd">    and retrieves the value associated with the provided string key.</span>
+
+<span class="sd">    :param search_str: The name of the enumeration to be matched.</span>
+<span class="sd">    :param enum: The enumeration from which the value is fetched. Defaults</span>
+<span class="sd">        to const.State.</span>
+<span class="sd">    :return: The value of the enum corresponding to the provided</span>
+<span class="sd">        ``search_str``.</span>
+<span class="sd">    :rtype: Any</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dct</span> <span class="o">=</span> <span class="p">{</span><span class="n">i</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">i</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">enum</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">dct</span><span class="p">[</span><span class="n">search_str</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="normalize_wrt_sum"><a class="viewcode-back" href="../helper.html#helper.normalize_wrt_sum">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">normalize_wrt_sum</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Normalize a pandas Series with respect to its sum.</span>
+
+<span class="sd">    This function takes a pandas Series and normalizes each element by dividing it</span>
+<span class="sd">    by the sum of all elements in the Series. The result is a Series where the</span>
+<span class="sd">    values add up to 1, unless the input Series contains only zeros.</span>
+
+<span class="sd">    :param s: A pandas Series to be normalized.</span>
+<span class="sd">    :type s: pd.Series</span>
+<span class="sd">    :return: A normalized pandas Series where the values sum to 1.</span>
+<span class="sd">    :rtype: pd.Series</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">s</span><span class="o">/</span><span class="n">s</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="dump_pickle"><a class="viewcode-back" href="../helper.html#helper.dump_pickle">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">dump_pickle</span><span class="p">(</span><span class="n">fname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Dumps the given data into a pickle file located in a predefined folder with the</span>
+<span class="sd">    specified filename. This function serializes the data and writes it into a file</span>
+<span class="sd">    using the Python `pickle` module. The resulting file is stored with the `.pkl`</span>
+<span class="sd">    extension.</span>
+
+<span class="sd">    :param fname: The name of the file (without extension) to save the serialized</span>
+<span class="sd">                  data to.</span>
+<span class="sd">    :type fname: str</span>
+<span class="sd">    :param data: The data object to serialize and dump into the file.</span>
+<span class="sd">    :return: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fpath</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">PRECALC_FOLDER</span> <span class="o">+</span> <span class="n">fname</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">handle</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;dumped &#39;</span><span class="p">,</span> <span class="n">fpath</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_pickle"><a class="viewcode-back" href="../helper.html#helper.load_pickle">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">load_pickle</span><span class="p">(</span><span class="n">fname</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">folder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">PRECALC_FOLDER</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Loads a pickle file from a specified folder and filename. The method constructs</span>
+<span class="sd">    the file path by combining the folder path with the filename and &#39;.pkl&#39;</span>
+<span class="sd">    extension, then deserializes the file content into a Python object using the</span>
+<span class="sd">    pickle module.</span>
+
+<span class="sd">    :param fname: Name of the pickle file (without extension) to be loaded.</span>
+<span class="sd">    :type fname: str</span>
+<span class="sd">    :param folder: Folder path where the pickle file is located. Defaults to</span>
+<span class="sd">        `const.PRECALC_FOLDER`.</span>
+<span class="sd">    :type folder: str</span>
+<span class="sd">    :return: The deserialized Python object from the pickle file.</span>
+<span class="sd">    :rtype: Any</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fpath</span> <span class="o">=</span> <span class="n">folder</span> <span class="o">+</span> <span class="n">fname</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+        <span class="n">pkl</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;loaded &#39;</span><span class="p">,</span> <span class="n">fpath</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pkl</span></div>
+
+
+<div class="viewcode-block" id="check_if_values_outside_range"><a class="viewcode-back" href="../helper.html#helper.check_if_values_outside_range">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">check_if_values_outside_range</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mi">10</span> <span class="o">**</span> <span class="mi">9</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Checks if the values in the provided pandas Series are outside of the specified range.</span>
+
+<span class="sd">    This function examines whether any of the values in the given pandas Series are</span>
+<span class="sd">    outside the defined minimum and maximum range. If any value falls below the</span>
+<span class="sd">    minimum or exceeds the maximum, an assertion error is raised, indicating that</span>
+<span class="sd">    values in the Series are out of the acceptable range.</span>
+
+<span class="sd">    :param s: A pandas Series to be checked for out-of-range conditions.</span>
+<span class="sd">    :type s: pd.Series</span>
+<span class="sd">    :param min: The minimum acceptable value for elements in the Series</span>
+<span class="sd">        (inclusive). Defaults to 0.</span>
+<span class="sd">    :type min: int, optional</span>
+<span class="sd">    :param max: The maximum acceptable value for elements in the Series</span>
+<span class="sd">        (inclusive). Defaults to 10 ** 9.</span>
+<span class="sd">    :type max: int, optional</span>
+<span class="sd">    :raises AssertionError: If any value in the Series is outside the specified</span>
+<span class="sd">        [min, max] range.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lower_than_min</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">s</span> <span class="o">&lt;</span> <span class="nb">min</span><span class="p">]</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+    <span class="n">higher_than_max</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="n">s</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">]</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+
+    <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">lower_than_min</span> <span class="ow">or</span> <span class="n">higher_than_max</span><span class="p">),</span> <span class="s2">&quot;Values of series outside range&quot;</span></div>
+
+
+<div class="viewcode-block" id="yield_pos_of_next_higher_number_in_ordered_list"><a class="viewcode-back" href="../helper.html#helper.yield_pos_of_next_higher_number_in_ordered_list">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">yield_pos_of_next_higher_number_in_ordered_list</span><span class="p">(</span><span class="n">ordered_list</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">number</span><span class="p">:</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Yield the position of the next higher (or equal) number in the ordered list compared to the given number.</span>
+
+<span class="sd">    This function iterates through an ordered list and identifies the position at which a number that is</span>
+<span class="sd">    greater than or equal to the input number occurs. If no such number exists, it returns the position</span>
+<span class="sd">    of the last element in the list. The input list must be ordered to ensure correct functionality.</span>
+
+<span class="sd">    :param ordered_list: A list of numbers that is expected to be sorted in ascending order.</span>
+<span class="sd">    :param number: A number (float or int) to search for the next higher or equal value in the</span>
+<span class="sd">        given ordered list.</span>
+<span class="sd">    :return: Position (integer index) of the closest number in the list that is greater than or</span>
+<span class="sd">        equal to the given number. If no such number is found, returns the position of the last</span>
+<span class="sd">        element in the list.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ordered_list</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">number</span> <span class="o">&lt;=</span> <span class="nb">float</span><span class="p">(</span><span class="n">e</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">i</span>
+    <span class="k">return</span> <span class="n">i</span></div>
+
+
+<span class="n">HOLIDAYS</span> <span class="o">=</span> <span class="n">get_holidays</span><span class="p">()</span>
+<div class="viewcode-block" id="get_typeday"><a class="viewcode-back" href="../helper.html#helper.get_typeday">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_typeday</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">holidays</span><span class="o">=</span><span class="n">HOLIDAYS</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determine the type of day (Sunday, Saturday, or Workday) for a given date.</span>
+
+<span class="sd">    This function takes a specific date and an optional list of holiday dates</span>
+<span class="sd">    and returns the type of the day based on whether it falls on a weekend or</span>
+<span class="sd">    is a holiday.</span>
+
+<span class="sd">    :param d: The date to evaluate.</span>
+<span class="sd">    :type d: datetime</span>
+<span class="sd">    :param holidays: A collection of holiday dates. If the given date matches one</span>
+<span class="sd">        of these dates, it will be treated as a Sunday. Defaults to HOLIDAYS.</span>
+<span class="sd">    :type holidays: set</span>
+<span class="sd">    :return: Numeric representation of the day type: Sunday, Saturday, or Workday.</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">d</span><span class="o">.</span><span class="n">weekday</span><span class="p">()</span> <span class="o">==</span> <span class="mi">6</span> <span class="ow">or</span> <span class="n">d</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="ow">in</span> <span class="n">holidays</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Typeday</span><span class="o">.</span><span class="n">Sunday</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">elif</span> <span class="n">d</span><span class="o">.</span><span class="n">weekday</span><span class="p">()</span> <span class="o">==</span> <span class="mi">5</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Typeday</span><span class="o">.</span><span class="n">Saturday</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">Typeday</span><span class="o">.</span><span class="n">Workday</span><span class="o">.</span><span class="n">value</span></div>
+
+
+<div class="viewcode-block" id="get_season"><a class="viewcode-back" href="../helper.html#helper.get_season">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_season</span><span class="p">(</span><span class="n">d</span><span class="p">:</span> <span class="n">datetime</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Determines the season corresponding to the given date based on predefined seasonal</span>
+<span class="sd">    periods. The function checks whether the given date falls within the defined periods</span>
+<span class="sd">    for Winter, Summer, or Transition. If the date does not match any defined period, an</span>
+<span class="sd">    AssertionError is raised.</span>
+
+<span class="sd">    :param d: The date for which the season needs to be determined.</span>
+<span class="sd">    :type d: datetime</span>
+<span class="sd">    :return: The season value corresponding to the date</span>
+<span class="sd">    :rtype: int</span>
+<span class="sd">    :raises AssertionError: If the date does not fall into any defined seasonal period.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">date_within_period</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">SEASON_PERIODS</span><span class="p">[</span><span class="n">Season</span><span class="o">.</span><span class="n">Winter</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Season</span><span class="o">.</span><span class="n">Winter</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">elif</span> <span class="n">date_within_period</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">SEASON_PERIODS</span><span class="p">[</span><span class="n">Season</span><span class="o">.</span><span class="n">Summer</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Season</span><span class="o">.</span><span class="n">Summer</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="n">date_within_period</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">SEASON_PERIODS</span><span class="p">[</span><span class="n">Season</span><span class="o">.</span><span class="n">Transition</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">d</span><span class="p">)</span> <span class="ow">or</span>
+          <span class="n">date_within_period</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">SEASON_PERIODS</span><span class="p">[</span><span class="n">Season</span><span class="o">.</span><span class="n">Transition</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">d</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">Season</span><span class="o">.</span><span class="n">Transition</span><span class="o">.</span><span class="n">value</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="s1">&#39;Invalid season&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="calc_for_blocks_of_n"><a class="viewcode-back" href="../helper.html#helper.calc_for_blocks_of_n">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_for_blocks_of_n</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">),</span> <span class="n">block_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">func</span><span class="o">=</span><span class="s1">&#39;mean&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate aggregated values for blocks of specified size from a pandas DataFrame or Series.</span>
+
+<span class="sd">    This function divides the input data into blocks of a given size and applies an</span>
+<span class="sd">    aggregation function to each block. The aggregated values are then aligned to</span>
+<span class="sd">    the original index of the input data.</span>
+
+<span class="sd">    :param df: The input data to process, either a pandas DataFrame or Series.</span>
+<span class="sd">    :param block_size: The size of each block for grouping, defaults to 24.</span>
+<span class="sd">    :type block_size: int, optional</span>
+<span class="sd">    :param func: The aggregation function to apply to each block. Can be a string</span>
+<span class="sd">        representing a common pandas aggregation function (e.g., &#39;mean&#39;, &#39;sum&#39;) or</span>
+<span class="sd">        a callable function, defaults to &#39;mean&#39;.</span>
+<span class="sd">    :type func: str or callable, optional</span>
+<span class="sd">    :return: A pandas Series containing the aggregated values aligned to the</span>
+<span class="sd">        original index structure of the input data.</span>
+<span class="sd">    :rtype: pd.Series</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">block_size</span> <span class="o">==</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">block_size</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span> <span class="o">*</span> <span class="mi">24</span>
+
+    <span class="n">old_index</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">group_number</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span> <span class="o">//</span> <span class="n">block_size</span>
+    <span class="n">group_means</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">group_number</span><span class="p">)</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="n">group_means</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">old_index</span>
+
+    <span class="k">return</span> <span class="n">group_means</span></div>
+
+
+<div class="viewcode-block" id="linear_extrapolate_all_columns"><a class="viewcode-back" href="../helper.html#helper.linear_extrapolate_all_columns">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">linear_extrapolate_all_columns</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">new_x</span><span class="p">:</span> <span class="nb">int</span><span class="o">|</span><span class="nb">float</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Linearly extrapolates to estimate new y values for all columns, using the DataFrame index as x values.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        df (pd.DataFrame): DataFrame containing the data with x values as the index.</span>
+<span class="sd">        new_x (float): The new x value for which y values will be extrapolated.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        pd.Series: A Series with extrapolated values for each column.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;DataFrame must contain at least two rows for extrapolation.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Ensure the index is sorted</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+
+    <span class="n">extrapolated_values</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c1"># Get the last two rows of the DataFrame</span>
+    <span class="n">x1</span><span class="p">,</span> <span class="n">x2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">y1</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">][</span><span class="n">col</span><span class="p">],</span> <span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">col</span><span class="p">]</span>
+
+        <span class="c1"># Calculate the slope (m)</span>
+        <span class="n">slope</span> <span class="o">=</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span>
+
+        <span class="c1"># Extrapolate to find y at new_x</span>
+        <span class="n">new_y</span> <span class="o">=</span> <span class="n">y2</span> <span class="o">+</span> <span class="n">slope</span> <span class="o">*</span> <span class="p">(</span><span class="n">new_x</span> <span class="o">-</span> <span class="n">x2</span><span class="p">)</span>
+        <span class="n">extrapolated_values</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_y</span>
+
+    <span class="c1"># Return the results as a pandas Series</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">extrapolated_values</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="calc_th_demand_summary"><a class="viewcode-back" href="../helper.html#helper.calc_th_demand_summary">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_th_demand_summary</span><span class="p">(</span><span class="n">dem</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">imp</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">cost_factors</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the thermal demand summary for room heating and domestic hot water (DHW).</span>
+<span class="sd">    This function computes thermal losses, gains, and demand factors based on the input</span>
+<span class="sd">    data and applies cost factors to generate a detailed summary.</span>
+
+<span class="sd">    :param dem: Dictionary containing the thermal room heating and DHW demand data.</span>
+<span class="sd">    :param imp: Dictionary containing the impact data for solar and internal heat gains.</span>
+<span class="sd">    :param cost_factors: Series containing cost factors to scale the computed values.</span>
+<span class="sd">    :return: A DataFrame with detailed thermal demand summary including transmission</span>
+<span class="sd">        losses, ventilation losses, solar heat gains, internal heat gains, DHW, and</span>
+<span class="sd">        aggregated sums.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">th_dem_summary</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+        <span class="s1">&#39;trans_loss&#39;</span><span class="p">:</span> <span class="n">dem</span><span class="p">[</span><span class="s1">&#39;th_roomheat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">transm_loss</span> <span class="o">*</span> <span class="n">dem</span><span class="p">[</span><span class="s1">&#39;th_roomheat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">delta_temp_t</span><span class="p">,</span>
+        <span class="s1">&#39;vent_loss&#39;</span><span class="p">:</span> <span class="n">dem</span><span class="p">[</span><span class="s1">&#39;th_roomheat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">vent_loss</span> <span class="o">*</span> <span class="n">dem</span><span class="p">[</span><span class="s1">&#39;th_roomheat&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">delta_temp_t</span><span class="p">,</span>
+        <span class="s1">&#39;solar_gains&#39;</span><span class="p">:</span> <span class="o">-</span> <span class="n">imp</span><span class="p">[</span><span class="s1">&#39;heat_gains&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">solar_gains_t</span><span class="p">,</span>
+        <span class="s1">&#39;internal_gains&#39;</span><span class="p">:</span> <span class="o">-</span> <span class="n">imp</span><span class="p">[</span><span class="s1">&#39;heat_gains&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">internal_gains_t</span><span class="p">,</span>
+        <span class="s1">&#39;dhw&#39;</span><span class="p">:</span> <span class="n">dem</span><span class="p">[</span><span class="s1">&#39;th_dhw&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">p_t</span><span class="p">,</span>
+    <span class="p">})</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span> <span class="o">*</span> <span class="n">cost_factors</span><span class="p">)</span>
+
+    <span class="n">th_dem_summary</span><span class="p">[</span><span class="s1">&#39;roomheat_sum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">th_dem_summary</span><span class="p">[[</span>
+        <span class="s1">&#39;trans_loss&#39;</span><span class="p">,</span> <span class="s1">&#39;vent_loss&#39;</span><span class="p">,</span> <span class="s1">&#39;solar_gains&#39;</span><span class="p">,</span> <span class="s1">&#39;internal_gains&#39;</span>
+    <span class="p">]]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="k">if</span> <span class="n">x</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">th_dem_summary</span><span class="p">[</span><span class="s1">&#39;sum&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">th_dem_summary</span><span class="p">[</span><span class="s1">&#39;roomheat_sum&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">th_dem_summary</span><span class="p">[</span><span class="s1">&#39;dhw&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">th_dem_summary</span></div>
+
+
+<div class="viewcode-block" id="create_ts_data_dump_id"><a class="viewcode-back" href="../helper.html#helper.create_ts_data_dump_id">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">create_ts_data_dump_id</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a unique identifier for a timeseries data dump based on geographic</span>
+<span class="sd">    position, modeled year, and reduction settings.</span>
+
+<span class="sd">    The function creates an identifier string composed of predefined constants</span>
+<span class="sd">    representing latitude, longitude, modeled year, and optionally includes a tag</span>
+<span class="sd">    to signify timeseries reduction if that setting is applied.</span>
+
+<span class="sd">    :return: A string representing the unique identifier for the timeseries data</span>
+<span class="sd">        dump.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dump_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">LATITUDE</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="n">const</span><span class="o">.</span><span class="n">APPLY_TIMESERIES_REDUCTION</span><span class="p">:</span>
+        <span class="n">dump_id</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;_ts_sel_weeks&quot;</span>
+
+    <span class="k">return</span> <span class="n">dump_id</span></div>
+
+<div class="viewcode-block" id="create_climate_data_dump_id"><a class="viewcode-back" href="../helper.html#helper.create_climate_data_dump_id">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">create_climate_data_dump_id</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a unique identifier for a climate data dump based on pre-defined constants.</span>
+<span class="sd">    The identifier combines geographic and temporal attributes to ensure uniqueness.</span>
+
+<span class="sd">    :return: A string representing the unique climate data dump identifier.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dump_id</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">LATITUDE</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">CLIMATE_DATA_YEARS</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">CLIMATE_DATA_YEARS</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">_&quot;</span>
+               <span class="sa">f</span><span class="s2">&quot;climate_summary&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">dump_id</span></div>
+
+
+<div class="viewcode-block" id="check_if_zero_or_nan"><a class="viewcode-back" href="../helper.html#helper.check_if_zero_or_nan">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">check_if_zero_or_nan</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Checks if the given value is either zero or NaN.</span>
+
+<span class="sd">    This function evaluates whether the provided value is equal to 0.0 or is a</span>
+<span class="sd">    string representation of &#39;nan&#39;. It returns a boolean reflecting the result</span>
+<span class="sd">    of this evaluation.</span>
+
+<span class="sd">    :param val: The value to be checked</span>
+<span class="sd">    :type val: Any</span>
+<span class="sd">    :return: True if the value is either 0.0 or &#39;nan&#39;, otherwise False</span>
+<span class="sd">    :rtype: bool</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">val</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">elif</span> <span class="nb">str</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;nan&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="create_result_folder"><a class="viewcode-back" href="../helper.html#helper.create_result_folder">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">create_result_folder</span><span class="p">(</span><span class="n">proj_name</span><span class="p">,</span> <span class="n">top_folder</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">PATH_TO_WD</span> <span class="o">+</span> <span class="s2">&quot;/data/output/results&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Creates a result folder for a given project and organizes it in a specified top directory.</span>
+
+<span class="sd">    This function generates a unique folder name for a project by appending the current</span>
+<span class="sd">    timestamp to the project&#39;s name. If the folder does not exist, it is created. The function</span>
+<span class="sd">    returns the path to the newly created folder.</span>
+
+<span class="sd">    :param proj_name: Name of the project used to create a uniquely named folder.</span>
+<span class="sd">    :type proj_name: str</span>
+<span class="sd">    :param top_folder: The base directory where the result folder will be created. Defaults</span>
+<span class="sd">        to a predefined directory within the workspace.</span>
+<span class="sd">    :type top_folder: str, optional</span>
+<span class="sd">    :return: The full path to the newly created result folder.</span>
+<span class="sd">    :rtype: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_res_folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">top_folder</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">proj_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%Y%m</span><span class="si">%d</span><span class="s1">-%H%M&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">new_res_folder</span><span class="p">):</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">new_res_folder</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">new_res_folder</span></div>
+
+
+<div class="viewcode-block" id="create_ts_multiindex"><a class="viewcode-back" href="../helper.html#helper.create_ts_multiindex">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">create_ts_multiindex</span><span class="p">(</span><span class="n">nr_of_days_in_red_ts</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">apply_ts_reduction</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    create a pandas Multiindex of the format (Season, timestep) for calculations with reduced timeseries</span>
+<span class="sd">    :param nr_of_days_in_red_ts: number of days per season in reduced timeseries</span>
+<span class="sd">    :return: pd.Multiindex</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">nr_of_days_in_red_ts</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">nr_of_days_in_red_ts</span> <span class="o">=</span> <span class="mi">7</span>
+
+    <span class="k">if</span> <span class="n">apply_ts_reduction</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">apply_ts_reduction</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">APPLY_TIMESERIES_REDUCTION</span>
+
+    <span class="k">if</span> <span class="n">apply_ts_reduction</span><span class="p">:</span>
+        <span class="n">multi_ind</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span>
+        <span class="p">[(</span><span class="n">season</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">Season</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">nr_of_days_in_red_ts</span> <span class="o">*</span> <span class="mi">24</span> <span class="o">*</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span><span class="p">)]</span>
+    <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">multi_ind</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_tuples</span><span class="p">(</span>
+            <span class="p">[(</span><span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8760</span> <span class="o">*</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span><span class="p">)]</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">multi_ind</span></div>
+
+
+<div class="viewcode-block" id="get_hour_from_multiindex"><a class="viewcode-back" href="../helper.html#helper.get_hour_from_multiindex">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_hour_from_multiindex</span><span class="p">(</span><span class="n">ind</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">MultiIndex</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    returns the hours for the Multi-Index (Season, timestep) of a reduced timeseries</span>
+<span class="sd">    :param: ind: pd.Mulit-Index of the format (Season, timestep)</span>
+<span class="sd">    :return: list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ind</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="mi">24</span> <span class="o">*</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span><span class="p">)</span> <span class="o">/</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="identify_blocks"><a class="viewcode-back" href="../helper.html#helper.identify_blocks">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">identify_blocks</span><span class="p">(</span><span class="n">series</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Identify contiguous blocks of 1s in a pandas Series.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    series : pd.Series</span>
+<span class="sd">        A pandas Series containing 0s and 1s.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        A dictionary {block_number: [indices]} representing each block of 1s.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Ensure the series is boolean for logical operations</span>
+    <span class="n">s</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">bool</span><span class="p">)</span>
+
+    <span class="c1"># Identify where blocks start: True when s[i]=1 and s[i-1]=0</span>
+    <span class="n">block_starts</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span> <span class="o">!=</span> <span class="n">s</span><span class="o">.</span><span class="n">shift</span><span class="p">())</span><span class="o">.</span><span class="n">cumsum</span><span class="p">()</span> <span class="o">*</span> <span class="n">s</span>  <span class="c1"># increment on state changes</span>
+
+    <span class="c1"># Group by the block id (only for 1s)</span>
+    <span class="n">blocks</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">block_id</span><span class="p">,</span> <span class="n">idxs</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="n">block_starts</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">block_starts</span><span class="p">),</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">blocks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">idxs</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">blocks</span></div>
+
+
+<div class="viewcode-block" id="tuple_list_from_hour_periods"><a class="viewcode-back" href="../helper.html#helper.tuple_list_from_hour_periods">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">tuple_list_from_hour_periods</span><span class="p">(</span><span class="n">hh_str</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    convert a string of e.g. format &quot;HH-HH,HH-HH&quot; to [(HH,HH),(HH,HH)]</span>
+<span class="sd">    :param hh_str: string with hour periods</span>
+<span class="sd">    :return: list of tuples</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">hh_str</span> <span class="o">=</span> <span class="n">hh_str</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">hh_str</span> <span class="o">==</span> <span class="s2">&quot;&quot;</span> <span class="ow">or</span> <span class="n">hh_str</span> <span class="o">==</span> <span class="s2">&quot;nan&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tup_lst</span> <span class="o">=</span> <span class="p">[(</span><span class="nb">int</span><span class="p">(</span><span class="n">period</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]),</span><span class="nb">int</span><span class="p">(</span><span class="n">period</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]))</span> <span class="k">for</span> <span class="n">period</span> <span class="ow">in</span> <span class="n">hh_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid sequence for hour period &#39;</span><span class="si">{</span><span class="n">hh_str</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">tup_lst</span></div>
+
+
+
+
+
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>data_preparation.demand_data &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">data_preparation.demand_data</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for data_preparation.demand_data</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">src/data_preparation/demand_data.py</span>
+
+<span class="sd">Utilities to create and process electricity, domestic hot water (DHW), and</span>
+<span class="sd">e-mobility demand time series as well as other timeseries (prices) used by the building and battery optimization</span>
+<span class="sd">workflows.</span>
+
+<span class="sd">Responsibilities:</span>
+
+<span class="sd">- Load and process external resource CSVs and precomputed profiles (synPRO,</span>
+<span class="sd">  DHW Calc, electricity prices, CO₂ intensity) and convert them into project</span>
+<span class="sd">  `Timeseries` objects.</span>
+<span class="sd">- Produce variable electricity price series with optional seasonal/time-based</span>
+<span class="sd">  variable grid fees and VAT adjustments.</span>
+<span class="sd">- Generate normalized household electrical demand profiles and aggregate</span>
+<span class="sd">  building-level loads from household mixes.</span>
+<span class="sd">- Compute DHW energy demand from precomputed volume/temperature profiles.</span>
+<span class="sd">- Build static and flexible EV charging profiles (charge types: flat, fast,</span>
+<span class="sd">  optimized) and extract flexible charging blocks for time-series reduction.</span>
+<span class="sd">- Provide enums for common column names and grid-fee specifications.</span>
+
+<span class="sd">Main functions:</span>
+
+<span class="sd">- get_elec_co2_intensity(...) -&gt; Timeseries</span>
+<span class="sd">- get_var_elec_prices(...) -&gt; Timeseries</span>
+<span class="sd">- get_dhwcalc_series(...) -&gt; Timeseries</span>
+<span class="sd">- get_synpro_el_hh_profiles(...) -&gt; Timeseries</span>
+<span class="sd">- get_el_hh_profiles(...) -&gt; Timeseries</span>
+<span class="sd">- calc_flex_dem_from_ts_red_inputs(...) -&gt; dict</span>
+<span class="sd">- calc_emob_demands(...) -&gt; tuple[Timeseries, Timeseries]</span>
+
+<span class="sd">Dependencies and notes:</span>
+
+<span class="sd">- Uses `Timeseries` from `src.data_preparation.data_formats` and project constants</span>
+<span class="sd">  from `src.const` (e.g. `PATH_TO_WD`, `PRECALC_FOLDER`, `TS_PER_HOUR`).</span>
+<span class="sd">- Some outputs are cached via `dump_pickle` / `load_pickle` to `PRECALC_FOLDER`.</span>
+<span class="sd">- Expects resource files under `data/resources` relative to `const.PATH_TO_WD`.</span>
+<span class="sd">- External data sources (e.g. electricitymaps, synPRO files) may be subject to</span>
+<span class="sd">  their respective licensing and usage restrictions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src</span><span class="w"> </span><span class="kn">import</span> <span class="n">const</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.data_preparation.data_formats</span><span class="w"> </span><span class="kn">import</span> <span class="n">Timeseries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.helper</span><span class="w"> </span><span class="kn">import</span> <span class="n">dump_pickle</span><span class="p">,</span> <span class="n">load_pickle</span><span class="p">,</span> <span class="n">Season</span><span class="p">,</span> <span class="n">calc_hours_in_period</span><span class="p">,</span> <span class="n">identify_blocks</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">CO2ElecCols</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">Co2eq_lca</span> <span class="o">=</span> <span class="s1">&#39;Carbon Intensity gCO₂eq/kWh (LCA)&#39;</span>
+    <span class="n">Co2eq_direct</span> <span class="o">=</span> <span class="s1">&#39;Carbon Intensity gCO₂eq/kWh (direct)&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ElPriceCols</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">Wholesale</span> <span class="o">=</span> <span class="s1">&#39;Wholesale market price EEX Day-Ahead (EUR/kWh)&#39;</span>
+    <span class="n">VarGridFees</span> <span class="o">=</span> <span class="s1">&#39;Variable grid fees acc. to EnWG 14a (EUR/kWh)&#39;</span>
+    <span class="n">ImportDynTariff</span> <span class="o">=</span> <span class="s1">&#39;Dynamic el. tariff w/o var. grid fees (EUR/kWh)&#39;</span>
+    <span class="n">ImportVarGridFeeTariff</span> <span class="o">=</span> <span class="s1">&#39;El. tariff w/ var. grid fees (EUR/kWh)&#39;</span>
+    <span class="n">ImportDynAndVarGridFeeTariff</span> <span class="o">=</span> <span class="s1">&#39;Dynamic el. tariff w/ var. grid fees (EUR/kWh)&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">DHWCols</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">Load</span> <span class="o">=</span> <span class="s1">&#39;DHW&#39;</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">ElLoadCols</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">FULLTIME_EMPLOYEES</span> <span class="o">=</span> <span class="s1">&#39;synPRO_el_2_fulltime_employees&#39;</span>
+    <span class="n">OVER_65</span> <span class="o">=</span> <span class="s1">&#39;synPRO_el_2_persons_over65&#39;</span>
+    <span class="n">FAMILY</span> <span class="o">=</span> <span class="s1">&#39;synPRO_el_family&#39;</span>
+    <span class="n">SINGLE_UNDER_30</span> <span class="o">=</span> <span class="s1">&#39;synPRO_el_single_person_under30&#39;</span>
+    <span class="n">TOTAL_HH</span> <span class="o">=</span> <span class="s1">&#39;total_el_hh_load&#39;</span>
+    <span class="n">TOTAL_EV_STAT</span> <span class="o">=</span> <span class="s1">&#39;total_ev_static_charging_load&#39;</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">VarGridFeeSpecs</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">HT_WINDOWS</span> <span class="o">=</span> <span class="s1">&#39;ht_windows&#39;</span>
+    <span class="n">HT_VAL</span> <span class="o">=</span> <span class="s1">&#39;ht_value&#39;</span>
+    <span class="n">LT_WINDOWS</span> <span class="o">=</span> <span class="s1">&#39;lt_windows&#39;</span>
+    <span class="n">LT_VAL</span> <span class="o">=</span> <span class="s1">&#39;lt_value&#39;</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">EmobChargetype</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">flat</span> <span class="o">=</span> <span class="s1">&#39;flat&#39;</span>
+    <span class="n">fast</span> <span class="o">=</span> <span class="s1">&#39;fast&#39;</span>
+    <span class="n">optimized</span> <span class="o">=</span> <span class="s1">&#39;optimized&#39;</span>
+
+
+<div class="viewcode-block" id="get_elec_co2_intensity"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.demand_data.get_elec_co2_intensity">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_elec_co2_intensity</span><span class="p">(</span><span class="n">folderpath</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">PATH_TO_WD</span> <span class="o">+</span> <span class="s2">&quot;/data/resources/co2_intensity_electricity_maps/&quot;</span><span class="p">,</span>
+                           <span class="n">default_val_lca</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">CO2_g_per_kWh_EL_LCA</span><span class="p">,</span> <span class="n">default_val_direct</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">CO2_g_per_kWh_EL_DIR</span><span class="p">,</span>
+                           <span class="n">year</span><span class="o">=</span><span class="mi">2023</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Timeseries</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates and returns the electricity CO2 intensity as a timeseries.</span>
+<span class="sd">    The data can be downloaded from https://app.electricitymaps.com. However, its commercial use is forbidden.</span>
+
+<span class="sd">    This function reads hourly CO2 intensity data for electricity from a predefined</span>
+<span class="sd">    CSV file, processes it, and converts it into a timeseries object. The timeseries</span>
+<span class="sd">    contains lifecycle CO2 equivalent and direct CO2 emissions data.</span>
+<span class="sd">    If no file is given, the default values for hourly CO2 intensity are used.</span>
+
+<span class="sd">    :return: Processed timeseries object containing CO2 intensity data for electricity.</span>
+<span class="sd">    :rtype: Timeseries</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">filepath</span> <span class="o">=</span> <span class="n">folderpath</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;DE_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">_hourly.csv&quot;</span>
+        <span class="n">co2_per_kwh_hourly</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">except</span> <span class="ne">FileNotFoundError</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;No hourly CO2 intensity data found. Using default values.&quot;</span><span class="p">)</span>
+        <span class="n">co2_per_kwh_hourly</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">8760</span><span class="p">),</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="n">CO2ElecCols</span><span class="o">.</span><span class="n">Co2eq_lca</span><span class="p">,</span> <span class="n">CO2ElecCols</span><span class="o">.</span><span class="n">Co2eq_direct</span><span class="p">])</span>
+        <span class="n">co2_per_kwh_hourly</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">CO2ElecCols</span><span class="o">.</span><span class="n">Co2eq_lca</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_val_lca</span>
+        <span class="n">co2_per_kwh_hourly</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">CO2ElecCols</span><span class="o">.</span><span class="n">Co2eq_direct</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_val_direct</span>
+
+    <span class="c1"># plotting for debugging purposes</span>
+    <span class="c1"># co2_per_kwh_hourly.hist()</span>
+    <span class="c1"># plt.show()</span>
+    <span class="c1"># plot_timeseries(co2_per_kwh_hourly)</span>
+
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">(</span><span class="n">co2_per_kwh_hourly</span><span class="p">[[</span><span class="n">CO2ElecCols</span><span class="o">.</span><span class="n">Co2eq_lca</span><span class="p">,</span> <span class="n">CO2ElecCols</span><span class="o">.</span><span class="n">Co2eq_direct</span><span class="p">]]</span><span class="o">/</span><span class="mi">1000</span><span class="p">)</span>
+
+    <span class="c1"># ts.plot_typeday(CO2ElecCols.Co2eq_lca)</span>
+
+    <span class="k">return</span> <span class="n">ts</span></div>
+
+
+<div class="viewcode-block" id="get_var_elec_prices"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.demand_data.get_var_elec_prices">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_var_elec_prices</span><span class="p">(</span><span class="n">grid_fees_st</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">other_taxes_and_charges</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">vat</span><span class="o">=</span><span class="mf">0.19</span><span class="p">,</span> <span class="n">var_grid_fees</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="mi">2023</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Timeseries</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute variable electricity prices based on day-ahead wholesale prices, grid fees,</span>
+<span class="sd">    other taxes and charges, as well as VAT. Optionally, seasonal and time-dependent</span>
+<span class="sd">    variable grid fees can be applied.</span>
+
+<span class="sd">    This function processes electricity price data for a given year, applies grid fees,</span>
+<span class="sd">    and adjusts values based on provided parameters.</span>
+
+<span class="sd">    :param grid_fees_st: Base grid fee in €/kWh. Default is 0.1.</span>
+<span class="sd">    :param other_taxes_and_charges: Fixed value for other taxes and charges in €/kWh. Default is 0.05.</span>
+<span class="sd">    :param vat: Value-added tax (VAT) represented as a decimal (e.g., 0.19 for 19%). Default is 0.19.</span>
+<span class="sd">    :param var_grid_fees: Optional dictionary defining seasonal variable grid fees and their respective</span>
+<span class="sd">        time windows for high and low tariffs, e.g.</span>
+<span class="sd">        var_grid_fees={</span>
+<span class="sd">            Season.Summer: {</span>
+<span class="sd">                VarGridFeeSpecs.HT_WINDOWS: [(17,20)],</span>
+<span class="sd">                VarGridFeeSpecs.HT_VAL: 0.2,</span>
+<span class="sd">                VarGridFeeSpecs.LT_WINDOWS: [(11,15)],</span>
+<span class="sd">                VarGridFeeSpecs.LT_VAL: 0.01,</span>
+<span class="sd">            },</span>
+<span class="sd">            Season.Transition: {</span>
+<span class="sd">                VarGridFeeSpecs.HT_WINDOWS: [(17,20)],</span>
+<span class="sd">                VarGridFeeSpecs.HT_VAL: 0.2,</span>
+<span class="sd">                VarGridFeeSpecs.LT_WINDOWS: [],</span>
+<span class="sd">                VarGridFeeSpecs.LT_VAL: 0.01,</span>
+<span class="sd">            },</span>
+<span class="sd">            Season.Winter: {</span>
+<span class="sd">                VarGridFeeSpecs.HT_WINDOWS: [(6,8), (17,20)],</span>
+<span class="sd">                VarGridFeeSpecs.HT_VAL: 0.2,</span>
+<span class="sd">                VarGridFeeSpecs.LT_WINDOWS: [(23,3)],</span>
+<span class="sd">                VarGridFeeSpecs.LT_VAL: 0.01,</span>
+<span class="sd">            },</span>
+<span class="sd">        }</span>
+<span class="sd">    :param year: Year for which the electricity prices are computed. Default is 2023.</span>
+<span class="sd">    :return: Timeseries object containing computed electricity prices with applied</span>
+<span class="sd">        taxes, fees, and optional variable components.</span>
+<span class="sd">    :rtype: Timeseries</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">hourly_day_ahead_prices</span> <span class="o">=</span>  <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">PATH_TO_WD</span> <span class="o">+</span>
+        <span class="sa">f</span><span class="s2">&quot;/data/resources/energy_charts/energy-charts_Stromproduktion_und_Börsenstrompreise_in_Deutschland_</span><span class="si">{</span><span class="n">year</span><span class="si">}</span><span class="s2">.csv&quot;</span><span class="p">,</span>
+                                           <span class="n">header</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:</span><span class="mi">35040</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">var_grid_fees</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">grid_fees</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s1">&#39;15min&#39;</span><span class="p">)</span>
+        <span class="n">grid_fees</span><span class="p">[</span><span class="s1">&#39;grid fees [€/kWh]&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_fees_st</span>
+        <span class="k">for</span> <span class="n">season</span> <span class="ow">in</span> <span class="n">Season</span><span class="p">:</span>
+            <span class="c1"># set high tariff</span>
+            <span class="n">idx_ht</span> <span class="o">=</span> <span class="n">grid_fees</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">season</span><span class="o">=</span><span class="n">season</span><span class="p">,</span> <span class="n">hour_periods</span><span class="o">=</span><span class="n">var_grid_fees</span><span class="p">[</span><span class="n">season</span><span class="p">][</span><span class="n">VarGridFeeSpecs</span><span class="o">.</span><span class="n">HT_WINDOWS</span><span class="p">])</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">grid_fees</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_ht</span><span class="p">,</span> <span class="s1">&#39;grid fees [€/kWh]&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">var_grid_fees</span><span class="p">[</span><span class="n">season</span><span class="p">][</span><span class="n">VarGridFeeSpecs</span><span class="o">.</span><span class="n">HT_VAL</span><span class="p">]</span>
+            <span class="c1"># set low tariff</span>
+            <span class="n">idx_lt</span> <span class="o">=</span> <span class="n">grid_fees</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span>
+                <span class="n">season</span><span class="o">=</span><span class="n">season</span><span class="p">,</span> <span class="n">hour_periods</span><span class="o">=</span><span class="n">var_grid_fees</span><span class="p">[</span><span class="n">season</span><span class="p">][</span><span class="n">VarGridFeeSpecs</span><span class="o">.</span><span class="n">LT_WINDOWS</span><span class="p">])</span><span class="o">.</span><span class="n">index</span>
+            <span class="n">grid_fees</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx_lt</span><span class="p">,</span> <span class="s1">&#39;grid fees [€/kWh]&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">var_grid_fees</span><span class="p">[</span><span class="n">season</span><span class="p">][</span><span class="n">VarGridFeeSpecs</span><span class="o">.</span><span class="n">LT_VAL</span><span class="p">]</span>
+
+        <span class="n">grid_fees</span> <span class="o">=</span> <span class="n">grid_fees</span><span class="p">[</span><span class="s1">&#39;grid fees [€/kWh]&#39;</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">grid_fees</span> <span class="o">=</span> <span class="n">grid_fees_st</span>
+
+    <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="n">ElPriceCols</span><span class="o">.</span><span class="n">Wholesale</span><span class="p">]</span> <span class="o">=</span> <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="s1">&#39;Preis (EUR/MWh, EUR/tCO2)&#39;</span><span class="p">]</span><span class="o">*</span><span class="mf">0.001</span>
+    <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="n">ElPriceCols</span><span class="o">.</span><span class="n">VarGridFees</span><span class="p">]</span> <span class="o">=</span> <span class="n">grid_fees</span>
+    <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="n">ElPriceCols</span><span class="o">.</span><span class="n">ImportDynTariff</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="n">ElPriceCols</span><span class="o">.</span><span class="n">Wholesale</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid_fees_st</span> <span class="o">+</span> <span class="n">other_taxes_and_charges</span><span class="p">)</span>
+    <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="n">ElPriceCols</span><span class="o">.</span><span class="n">ImportVarGridFeeTariff</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="n">ElPriceCols</span><span class="o">.</span><span class="n">Wholesale</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="o">+</span> <span class="n">grid_fees</span> <span class="o">+</span> <span class="n">other_taxes_and_charges</span><span class="p">)</span>
+    <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="n">ElPriceCols</span><span class="o">.</span><span class="n">ImportDynAndVarGridFeeTariff</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="n">ElPriceCols</span><span class="o">.</span><span class="n">Wholesale</span><span class="p">]</span> <span class="o">+</span> <span class="n">grid_fees</span> <span class="o">+</span> <span class="n">other_taxes_and_charges</span><span class="p">)</span>
+
+    <span class="c1"># Apply VAT</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="p">[</span><span class="n">ElPriceCols</span><span class="o">.</span><span class="n">ImportDynTariff</span><span class="p">,</span> <span class="n">ElPriceCols</span><span class="o">.</span><span class="n">ImportVarGridFeeTariff</span><span class="p">,</span>
+                <span class="n">ElPriceCols</span><span class="o">.</span><span class="n">ImportDynAndVarGridFeeTariff</span><span class="p">]:</span>
+        <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="n">col</span><span class="p">]</span> <span class="o">+=</span> <span class="n">hourly_day_ahead_prices</span><span class="p">[</span><span class="n">col</span><span class="p">]</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">vat</span><span class="o">*</span><span class="n">x</span><span class="p">))</span>
+
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">(</span><span class="n">hourly_day_ahead_prices</span><span class="p">[[</span><span class="n">col</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">ElPriceCols</span><span class="p">]],</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;15min&#39;</span><span class="p">)</span>
+
+    <span class="n">ts</span><span class="o">.</span><span class="n">convert_to_hourly</span><span class="p">()</span>
+
+    <span class="c1"># ts.plot_typeday(ElPriceCols.DayAhead)</span>
+
+    <span class="k">return</span> <span class="n">ts</span></div>
+
+
+<div class="viewcode-block" id="get_dhwcalc_series"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.demand_data.get_dhwcalc_series">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_dhwcalc_series</span><span class="p">(</span><span class="n">nr_of_households</span><span class="p">,</span> <span class="n">l_per_person_day</span><span class="p">,</span> <span class="n">temp_dhw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes a domestic hot water (DHW) time series based on the number of households, daily water</span>
+<span class="sd">    consumption per person, and desired DHW temperature. The function loads a pre-computed DHW</span>
+<span class="sd">    profile and scales it to energy demand according to the given parameters.</span>
+
+<span class="sd">    The pre-computed load profiles have been prepared with DHW Calc from the University of Kassel.</span>
+<span class="sd">    https://www.uni-kassel.de/maschinenbau/institute/thermische-energietechnik/fachgebiete/solar-und-anlagentechnik/downloads.html</span>
+<span class="sd">    Pre-computed load profiles are available for 1 - 10 households a 2 persons, for an average hot water consumption of</span>
+<span class="sd">    30,40 or 50 liters per person per day.</span>
+
+<span class="sd">    :param nr_of_households: Number of households to consider for the DHW calculation.</span>
+<span class="sd">    :type nr_of_households: int</span>
+<span class="sd">    :param l_per_person_day: Daily water consumption per person in liters.</span>
+<span class="sd">    :type l_per_person_day: float</span>
+<span class="sd">    :param temp_dhw: Desired temperature of the domestic hot water in degrees Celsius.</span>
+<span class="sd">    :type temp_dhw: float</span>
+<span class="sd">    :return: Time series data representing the calculated DHW energy demand.</span>
+<span class="sd">    :rtype: Timeseries</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;DHW_</span><span class="si">{</span><span class="n">nr_of_households</span><span class="si">}</span><span class="s2">HH_</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">l_per_person_day</span><span class="p">)</span><span class="si">}</span><span class="s2">LpP_DHW.txt&quot;</span>
+    <span class="n">dhw_profile</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">PATH_TO_WD</span> <span class="o">+</span> <span class="s2">&quot;/data/resources/DHW_calc/&quot;</span> <span class="o">+</span> <span class="n">fname</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">dhw_profile</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;DHW&#39;</span><span class="p">]</span>
+
+    <span class="c1"># calculate energy demand</span>
+    <span class="n">dhw_demand_kwh_per_l</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">TH_CAP_WATER_Wh_per_kg_K</span> <span class="o">/</span> <span class="mi">1000</span> <span class="o">*</span> <span class="p">(</span><span class="n">temp_dhw</span> <span class="o">-</span> <span class="n">const</span><span class="o">.</span><span class="n">TEMP_EARTH</span><span class="p">)</span>
+    <span class="n">dhw_profile</span> <span class="o">*=</span> <span class="n">dhw_demand_kwh_per_l</span>
+
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">(</span><span class="n">dhw_profile</span><span class="p">)</span>
+    <span class="c1"># ts.plot_ts()</span>
+    <span class="c1"># ts.plot_typeday(&#39;DHW&#39;)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;DHW demand: </span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">ts</span><span class="o">.</span><span class="n">get_specs</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">ts</span></div>
+
+
+<div class="viewcode-block" id="get_synpro_el_hh_profiles"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.demand_data.get_synpro_el_hh_profiles">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_synpro_el_hh_profiles</span><span class="p">(</span><span class="n">hourly</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Retrieve and process synthetic electric household electricity load profiles.</span>
+<span class="sd">    The load profiles have been prepared with the synPRO tool from Fraunhofer ISE https://synpro-lastprofile.de/</span>
+
+<span class="sd">    This function processes synthetic electric household profiles for different exemplary users from CSV files in</span>
+<span class="sd">    a specified directory. It reads the data, extracts the relevant electric power</span>
+<span class="sd">    values, and stores them into a Timeseries object. Optionally, it converts the</span>
+<span class="sd">    profiles to hourly intervals depending on the `hourly` parameter.</span>
+
+<span class="sd">    :param hourly: Specifies whether the timeseries should be converted to hourly</span>
+<span class="sd">                   intervals. Defaults to True.</span>
+<span class="sd">    :type hourly: bool</span>
+<span class="sd">    :return: A Timeseries object containing the processed household electric</span>
+<span class="sd">             profiles.</span>
+<span class="sd">    :rtype: Timeseries</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">folder</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">PATH_TO_WD</span><span class="si">}</span><span class="s2">/data/resources/synPRO_households/electric&quot;</span>
+
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">(</span><span class="n">freq</span><span class="o">=</span><span class="s1">&#39;15min&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">folder</span><span class="p">):</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">folder</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="n">fname</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;;&#39;</span><span class="p">)</span>
+        <span class="n">pfname</span> <span class="o">=</span> <span class="n">fname</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ts</span><span class="p">[</span><span class="n">pfname</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s1">&#39;P_el&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span>
+
+        <span class="c1"># ts.plot_typeday(pfname, title=fname)</span>
+
+    <span class="k">if</span> <span class="n">hourly</span><span class="p">:</span>
+        <span class="n">ts</span><span class="o">.</span><span class="n">convert_to_hourly</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">ts</span></div>
+
+
+
+
+<div class="viewcode-block" id="get_el_hh_profiles"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.demand_data.get_el_hh_profiles">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_el_hh_profiles</span><span class="p">(</span><span class="n">el_demand</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">nr_of_households</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">nr_of_household_types</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Timeseries</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    returns a Timeseries containing load profiles for each user type.</span>
+<span class="sd">    The profiles sum up to the demand of one household.</span>
+<span class="sd">    Like that, in a later step a load profile for the building can be calculated by adding up</span>
+<span class="sd">    exemplary daily profiles for each household.</span>
+<span class="sd">    This leads to more homogenous load profiles with a rising number of modelled households.</span>
+
+<span class="sd">    :param el_demand:</span>
+<span class="sd">    :param nr_of_households:</span>
+<span class="sd">    :param nr_of_household_types:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">nr_of_household_types</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">nr_of_household_types</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">ElLoadCols</span><span class="o">.</span><span class="n">FULLTIME_EMPLOYEES</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="n">nr_of_households</span><span class="p">,</span>
+            <span class="n">ElLoadCols</span><span class="o">.</span><span class="n">OVER_65</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">ElLoadCols</span><span class="o">.</span><span class="n">FAMILY</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">ElLoadCols</span><span class="o">.</span><span class="n">SINGLE_UNDER_30</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">assert</span> <span class="nb">sum</span><span class="p">(</span><span class="n">nr</span> <span class="k">for</span> <span class="n">nr</span> <span class="ow">in</span> <span class="n">nr_of_household_types</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">==</span> <span class="n">nr_of_households</span><span class="p">,</span> \
+        <span class="s2">&quot;nr of households for different user types doesn&#39;t match total number of households&quot;</span>
+    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">nr</span><span class="p">)</span><span class="o">.</span><span class="n">is_integer</span><span class="p">()</span> <span class="k">for</span> <span class="n">nr</span> <span class="ow">in</span> <span class="n">nr_of_household_types</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> \
+        <span class="s2">&quot;nr_of_synPro_hh_1 .. 4 have to be integers&quot;</span>
+
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">const</span><span class="o">.</span><span class="n">PRECALC_FOLDER</span> <span class="o">+</span> <span class="s2">&quot;synpro_el_hh_normalized.pkl&quot;</span><span class="p">):</span>
+        <span class="n">ts_std</span> <span class="o">=</span> <span class="n">load_pickle</span><span class="p">(</span><span class="s2">&quot;synpro_el_hh_normalized&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">ts_std</span> <span class="o">=</span> <span class="n">get_synpro_el_hh_profiles</span><span class="p">(</span><span class="n">hourly</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># normalize</span>
+        <span class="n">ts_std</span><span class="o">.</span><span class="n">normalize</span><span class="p">()</span>
+        <span class="c1"># store for later usage</span>
+        <span class="n">dump_pickle</span><span class="p">(</span><span class="s2">&quot;synpro_el_hh_normalized&quot;</span><span class="p">,</span> <span class="n">ts_std</span><span class="p">)</span>
+
+    <span class="c1"># apply user shares and normalize on demand per household</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">hh_type</span><span class="p">,</span> <span class="n">hh_count</span> <span class="ow">in</span> <span class="n">nr_of_household_types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">hh_count</span><span class="p">)):</span>
+            <span class="n">ts</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">hh_type</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts_std</span><span class="p">[</span><span class="n">hh_type</span><span class="p">]</span> <span class="o">*</span> <span class="mi">1</span><span class="o">/</span><span class="n">nr_of_households</span> <span class="o">*</span> <span class="n">el_demand</span>
+
+    <span class="k">return</span> <span class="n">ts</span></div>
+
+
+<div class="viewcode-block" id="calc_flex_dem_from_ts_red_inputs"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.demand_data.calc_flex_dem_from_ts_red_inputs">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_flex_dem_from_ts_red_inputs</span><span class="p">(</span><span class="n">ts_red_inputs</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates flexible energy demands from a given charging data DataFrame.</span>
+
+<span class="sd">    This function processes the input DataFrame containing flexible charging demands for</span>
+<span class="sd">    electric vehicles (EVs). It identifies charging blocks for each EV using their</span>
+<span class="sd">    charging status, and computes the demand and associated periods for each block.</span>
+<span class="sd">    The results are then aggregated into a dictionary.</span>
+
+<span class="sd">    :param ts_red_inputs: A pandas DataFrame containing flexible charging data. The column</span>
+<span class="sd">                       names should follow the format &quot;&lt;vehicle_id&gt;_&lt;metric&gt;&quot;, where</span>
+<span class="sd">                       &lt;metric&gt; includes &quot;charging_status&quot; and &quot;delivered_energy&quot;.</span>
+<span class="sd">    :type ts_red_inputs: pd.DataFrame</span>
+<span class="sd">    :return: A dictionary where each key corresponds to a charging block in the format</span>
+<span class="sd">             &quot;&lt;vehicle_id&gt;_&lt;block_id&gt;&quot;, and the value is another dictionary with</span>
+<span class="sd">             &#39;period&#39; (indices of periods in the block) and &#39;demand&#39; (energy delivered</span>
+<span class="sd">             in the block).</span>
+<span class="sd">    :rtype: dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># get list of vehicles with flexible charging demands</span>
+    <span class="n">evs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span><span class="n">col</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;flex&quot;</span><span class="p">]</span> <span class="p">))</span>
+
+    <span class="n">flex_demands</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">ev</span> <span class="ow">in</span> <span class="n">evs</span><span class="p">:</span>
+        <span class="n">charge_block_idx</span> <span class="o">=</span> <span class="n">identify_blocks</span><span class="p">(</span><span class="n">ts_red_inputs</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;flex_</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_charging_status&quot;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">block</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">charge_block_idx</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">flex_demands</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">block</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;period&#39;</span><span class="p">:</span> <span class="n">idx</span><span class="p">,</span>
+                <span class="s1">&#39;demand&#39;</span><span class="p">:</span> <span class="n">ts_red_inputs</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="sa">f</span><span class="s2">&quot;flex_</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_delivered_energy&quot;</span><span class="p">],</span>
+            <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">flex_demands</span></div>
+
+
+<div class="viewcode-block" id="calc_emob_demands"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.demand_data.calc_emob_demands">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_emob_demands</span><span class="p">(</span><span class="n">ev_data</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Timeseries</span><span class="p">,</span> <span class="n">Timeseries</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculate e-mobility charging demands based on electric vehicle data.</span>
+
+<span class="sd">    This function processes electric vehicle (EV) data to calculate both static (fixed)</span>
+<span class="sd">    and flexible charging demands over specified charging periods. It computes the charging</span>
+<span class="sd">    statuses and energy delivered for different charge types flat, fast, and optimized</span>
+<span class="sd">    charging. Depending on the charging type, it determines whether the charging energy</span>
+<span class="sd">    distribution is flexible or fixed during the charging period.</span>
+
+<span class="sd">    :param ev_data: Dictionary containing electric vehicle data. The data includes details like</span>
+<span class="sd">        charging type, driving distance, energy consumption rate (kWh/100km), charging periods,</span>
+<span class="sd">        and other relevant parameters for charging demands of each vehicle, e.g.</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;ev1&#39;: {</span>
+<span class="sd">                &#39;max_p&#39;: 20,</span>
+<span class="sd">                &#39;period&#39;: &#39;18-7&#39;,</span>
+<span class="sd">                &#39;drivedist&#39;: 50,</span>
+<span class="sd">                &#39;kwhper100km&#39;: 20,</span>
+<span class="sd">                &#39;daysinweek&#39;: &quot;1,2,3,4,5&quot;,</span>
+<span class="sd">                &#39;chargetype&#39;: &#39;optimized&#39;</span>
+<span class="sd">            },</span>
+<span class="sd">            &#39;ev2&#39;: {... above params must be given...},</span>
+<span class="sd">        }</span>
+<span class="sd">    :return: A tuple of two Timeseries objects:</span>
+<span class="sd">        - The first Timeseries object contains static charging demands, with details of</span>
+<span class="sd">          non-flexible loads and energy consumption during specified periods.</span>
+<span class="sd">        - The second Timeseries object includes flexible charging demands, incorporating</span>
+<span class="sd">          the capability to distribute charging energy more flexibly across the periods.</span>
+<span class="sd">    :rtype: tuple[Timeseries, Timeseries]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">stat_demands</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">()</span>
+    <span class="n">flex_demands</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">ev</span> <span class="ow">in</span> <span class="n">ev_data</span><span class="p">:</span>
+        <span class="n">ts</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">()</span>
+        <span class="n">charge_start</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ev_data</span><span class="p">[</span><span class="n">ev</span><span class="p">][</span><span class="s1">&#39;period&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">charge_end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ev_data</span><span class="p">[</span><span class="n">ev</span><span class="p">][</span><span class="s1">&#39;period&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">ch_period_len</span> <span class="o">=</span> <span class="n">calc_hours_in_period</span><span class="p">((</span><span class="n">charge_start</span><span class="p">,</span> <span class="n">charge_end</span><span class="p">))</span>
+        <span class="n">ch_energy</span> <span class="o">=</span> <span class="p">(</span><span class="n">ev_data</span><span class="p">[</span><span class="n">ev</span><span class="p">][</span><span class="s1">&#39;drivedist&#39;</span><span class="p">]</span>
+                     <span class="o">*</span><span class="n">ev_data</span><span class="p">[</span><span class="n">ev</span><span class="p">][</span><span class="s1">&#39;kwhper100km&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">100</span><span class="p">)</span>
+        <span class="n">daysofweek</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">dow</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span> <span class="k">for</span> <span class="n">dow</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">ev_data</span><span class="p">[</span><span class="n">ev</span><span class="p">][</span><span class="s1">&#39;daysinweek&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+        <span class="n">idx_ch_start</span> <span class="o">=</span> <span class="n">stat_demands</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">hour_periods</span><span class="o">=</span><span class="p">[(</span><span class="n">charge_start</span><span class="p">,</span> <span class="n">charge_start</span><span class="o">+</span><span class="mi">1</span><span class="p">)],</span> <span class="n">daysofweek</span><span class="o">=</span><span class="n">daysofweek</span><span class="p">)</span><span class="o">.</span><span class="n">index</span>
+
+        <span class="n">ts</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_charging_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">i_start</span> <span class="ow">in</span> <span class="n">idx_ch_start</span><span class="p">:</span>
+            <span class="n">i_end</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">i_start</span><span class="o">+</span><span class="n">ch_period_len</span><span class="p">,</span> <span class="n">ts</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">ts</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i_start</span><span class="p">:</span><span class="n">i_end</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_charging_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+
+        <span class="c1"># get the indices for each charging block</span>
+        <span class="n">charge_block_idx</span> <span class="o">=</span> <span class="n">identify_blocks</span><span class="p">(</span><span class="n">ts</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_charging_status&quot;</span><span class="p">])</span>
+
+        <span class="c1"># optimized charging: energy has to be delivered somewhere in period, but is flexible when</span>
+        <span class="k">if</span> <span class="n">ev_data</span><span class="p">[</span><span class="n">ev</span><span class="p">][</span><span class="s1">&#39;chargetype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">EmobChargetype</span><span class="o">.</span><span class="n">optimized</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+            <span class="n">flex_demands</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;flex_</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_charging_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_charging_status&quot;</span><span class="p">]</span>
+            <span class="n">flex_demands</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;flex_</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_delivered_energy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">block</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">charge_block_idx</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">flex_demands</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="sa">f</span><span class="s2">&quot;flex_</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_delivered_energy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ch_energy</span>
+
+        <span class="c1"># flat charging: constant charging throughout charing period</span>
+        <span class="k">elif</span> <span class="n">ev_data</span><span class="p">[</span><span class="n">ev</span><span class="p">][</span><span class="s1">&#39;chargetype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">EmobChargetype</span><span class="o">.</span><span class="n">flat</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+            <span class="n">stat_demands</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_charging_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_charging_status&quot;</span><span class="p">]</span>
+            <span class="n">stat_demands</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_load&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">block</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">charge_block_idx</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">stat_demands</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_load&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ch_energy</span><span class="o">/</span><span class="n">ch_period_len</span>
+
+        <span class="c1"># fast charging: charing with full power until full</span>
+        <span class="k">elif</span> <span class="n">ev_data</span><span class="p">[</span><span class="n">ev</span><span class="p">][</span><span class="s1">&#39;chargetype&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">EmobChargetype</span><span class="o">.</span><span class="n">fast</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+            <span class="n">stat_demands</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_charging_status&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ts</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_charging_status&quot;</span><span class="p">]</span>
+            <span class="n">stat_demands</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_load&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">ch_power</span> <span class="o">=</span> <span class="n">ev_data</span><span class="p">[</span><span class="n">ev</span><span class="p">][</span><span class="s1">&#39;max_p&#39;</span><span class="p">]</span>
+            <span class="n">max_ch_steps</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">ch_energy</span> <span class="o">/</span> <span class="n">ch_power</span> <span class="o">*</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span><span class="p">)</span>
+            <span class="n">ch_power_rest</span> <span class="o">=</span> <span class="n">ch_energy</span> <span class="o">*</span> <span class="n">const</span><span class="o">.</span><span class="n">TS_PER_HOUR</span> <span class="o">-</span> <span class="n">max_ch_steps</span> <span class="o">*</span> <span class="n">ch_power</span>
+            <span class="k">for</span> <span class="n">block</span><span class="p">,</span> <span class="n">idx</span> <span class="ow">in</span> <span class="n">charge_block_idx</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">max_p_idx</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">max_ch_steps</span><span class="p">)]</span>
+                <span class="n">rest_idx</span> <span class="o">=</span> <span class="p">[</span><span class="n">idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">max_ch_steps</span><span class="p">]</span>
+                <span class="n">stat_demands</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">max_p_idx</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_load&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ch_power</span>
+                <span class="n">stat_demands</span><span class="o">.</span><span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">rest_idx</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">ev</span><span class="si">}</span><span class="s2">_load&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ch_power_rest</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid charge type. Not in </span><span class="si">{</span><span class="p">[</span><span class="n">e</span><span class="o">.</span><span class="n">value</span><span class="w"> </span><span class="k">for</span><span class="w"> </span><span class="n">e</span><span class="w"> </span><span class="ow">in</span><span class="w"> </span><span class="n">EmobChargetype</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">stat_demands</span><span class="p">[</span><span class="n">ElLoadCols</span><span class="o">.</span><span class="n">TOTAL_EV_STAT</span><span class="p">]</span> <span class="o">=</span> <span class="n">stat_demands</span><span class="p">[</span>
+        <span class="p">[</span><span class="n">col</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">stat_demands</span><span class="o">.</span><span class="n">data_columns</span> <span class="k">if</span> <span class="n">col</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;load&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">stat_demands</span><span class="p">,</span> <span class="n">flex_demands</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">get_elec_co2_intensity</span><span class="p">()</span>
+    <span class="c1"># price_ts = get_var_elec_prices(</span>
+    <span class="c1">#     var_grid_fees={</span>
+    <span class="c1">#         Season.Summer: {</span>
+    <span class="c1">#             VarGridFeeSpecs.HT_WINDOWS: [(17,20)],</span>
+    <span class="c1">#             VarGridFeeSpecs.HT_VAL: 2.0,</span>
+    <span class="c1">#             VarGridFeeSpecs.LT_WINDOWS: [(11,15)],</span>
+    <span class="c1">#             VarGridFeeSpecs.LT_VAL: 0.1,</span>
+    <span class="c1">#         },</span>
+    <span class="c1">#         Season.Transition: {</span>
+    <span class="c1">#             VarGridFeeSpecs.HT_WINDOWS: [(17,20)],</span>
+    <span class="c1">#             VarGridFeeSpecs.HT_VAL: 2.0,</span>
+    <span class="c1">#             VarGridFeeSpecs.LT_WINDOWS: [],</span>
+    <span class="c1">#             VarGridFeeSpecs.LT_VAL: 0.1,</span>
+    <span class="c1">#         },</span>
+    <span class="c1">#         Season.Winter: {</span>
+    <span class="c1">#             VarGridFeeSpecs.HT_WINDOWS: [(6,8), (17,20)],</span>
+    <span class="c1">#             VarGridFeeSpecs.HT_VAL: 2.0,</span>
+    <span class="c1">#             VarGridFeeSpecs.LT_WINDOWS: [(23,3)],</span>
+    <span class="c1">#             VarGridFeeSpecs.LT_VAL: 0.1,</span>
+    <span class="c1">#         },</span>
+    <span class="c1">#     }</span>
+    <span class="c1"># )</span>
+    <span class="c1"># price_ts = pd.DataFrame()</span>
+    <span class="c1"># for year in [2019,2020,2021,2022,2023,2024]:</span>
+    <span class="c1">#     price_ts[year] = get_var_elec_prices(year=year)[ElPriceCols.FeedIn]</span>
+    <span class="c1"># price_ts.astype(float).boxplot(column=price_ts.columns.tolist())</span>
+    <span class="c1"># plt.show()</span>
+
+    <span class="c1"># get_dhwcalc_series(nr_of_households=10, l_per_person_day=30,temp_dhw=65)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

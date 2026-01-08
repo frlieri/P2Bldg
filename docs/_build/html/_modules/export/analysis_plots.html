@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>export.analysis_plots &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">export.analysis_plots</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for export.analysis_plots</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">src/export/analysis_plots.py</span>
+
+<span class="sd">Plotting utilities to visualize time-series, typical-day analyses and diagnostics</span>
+<span class="sd">for building and battery optimisation workflows. The module provides convenience</span>
+<span class="sd">wrappers around Plotly (primary), with some Matplotlib/Seaborn helpers for</span>
+<span class="sd">statistical plots.</span>
+
+<span class="sd">Main responsibilities:</span>
+
+<span class="sd">- Flexible time-series plotting (lines, stacked areas, secondary y-axis) with</span>
+<span class="sd">  `plot_timeseries`.</span>
+<span class="sd">- Composition of multiple Plotly figures into a subplot grid while avoiding</span>
+<span class="sd">  duplicate legend entries via `plot_subplots`.</span>
+<span class="sd">- Typical-day quantile calculation and plotting helpers:</span>
+<span class="sd">  `calc_dayprofile_quantiles`, `plot_quantiles`, `plot_typical_day_quantiles`,</span>
+<span class="sd">  and `compare_typical_day_quantiles`.</span>
+<span class="sd">- Scatterplots with linear regression overlays using `scatterplot`.</span>
+<span class="sd">- Domain-specific visualisations such as `plot_heat_curve` (temperatures, COP)</span>
+<span class="sd">  and `plot_seasonal_boxplots` (hourly boxplots by season).</span>
+
+<span class="sd">Key behaviours and expectations:</span>
+
+<span class="sd">- Input data: pandas `DataFrame` or `Series` with a datetime-like index.</span>
+<span class="sd">- Most functions return a Plotly `go.Figure` and optionally call `.show()` by</span>
+<span class="sd">  default (display side-effect). They do not perform file I/O.</span>
+<span class="sd">- Several functions accept plotting options to control styles, stacking and</span>
+<span class="sd">  secondary axes; quantile helpers expect hourly/resampled data for typical-day</span>
+<span class="sd">  aggregation.</span>
+
+<span class="sd">Dependencies:</span>
+
+<span class="sd">- pandas, numpy, plotly, seaborn, matplotlib and project constants from</span>
+<span class="sd">  `src.const` (e.g. `NOM_TEMP_INDOOR`, `TimeseriesCols`).</span>
+
+<span class="sd">Intended use:</span>
+
+<span class="sd">- Interactive exploration, dashboarding and figure generation for analysis and</span>
+<span class="sd">  reporting. Functions are lightweight wrappers aimed at consistent, reusable</span>
+<span class="sd">  visual output for downstream notebooks and reporting scripts.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">plotly.subplots</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_subplots</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.const</span><span class="w"> </span><span class="kn">import</span> <span class="n">NOM_TEMP_INDOOR</span><span class="p">,</span> <span class="n">TimeseriesCols</span>
+
+
+<div class="viewcode-block" id="plot_timeseries"><a class="viewcode-back" href="../../export.html#export.analysis_plots.plot_timeseries">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_timeseries</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">|</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">plot_options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">y_range</span><span class="p">:</span> <span class="nb">list</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots time series data from a DataFrame using Plotly.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    df (pd.DataFrame): DataFrame with time series data. Index should be the time index.</span>
+<span class="sd">    plot_options (dict): Optional dictionary to specify plot types, linestyles, and colors for each column.</span>
+<span class="sd">                         Example:</span>
+<span class="sd">                         {</span>
+<span class="sd">                             &#39;column1&#39;: {&#39;type&#39;: &#39;line&#39;, &#39;line_style&#39;: &#39;dash&#39;, &#39;color&#39;: &#39;blue&#39;},</span>
+<span class="sd">                             &#39;column2&#39;: {&#39;type&#39;: &#39;area&#39;, &#39;color&#39;: &#39;red&#39;, &#39;fill&#39;: &#39;tonexty&#39;}</span>
+<span class="sd">                         }</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    fig (go.Figure): Plotly Figure object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="c1"># Default plot options</span>
+        <span class="n">plot_type</span> <span class="o">=</span> <span class="s1">&#39;line&#39;</span>
+        <span class="n">line_style</span> <span class="o">=</span> <span class="s1">&#39;solid&#39;</span>
+        <span class="n">fill</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">color</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">stackgroup</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">pattern_shape</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">secondary_y</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># Default to primary y-axis</span>
+
+        <span class="k">if</span> <span class="n">plot_options</span> <span class="ow">and</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">plot_options</span><span class="p">:</span>
+            <span class="n">col_options</span> <span class="o">=</span> <span class="n">plot_options</span><span class="p">[</span><span class="n">col</span><span class="p">]</span>
+            <span class="n">plot_type</span> <span class="o">=</span> <span class="n">col_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="s1">&#39;line&#39;</span><span class="p">)</span>
+            <span class="n">line_style</span> <span class="o">=</span> <span class="n">col_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;line_style&#39;</span><span class="p">,</span> <span class="s1">&#39;solid&#39;</span><span class="p">)</span>
+            <span class="n">fill</span> <span class="o">=</span> <span class="n">col_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;fill&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">color</span> <span class="o">=</span> <span class="n">col_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;color&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">stackgroup</span> <span class="o">=</span> <span class="n">col_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stackgroup&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">pattern_shape</span> <span class="o">=</span> <span class="n">col_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pattern_shape&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="n">secondary_y</span> <span class="o">=</span> <span class="n">col_options</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;secondary_y&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">plot_type</span> <span class="o">==</span> <span class="s1">&#39;line&#39;</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
+                <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">dash</span><span class="o">=</span><span class="n">line_style</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">),</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">col</span><span class="p">,</span>
+                <span class="n">yaxis</span><span class="o">=</span><span class="s2">&quot;y2&quot;</span> <span class="k">if</span> <span class="n">secondary_y</span> <span class="k">else</span> <span class="s2">&quot;y1&quot;</span>
+            <span class="p">))</span>
+        <span class="k">elif</span> <span class="n">plot_type</span> <span class="o">==</span> <span class="s1">&#39;area&#39;</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span>
+                <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">),</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">col</span><span class="p">,</span>
+                <span class="n">stackgroup</span><span class="o">=</span><span class="n">stackgroup</span><span class="p">,</span>
+                <span class="n">fillpattern</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">pattern_shape</span><span class="p">)</span> <span class="k">if</span> <span class="n">pattern_shape</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+                <span class="n">yaxis</span><span class="o">=</span><span class="s2">&quot;y2&quot;</span> <span class="k">if</span> <span class="n">secondary_y</span> <span class="k">else</span> <span class="s2">&quot;y1&quot;</span>
+            <span class="p">))</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">xaxis_title</span><span class="o">=</span><span class="s1">&#39;Hours&#39;</span><span class="p">,</span>
+        <span class="n">yaxis_title</span><span class="o">=</span><span class="s1">&#39;P in kW&#39;</span><span class="p">,</span>
+        <span class="n">yaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="nb">range</span><span class="o">=</span><span class="n">y_range</span>
+        <span class="p">),</span>
+        <span class="n">yaxis2</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="s2">&quot;EUR/kWh_el or kgCO2eq./kWh_el&quot;</span><span class="p">,</span>
+            <span class="n">overlaying</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span>  <span class="c1"># Overlay the secondary y-axis on the same plot</span>
+            <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span>
+        <span class="p">),</span>
+        <span class="n">xaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">tickmode</span><span class="o">=</span><span class="s1">&#39;array&#39;</span><span class="p">,</span>
+            <span class="n">tickvals</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">[::</span><span class="mi">24</span><span class="p">],</span>
+        <span class="p">),</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+<div class="viewcode-block" id="plot_subplots"><a class="viewcode-back" href="../../export.html#export.analysis_plots.plot_subplots">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_subplots</span><span class="p">(</span><span class="n">figures</span><span class="p">,</span> <span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="p">,</span> <span class="n">y_ranges</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Arranges multiple Plotly figures as subplots with individual titles and unique legend items.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    figures (list): List of Plotly Figure objects.</span>
+<span class="sd">    rows (int): Number of rows in the subplot layout.</span>
+<span class="sd">    cols (int): Number of columns in the subplot layout.</span>
+<span class="sd">    y_ranges (list): List of tuples specifying (ymin, ymax) for each subplot.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    fig (go.Figure): Combined Plotly Figure object with subplots.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">figures</span><span class="p">)</span> <span class="o">!=</span> <span class="n">rows</span> <span class="o">*</span> <span class="n">cols</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The number of figures must match the number of subplots (rows * cols).&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">y_ranges</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">y_ranges</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">figures</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The number of y_ranges must match the number of figures.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Extract titles from the individual figures</span>
+    <span class="n">titles</span> <span class="o">=</span> <span class="p">[</span><span class="n">figure</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">text</span> <span class="k">for</span> <span class="n">figure</span> <span class="ow">in</span> <span class="n">figures</span><span class="p">]</span>
+
+    <span class="c1"># Create a subplot figure</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="n">rows</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="n">cols</span><span class="p">,</span> <span class="n">subplot_titles</span><span class="o">=</span><span class="n">titles</span><span class="p">)</span>
+
+    <span class="c1"># Track unique legend items</span>
+    <span class="n">unique_legends</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="c1"># Iterate through figures and add them to the subplot figure</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">individual_fig</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">figures</span><span class="p">):</span>
+        <span class="n">row</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">//</span> <span class="n">cols</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">col</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span> <span class="o">%</span> <span class="n">cols</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="k">for</span> <span class="n">trace</span> <span class="ow">in</span> <span class="n">individual_fig</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="c1"># Add trace name to the unique legend set</span>
+            <span class="k">if</span> <span class="n">trace</span><span class="o">.</span><span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">unique_legends</span><span class="p">:</span>
+                <span class="n">unique_legends</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">trace</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">show_legend</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">show_legend</span> <span class="o">=</span> <span class="kc">False</span>
+
+            <span class="c1"># Add the trace to the subplot</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">trace</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">showlegend</span><span class="o">=</span><span class="n">show_legend</span><span class="p">),</span> <span class="n">row</span><span class="o">=</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+
+        <span class="c1"># Set y-range for each subplot if provided</span>
+        <span class="k">if</span> <span class="n">y_ranges</span><span class="p">:</span>
+            <span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span> <span class="o">=</span> <span class="n">y_ranges</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="n">ymin</span><span class="p">,</span> <span class="n">ymax</span><span class="p">],</span> <span class="n">row</span><span class="o">=</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+
+        <span class="c1"># Find the correct x-axis and y-axis references for this subplot</span>
+        <span class="n">xaxis_ref</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;xaxis</span><span class="si">{</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="si">}</span><span class="s1">&#39;</span>  <span class="c1"># xaxis1, xaxis2, etc.</span>
+        <span class="n">yaxis_ref</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;yaxis</span><span class="si">{</span><span class="p">(</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mi">0</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="si">}</span><span class="s1">&#39;</span>  <span class="c1"># yaxis1, yaxis2, etc.</span>
+
+        <span class="c1"># Update the X-axis for the subplot</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">({</span>
+            <span class="n">xaxis_ref</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">title_text</span><span class="o">=</span><span class="n">individual_fig</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>  <span class="c1"># Copy title</span>
+                <span class="n">tickmode</span><span class="o">=</span><span class="n">individual_fig</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">tickmode</span><span class="p">,</span>  <span class="c1"># Copy tickmode</span>
+                <span class="n">tickvals</span><span class="o">=</span><span class="n">individual_fig</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">tickvals</span><span class="p">,</span>  <span class="c1"># Copy tickvals</span>
+            <span class="p">),</span>
+            <span class="n">yaxis_ref</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="n">title_text</span><span class="o">=</span><span class="n">individual_fig</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>  <span class="c1"># Copy title</span>
+                <span class="nb">range</span><span class="o">=</span><span class="n">y_ranges</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="p">})</span>
+
+        <span class="c1"># Update the secondary Y-axis (right side, overlaying primary Y-axis) if it exists</span>
+        <span class="k">if</span> <span class="s1">&#39;yaxis2&#39;</span> <span class="ow">in</span> <span class="n">individual_fig</span><span class="o">.</span><span class="n">layout</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">({</span>
+                <span class="n">yaxis_ref</span> <span class="o">+</span> <span class="s1">&#39;2&#39;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span>
+                    <span class="n">title_text</span><span class="o">=</span><span class="n">individual_fig</span><span class="o">.</span><span class="n">layout</span><span class="o">.</span><span class="n">yaxis2</span><span class="o">.</span><span class="n">title</span><span class="o">.</span><span class="n">text</span><span class="p">,</span>  <span class="c1"># Copy title for secondary axis</span>
+                    <span class="n">overlaying</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span>  <span class="c1"># Overlay on primary Y-axis</span>
+                    <span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">,</span>  <span class="c1"># Display on right side</span>
+                    <span class="nb">range</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">),</span>
+                <span class="p">)</span>
+            <span class="p">})</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">show</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+<div class="viewcode-block" id="plot_typical_day_quantiles"><a class="viewcode-back" href="../../export.html#export.analysis_plots.plot_typical_day_quantiles">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_typical_day_quantiles</span><span class="p">(</span><span class="n">ts</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">quantiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Typedayplot&#39;</span><span class="p">,</span> <span class="n">yaxis_title</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                               <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">yaxis_range</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots a typical day quantile analysis of the provided time series data. This function calculates</span>
+<span class="sd">    the quantiles for hourly data based on the input time series, creates a plot using the specified</span>
+<span class="sd">    or default quantiles, and visualizes the results with appropriate layout and titles. It also</span>
+<span class="sd">    allows customization of the figure, titles, and y-axis range based on provided inputs.</span>
+
+<span class="sd">    :param ts: Series containing time-series data to be analyzed.</span>
+<span class="sd">    :type ts: pandas.Series</span>
+<span class="sd">    :param quantiles: List of desired quantile values to compute and plot. Defaults to None.</span>
+<span class="sd">    :type quantiles: list, optional</span>
+<span class="sd">    :param title: Title of the plot. Defaults to &#39;Typedayplot&#39;.</span>
+<span class="sd">    :type title: str, optional</span>
+<span class="sd">    :param yaxis_title: Label for the y-axis of the plot. Defaults to an empty string.</span>
+<span class="sd">    :type yaxis_title: str, optional</span>
+<span class="sd">    :param fig: Existing figure to use for the plot. If None, a new figure is created. Defaults to None.</span>
+<span class="sd">    :type fig: plotly.graph_objs._figure.Figure, optional</span>
+<span class="sd">    :param row: Row index for locating the plot on a subplot. Applicable only if a figure is provided.</span>
+<span class="sd">                 Defaults to None.</span>
+<span class="sd">    :type row: int, optional</span>
+<span class="sd">    :param col: Column index for locating the plot on a subplot. Applicable only if a figure is provided.</span>
+<span class="sd">                 Defaults to None.</span>
+<span class="sd">    :type col: int, optional</span>
+<span class="sd">    :param yaxis_range: Range for the y-axis in the plot. If None, the range is determined automatically.</span>
+<span class="sd">                         Defaults to None.</span>
+<span class="sd">    :type yaxis_range: tuple, optional</span>
+<span class="sd">    :return: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">quan_df</span> <span class="o">=</span> <span class="n">calc_dayprofile_quantiles</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">quantiles</span><span class="p">)</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_quantiles</span><span class="p">(</span><span class="n">quan_df</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">yaxis_range</span><span class="o">=</span><span class="n">yaxis_range</span><span class="p">)</span>
+
+    <span class="c1"># Set layout</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+                      <span class="n">xaxis_title</span><span class="o">=</span><span class="s1">&#39;Hour of the Day&#39;</span><span class="p">,</span>
+                      <span class="n">yaxis_title</span><span class="o">=</span><span class="n">yaxis_title</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="compare_typical_day_quantiles"><a class="viewcode-back" href="../../export.html#export.analysis_plots.compare_typical_day_quantiles">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">compare_typical_day_quantiles</span><span class="p">(</span><span class="n">ts_list</span><span class="p">:</span> <span class="p">[</span><span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">],</span> <span class="n">quantiles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">subplot_titles</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Typedayplots&#39;</span><span class="p">,</span>
+                                  <span class="n">yaxis_title</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">yaxis_range</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates a comparative visualization of quantiles for multiple time series datasets.</span>
+
+<span class="sd">    This function compares the typical day&#39;s quantiles for multiple time series datasets</span>
+<span class="sd">    by plotting individual subplots for each dataset and its respective quantiles. The</span>
+<span class="sd">    layout of the figure and other aspects such as titles, axis labels, and ranges can</span>
+<span class="sd">    be customized.</span>
+
+<span class="sd">    :param ts_list: A list of pandas Series objects representing the time series data to</span>
+<span class="sd">        compare.</span>
+<span class="sd">    :param quantiles: A list of desired quantiles for comparison. If None, default quantiles</span>
+<span class="sd">        are used.</span>
+<span class="sd">    :param subplot_titles: A list of titles for the individual subplots. Its length must</span>
+<span class="sd">        match the number of datasets in `ts_list`.</span>
+<span class="sd">    :param title: The main title for the entire figure. Default is &#39;Typedayplots&#39;.</span>
+<span class="sd">    :param yaxis_title: The title of the y-axis for the entire figure. Default is an empty</span>
+<span class="sd">        string.</span>
+<span class="sd">    :param fig: An existing figure object to plot onto. If None, a new figure is created.</span>
+<span class="sd">    :param row: The row position in the grid layout of the figure where the plots will</span>
+<span class="sd">        be drawn. Default is None.</span>
+<span class="sd">    :param col: The column position in the grid layout of the figure where the plots will</span>
+<span class="sd">        be drawn. Default is None.</span>
+<span class="sd">    :param yaxis_range: Range for the y-axis, specified as a list [min, max]. If None,</span>
+<span class="sd">        it is automatically calculated.</span>
+<span class="sd">    :return: Returns None. Displays the generated plot.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">subplot_titles</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">subplot_titles</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">ts_list</span><span class="p">),</span> <span class="s2">&quot;number of datasets and subplot titles doesn&#39;t match&quot;</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">make_subplots</span><span class="p">(</span><span class="n">rows</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cols</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">ts_list</span><span class="p">),</span> <span class="n">subplot_titles</span><span class="o">=</span><span class="n">subplot_titles</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ts</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ts_list</span><span class="p">):</span>
+        <span class="n">quan_df</span> <span class="o">=</span> <span class="n">calc_dayprofile_quantiles</span><span class="p">(</span><span class="n">ts</span><span class="p">,</span> <span class="n">quantiles</span><span class="p">)</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plot_quantiles</span><span class="p">(</span><span class="n">quan_df</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">yaxis_range</span><span class="o">=</span><span class="n">yaxis_range</span><span class="p">)</span>
+
+    <span class="c1"># Set layout</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+                      <span class="n">xaxis_title</span><span class="o">=</span><span class="s1">&#39;Hour of the Day&#39;</span><span class="p">,</span>
+                      <span class="n">yaxis_title</span><span class="o">=</span><span class="n">yaxis_title</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">yaxis_range</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">min_val</span><span class="p">,</span> <span class="n">max_val</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">ts</span><span class="o">.</span><span class="n">min</span><span class="p">()</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">ts_list</span><span class="p">]),</span> <span class="nb">max</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="k">for</span> <span class="n">ts</span> <span class="ow">in</span> <span class="n">ts_list</span><span class="p">)</span>
+        <span class="n">yaxis_range</span> <span class="o">=</span> <span class="p">[</span><span class="n">min_val</span><span class="o">-</span><span class="mf">0.1</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="n">min_val</span><span class="p">),</span> <span class="n">max_val</span><span class="o">+</span><span class="mf">0.1</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="n">max_val</span><span class="p">)]</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="nb">range</span><span class="o">=</span><span class="n">yaxis_range</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="calc_dayprofile_quantiles"><a class="viewcode-back" href="../../export.html#export.analysis_plots.calc_dayprofile_quantiles">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_dayprofile_quantiles</span><span class="p">(</span><span class="n">ts</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">,</span> <span class="n">quantiles</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">quantiles</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">quantiles</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">,</span> <span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
+
+    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">quantiles</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="p">[</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">quantiles</span> <span class="k">if</span> <span class="n">q</span> <span class="o">==</span> <span class="mf">0.5</span><span class="p">],</span> \
+        <span class="s2">&quot;Invalid quantiles gives. Length of list has to be odd number and list has to contain 0.5 for median&quot;</span>
+
+    <span class="c1"># Calculate quantiles</span>
+    <span class="k">return</span> <span class="n">ts</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">time</span><span class="p">)</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">quantiles</span><span class="p">)</span><span class="o">.</span><span class="n">unstack</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="plot_quantiles"><a class="viewcode-back" href="../../export.html#export.analysis_plots.plot_quantiles">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_quantiles</span><span class="p">(</span><span class="n">quan_df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">fig</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">row</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">yaxis_range</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plots quantile ranges and median from a given DataFrame on a figure using Plotly.</span>
+
+<span class="sd">    This function creates a visual representation of quantiles from a DataFrame, allowing you</span>
+<span class="sd">    to fill areas between quantile ranges and overlay a median line. It supports both standalone</span>
+<span class="sd">    figures and subplots with specified rows and columns.</span>
+
+<span class="sd">    :param quan_df: A pandas DataFrame where the index represents the time component for the x-axis</span>
+<span class="sd">        and the columns represent the quantiles to plot.</span>
+<span class="sd">    :param fig: An optional Plotly Figure object. Defaults to None, in which case a new figure is</span>
+<span class="sd">        created.</span>
+<span class="sd">    :param row: Integer representing the row number in the subplot layout where the plot will</span>
+<span class="sd">        be added (optional, but required if `fig` is provided).</span>
+<span class="sd">    :param col: Integer representing the column number in the subplot layout where the plot will</span>
+<span class="sd">        be added (optional, but required if `fig` is provided).</span>
+<span class="sd">    :param yaxis_range: An optional parameter for the y-axis range. This is not utilized in the</span>
+<span class="sd">        function as provided.</span>
+<span class="sd">    :return: A Plotly Figure object containing the plotted quantiles and median line.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Extract time component for x-axis</span>
+    <span class="n">ind</span> <span class="o">=</span> <span class="n">quan_df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span>
+
+    <span class="c1"># Create figure</span>
+    <span class="k">if</span> <span class="n">fig</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">row</span> <span class="ow">and</span> <span class="n">col</span><span class="p">,</span> <span class="s2">&quot;row and col must be given for subplot&quot;</span>
+
+    <span class="c1"># Fill areas between quantile ranges</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">quan</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">quan_df</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">quan</span> <span class="o">==</span> <span class="mf">0.5</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">quan_range</span> <span class="o">=</span> <span class="p">(</span><span class="n">quan</span><span class="p">,</span> <span class="n">quan_df</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)])</span>
+        <span class="n">opacity</span> <span class="o">=</span> <span class="mf">0.25</span> <span class="o">+</span> <span class="n">i</span><span class="o">/</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">quan_df</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="mf">0.75</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">ind</span> <span class="o">+</span> <span class="n">ind</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+                                 <span class="n">y</span><span class="o">=</span><span class="p">(</span><span class="n">quan_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">quan_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()</span> <span class="o">+</span>
+                                    <span class="n">quan_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="n">quan_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">to_list</span><span class="p">()[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
+                                 <span class="n">fill</span><span class="o">=</span><span class="s1">&#39;toself&#39;</span><span class="p">,</span>
+                                 <span class="n">fillcolor</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;rgba(128, 128, 128, </span><span class="si">{</span><span class="n">opacity</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>  <span class="c1"># color code + opacity</span>
+                                 <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;rgba(255,255,255,0)&#39;</span><span class="p">),</span>  <span class="c1"># not visible</span>
+                                 <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">quan_range</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">-</span><span class="si">{</span><span class="n">quan_range</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> Quantile Range&#39;</span><span class="p">),</span>
+                      <span class="n">row</span><span class="o">=</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+
+
+
+    <span class="c1"># Add median line</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">ind</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">quan_df</span><span class="o">.</span><span class="n">loc</span><span class="p">[:,</span> <span class="mf">0.5</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Median&#39;</span><span class="p">,</span>
+                  <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;rgba(0,0,0,1.0)&#39;</span><span class="p">)),</span> <span class="n">row</span><span class="o">=</span><span class="n">row</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="n">col</span><span class="p">)</span>
+
+    <span class="c1"># Show plot</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+<div class="viewcode-block" id="scatterplot"><a class="viewcode-back" href="../../export.html#export.analysis_plots.scatterplot">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">scatterplot</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">graph_title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">x_axis_title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">y1_axis_title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">y2_axis_title</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create and show a scatter plot for a DataFrame with optional dual y-axes and linear regression lines.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    - data (pd.DataFrame): The data for the scatter plot.</span>
+<span class="sd">    - x (str, optional): The column name for the x-axis. Defaults to DataFrame index.</span>
+<span class="sd">    - y1 (list of str, optional): List of column names for the first y-axis. Defaults to all columns if y2 is not provided.</span>
+<span class="sd">    - y2 (list of str, optional): List of column names for the second y-axis.</span>
+<span class="sd">    - graph_title (str, optional): The title of the graph.</span>
+<span class="sd">    - x_axis_title (str, optional): The title of the x-axis.</span>
+<span class="sd">    - y1_axis_title (str, optional): The title of the first y-axis.</span>
+<span class="sd">    - y2_axis_title (str, optional): The title of the second y-axis.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">    - fig: A Plotly figure object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Set default x and y1 values if not provided</span>
+    <span class="k">if</span> <span class="n">x</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">y1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">y1</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+        <span class="n">y1</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">y2</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">y2</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">y1</span><span class="p">:</span>
+                    <span class="n">y1</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">col</span><span class="p">)</span>
+
+    <span class="c1"># Create a figure with secondary y-axis if y2 is provided</span>
+    <span class="n">specs</span> <span class="o">=</span> <span class="p">[[{</span><span class="s2">&quot;secondary_y&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}]]</span> <span class="k">if</span> <span class="n">y2</span> <span class="k">else</span> <span class="p">[[{</span><span class="s2">&quot;secondary_y&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}]]</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">make_subplots</span><span class="p">(</span><span class="n">specs</span><span class="o">=</span><span class="n">specs</span><span class="p">)</span>
+
+    <span class="c1"># Add traces and regression lines for the first y-axis</span>
+    <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">y1</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+            <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;markers&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">col</span><span class="p">),</span>
+            <span class="n">secondary_y</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="c1"># Calculate and add the linear regression line</span>
+        <span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+            <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">m</span> <span class="o">*</span> <span class="n">data</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s1"> Trend&#39;</span><span class="p">,</span> <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">dash</span><span class="o">=</span><span class="s1">&#39;dash&#39;</span><span class="p">)),</span>
+            <span class="n">secondary_y</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Add traces and regression lines for the second y-axis if provided</span>
+    <span class="k">if</span> <span class="n">y2</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">y2</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;markers&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">col</span><span class="p">),</span>
+                <span class="n">secondary_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="c1"># Calculate and add the linear regression line</span>
+            <span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="n">m</span> <span class="o">*</span> <span class="n">data</span><span class="p">[</span><span class="n">x</span><span class="p">]</span> <span class="o">+</span> <span class="n">b</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">col</span><span class="si">}</span><span class="s1"> Trend&#39;</span><span class="p">,</span> <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">dash</span><span class="o">=</span><span class="s1">&#39;dash&#39;</span><span class="p">)),</span>
+                <span class="n">secondary_y</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+
+    <span class="c1"># Set the titles</span>
+    <span class="k">if</span> <span class="n">graph_title</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">graph_title</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">x_axis_title</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">title_text</span><span class="o">=</span><span class="n">x_axis_title</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y1_axis_title</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">title_text</span><span class="o">=</span><span class="n">y1_axis_title</span><span class="p">,</span> <span class="n">secondary_y</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">y2_axis_title</span><span class="p">:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">title_text</span><span class="o">=</span><span class="n">y2_axis_title</span><span class="p">,</span> <span class="n">secondary_y</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+<div class="viewcode-block" id="plot_heat_curve"><a class="viewcode-back" href="../../export.html#export.analysis_plots.plot_heat_curve">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_heat_curve</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">indoortemp</span><span class="o">=</span><span class="n">NOM_TEMP_INDOOR</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generates and displays a heat curve plot using the given dataframe and indoor temperature.</span>
+
+<span class="sd">    The plot visually represents various temperature-related data over time using a combination of</span>
+<span class="sd">    primary and secondary y-axes. It includes external temperature, forward flow temperature,</span>
+<span class="sd">    indoor temperature, and optionally, COP (if present in the dataframe). The chart also highlights</span>
+<span class="sd">    the heating demand region by shading the area between the external temperature and the specified</span>
+<span class="sd">    indoor temperature.</span>
+
+<span class="sd">    :param df: The input dataframe containing indexed time-series data for &#39;Aussentemperatur&#39;,</span>
+<span class="sd">               &#39;Vorlauftemperatur&#39;, and optional &#39;COP&#39; values.</span>
+<span class="sd">               - Index: Time-series index</span>
+<span class="sd">               - Columns:</span>
+<span class="sd">                   - `Aussentemperatur`: External temperature data</span>
+<span class="sd">                   - `Vorlauftemperatur`: Forward flow temperature data</span>
+<span class="sd">                   - `COP` (optional): Coefficient of performance data</span>
+<span class="sd">    :param indoortemp: The assumed constant indoor temperature to compare against external</span>
+<span class="sd">                       temperature and calculate heating demand. Default is set to `NOM_TEMP_INDOOR`.</span>
+
+<span class="sd">    :return: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create a figure with subplots (2 y-axes)</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">make_subplots</span><span class="p">(</span><span class="n">specs</span><span class="o">=</span><span class="p">[[{</span><span class="s2">&quot;secondary_y&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}]])</span>
+
+    <span class="c1"># Add line plot for Aussentemperatur</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Aussentemperatur&#39;</span><span class="p">],</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Aussentemperatur&#39;</span><span class="p">,</span>
+        <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">)</span>
+    <span class="p">))</span>
+
+    <span class="c1"># Add line plot for Vorlauftemperatur</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Vorlauftemperatur&#39;</span><span class="p">],</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Vorlauftemperatur&#39;</span><span class="p">,</span>
+        <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;orange&#39;</span><span class="p">)</span>
+    <span class="p">))</span>
+
+    <span class="k">if</span> <span class="s1">&#39;COP&#39;</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="c1"># Add line plot for COP with secondary y-axis</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;COP&#39;</span><span class="p">],</span>
+            <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s1">&#39;COP&#39;</span><span class="p">,</span>
+            <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;black&#39;</span><span class="p">,</span> <span class="n">dash</span><span class="o">=</span><span class="s1">&#39;dash&#39;</span><span class="p">),</span>
+        <span class="p">),</span> <span class="n">secondary_y</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="c1"># Fill the area between Aussentemperatur and the given indoortemp</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">indoortemp</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">df</span><span class="p">),</span>  <span class="c1"># Constant line for indoortemp</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Innentemperatur&#39;</span><span class="p">,</span>
+        <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">)</span>
+    <span class="p">))</span>
+
+    <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="s1">&#39;Aussentemperatur&#39;</span><span class="p">],</span>
+        <span class="n">fill</span><span class="o">=</span><span class="s1">&#39;tonexty&#39;</span><span class="p">,</span>  <span class="c1"># Fill to the next trace (Aussentemperatur)</span>
+        <span class="n">fillcolor</span><span class="o">=</span><span class="s1">&#39;rgba(200, 130, 0, 0.2)&#39;</span><span class="p">,</span>  <span class="c1"># Fill color</span>
+        <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span>  <span class="c1"># No line</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Heizbedarf&#39;</span><span class="p">,</span>
+    <span class="p">))</span>
+
+    <span class="c1"># Update layout</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Heizkurve&#39;</span><span class="p">,</span>
+        <span class="n">xaxis_title</span><span class="o">=</span><span class="s1">&#39;Stunden&#39;</span><span class="p">,</span>
+        <span class="n">yaxis_title</span><span class="o">=</span><span class="s1">&#39;Temperatur (°C)&#39;</span><span class="p">,</span>
+        <span class="n">template</span><span class="o">=</span><span class="s1">&#39;plotly&#39;</span><span class="p">,</span>
+        <span class="n">yaxis2</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="s1">&#39;COP&#39;</span><span class="p">,</span>  <span class="c1"># Label for the second y-axis</span>
+            <span class="n">overlaying</span><span class="o">=</span><span class="s1">&#39;y&#39;</span><span class="p">,</span>  <span class="c1"># Allow the two y-axes to share the x-axis</span>
+            <span class="n">side</span><span class="o">=</span><span class="s1">&#39;right&#39;</span><span class="p">,</span>  <span class="c1"># Position the second y-axis on the right</span>
+            <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">],</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="c1"># Show the figure</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="plot_seasonal_boxplots"><a class="viewcode-back" href="../../export.html#export.analysis_plots.plot_seasonal_boxplots">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_seasonal_boxplots</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">col</span><span class="o">=</span><span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate seasonal boxplots of a specified column against the hour of the day, categorized by</span>
+<span class="sd">    season. This function helps visualize data distribution and variation for each hour, grouped by</span>
+<span class="sd">    seasons (e.g., Winter, Spring, etc.).</span>
+
+<span class="sd">    :param df: The input pandas DataFrame containing the time-series data. It must include</span>
+<span class="sd">        the columns corresponding to seasons and hours of the day for the function to properly</span>
+<span class="sd">        categorize and plot.</span>
+<span class="sd">    :param col: The name of the column in the DataFrame to be visualized. This column&#39;s values</span>
+<span class="sd">        will be plotted on the y-axis of the boxplot.</span>
+<span class="sd">    :return: None. This function renders and displays the boxplot visualization.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">df</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s1">&#39;category&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Set the figure size and grid for the plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+
+    <span class="c1"># Create the boxplot for each season</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">boxplot</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Hour</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">col</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="n">TimeseriesCols</span><span class="o">.</span><span class="n">Season</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">df</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="s1">&#39;Set2&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Set plot titles and labels</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">&#39;Boxplot of Values by Hour of the Day for Each Season&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;Hour of the Day&#39;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;Values&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Show the legend for the seasons</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Season&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Display the plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">24</span><span class="p">))</span>  <span class="c1"># Ensure the hours are correctly displayed (0 to 23)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Example usage</span>
+    <span class="n">date_range</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">date_range</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="s1">&#39;2024-01-01&#39;</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;2024-12-31&#39;</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s1">&#39;H&#39;</span><span class="p">)</span>
+    <span class="n">hourly_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">date_range</span><span class="p">))</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">hourly_data</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">date_range</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Value&#39;</span><span class="p">])</span>
+    <span class="n">plot_typical_day_quantiles</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">hourly_data1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">date_range</span><span class="p">))</span>
+    <span class="n">hourly_data2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">55</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">date_range</span><span class="p">))</span>
+    <span class="n">day1_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">hourly_data1</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">date_range</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Value&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">day2_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">hourly_data2</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="n">date_range</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Value&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">iloc</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">compare_typical_day_quantiles</span><span class="p">([</span><span class="n">day1_df</span><span class="p">,</span> <span class="n">day2_df</span><span class="p">])</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

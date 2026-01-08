@@ -1,0 +1,8 @@
+# Ignore downloaded / locally managed electricityMaps CO2 intensity CSVs (and any future files)
+.idea/
+data/resources/co2_intensity_electricity_maps/**
+data/resources/precalc/PVGIS_hourly_data/
+data/output/
+data/input/
+src/infeasible.log
+

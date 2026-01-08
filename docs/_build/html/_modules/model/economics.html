@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>model.economics &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">model.economics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for model.economics</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">src/model/economics.py</span>
+
+<span class="sd">Financial utilities for the optimisation framework. This module implements</span>
+<span class="sd">common discounted‑cashflow and levelised cost calculations used when converting</span>
+<span class="sd">capital and operational costs into annualised or present‑value figures for</span>
+<span class="sd">scenario analysis.</span>
+
+<span class="sd">Main functions:</span>
+
+<span class="sd">- crf(lifetime, i_eff=const.REAL_INTEREST_RATE) -&gt; float</span>
+<span class="sd">    Compute the capital recovery factor (CRF). Handles i_eff == 0 as a special</span>
+<span class="sd">    case; asserts that lifetime is non‑negative and raises for negative rates.</span>
+
+<span class="sd">- calc_annuity(inv_cost, duration=None, i_eff=None) -&gt; float</span>
+<span class="sd">    Annualise an investment cost using the CRF over the given duration.</span>
+
+<span class="sd">- calc_present_value(annuity, duration=None, i_eff=None) -&gt; float</span>
+<span class="sd">    Convert an annuity to its present value using the inverse CRF.</span>
+
+<span class="sd">- celf(escalation_rate, duration=None, i_eff=None) -&gt; float</span>
+<span class="sd">    Compute the constant escalation levelization factor (CELF) for recurring</span>
+<span class="sd">    variable costs subject to an escalation rate.</span>
+
+<span class="sd">- calc_constant_escalation_row(var_cost, escalation_rate, duration=None, i_eff=None) -&gt; float</span>
+<span class="sd">    Apply CELF to a variable cost row to obtain a levelised annual figure.</span>
+
+<span class="sd">- calc_residual_value(inv_cost, lifetime, duration=None, i_eff=None) -&gt; float</span>
+<span class="sd">    Estimate residual book value when an asset outlives or is retired before</span>
+<span class="sd">    the analysis duration.</span>
+
+<span class="sd">- calc_reinvest(inv_cost, lifetime, escalation_rate=0.0, i_eff=None) -&gt; float</span>
+<span class="sd">    Compute the escalated cost of a reinvestment occurring after a given lifetime.</span>
+
+<span class="sd">- calc_inv_cost_with_residuals_and_reinvests(inv_cost, lifetime, escalation_rate=0.0,</span>
+<span class="sd">    duration=None, i_eff=None) -&gt; float</span>
+<span class="sd">    Aggregate initial investment, necessary reinvestments and residual values</span>
+<span class="sd">    across the analysis duration to obtain an effective total investment.</span>
+
+<span class="sd">- inflation_adjustment(annuity, i_nom, duration=None, i_eff=None, inflation_rate=None) -&gt; float</span>
+<span class="sd">    Adjust an annuity value to account for inflation using nominal and real</span>
+<span class="sd">    interest conventions.</span>
+
+<span class="sd">Behavior and notes:</span>
+
+<span class="sd">- Functions use project constants from `src.const` (e.g. DURATION, REAL_INTEREST_RATE,</span>
+<span class="sd">  INFLATION_RATE) when optional arguments are not supplied.</span>
+<span class="sd">- Inputs and outputs are floats representing yearly amounts or factors; durations</span>
+<span class="sd">  are interpreted in years.</span>
+<span class="sd">- Functions are pure (no file I/O or network access) and raise ValueError for</span>
+<span class="sd">  invalid financial inputs (negative interest rates, inconsistent parameters).</span>
+<span class="sd">- Numerical edge cases (e.g. zero interest) are handled explicitly to avoid</span>
+<span class="sd">  division-by-zero errors.</span>
+
+<span class="sd">Dependencies:</span>
+
+<span class="sd">- math</span>
+<span class="sd">- `src.const` (for default economic parameters)</span>
+
+<span class="sd">Example:</span>
+
+<span class="sd">    ann = calc_annuity(10000.0, duration=20)</span>
+<span class="sd">    pv = calc_present_value(ann, duration=20)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src</span><span class="w"> </span><span class="kn">import</span> <span class="n">const</span>
+
+
+<div class="viewcode-block" id="crf"><a class="viewcode-back" href="../../model.html#model.economics.crf">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">crf</span><span class="p">(</span><span class="n">lifetime</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;calculate the capital recovery factor (CRF)&quot;&quot;&quot;</span>
+
+    <span class="k">assert</span> <span class="n">lifetime</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;lifetime must be &gt; 0 years&quot;</span>
+
+    <span class="k">if</span> <span class="n">i_eff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">i_eff</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">i_eff</span><span class="p">)</span> <span class="o">**</span> <span class="n">lifetime</span><span class="p">)</span> <span class="o">/</span> <span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">i_eff</span><span class="p">)</span> <span class="o">**</span> <span class="n">lifetime</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">i_eff</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span><span class="o">/</span><span class="n">lifetime</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;i_eff must be &gt;= 0&quot;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="calc_annuity"><a class="viewcode-back" href="../../model.html#model.economics.calc_annuity">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_annuity</span><span class="p">(</span><span class="n">inv_cost</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;calculate annuities using the capital recovery factor (CRF)&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">DURATION</span>
+    <span class="k">if</span> <span class="n">i_eff</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">i_eff</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span>
+
+    <span class="k">return</span> <span class="n">inv_cost</span> <span class="o">*</span> <span class="n">crf</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">i_eff</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="calc_present_value"><a class="viewcode-back" href="../../model.html#model.economics.calc_present_value">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_present_value</span><span class="p">(</span><span class="n">annuity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;calculate total investment&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">DURATION</span>
+    <span class="k">if</span> <span class="n">i_eff</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">i_eff</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span>
+    <span class="n">pvf</span> <span class="o">=</span> <span class="mi">1</span><span class="o">/</span><span class="n">crf</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">i_eff</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">annuity</span> <span class="o">*</span> <span class="n">pvf</span></div>
+
+
+<div class="viewcode-block" id="celf"><a class="viewcode-back" href="../../model.html#model.economics.celf">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">celf</span><span class="p">(</span><span class="n">escalation_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;calculate constant escalation levelization factor (CELF)&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">DURATION</span>
+    <span class="k">if</span> <span class="n">i_eff</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">i_eff</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">escalation_rate</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">i_eff</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">f</span> <span class="o">==</span> <span class="mf">1.0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mf">1.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">f</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">f</span><span class="o">**</span><span class="n">duration</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="n">f</span><span class="p">)</span><span class="o">*</span><span class="n">crf</span><span class="p">(</span><span class="n">duration</span><span class="p">,</span> <span class="n">i_eff</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="calc_constant_escalation_row"><a class="viewcode-back" href="../../model.html#model.economics.calc_constant_escalation_row">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_constant_escalation_row</span><span class="p">(</span><span class="n">var_cost</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">escalation_rate</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;calculate leveled costs for variable costs row using the CELF&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">DURATION</span>
+    <span class="k">if</span> <span class="n">i_eff</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">i_eff</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span>
+
+    <span class="k">return</span> <span class="n">var_cost</span><span class="o">*</span><span class="n">celf</span><span class="p">(</span><span class="n">escalation_rate</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">i_eff</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="calc_residual_value"><a class="viewcode-back" href="../../model.html#model.economics.calc_residual_value">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_residual_value</span><span class="p">(</span><span class="n">inv_cost</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;calculate the residual lifetime if lifetime &gt; duration&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">DURATION</span>
+    <span class="k">if</span> <span class="n">i_eff</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">i_eff</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span>
+
+    <span class="k">return</span> <span class="n">inv_cost</span> <span class="o">*</span> <span class="p">(</span><span class="n">lifetime</span> <span class="o">-</span> <span class="n">duration</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">lifetime</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">i_eff</span><span class="p">)</span><span class="o">**</span><span class="n">duration</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="calc_reinvest"><a class="viewcode-back" href="../../model.html#model.economics.calc_reinvest">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_reinvest</span><span class="p">(</span><span class="n">inv_cost</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">escalation_rate</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;calculate reinvest needed if duration &gt; lifetime &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">i_eff</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">i_eff</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span>
+
+    <span class="k">return</span> <span class="n">inv_cost</span> <span class="o">*</span> <span class="p">((</span><span class="mi">1</span> <span class="o">+</span> <span class="n">escalation_rate</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">i_eff</span><span class="p">))</span><span class="o">**</span><span class="n">lifetime</span></div>
+
+
+<div class="viewcode-block" id="calc_inv_cost_with_residuals_and_reinvests"><a class="viewcode-back" href="../../model.html#model.economics.calc_inv_cost_with_residuals_and_reinvests">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">calc_inv_cost_with_residuals_and_reinvests</span><span class="p">(</span><span class="n">inv_cost</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">escalation_rate</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                                               <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the total investment cost considering reinvestments and residual values over</span>
+<span class="sd">    a given duration, while accounting for escalation rates and effective interest rates.</span>
+<span class="sd">    This function is particularly useful for cost analysis in long-term projects where</span>
+<span class="sd">    investments are required periodically or partially recovered before the end of the project.</span>
+
+<span class="sd">    :param inv_cost: Initial investment cost.</span>
+<span class="sd">    :param lifetime: Lifetime of the investment in years.</span>
+<span class="sd">    :param escalation_rate: Annual escalation rate of the investment cost. Defaults to 0.0.</span>
+<span class="sd">    :param duration: Total duration in years for which the investment is being considered.</span>
+<span class="sd">        Defaults to a predefined constant value.</span>
+<span class="sd">    :param i_eff: Effective interest rate. Defaults to a predefined constant value.</span>
+<span class="sd">    :return: Final adjusted investment cost considering reinvestment, residual value,</span>
+<span class="sd">        or both as appropriate.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">DURATION</span>
+    <span class="k">if</span> <span class="n">i_eff</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">i_eff</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span>
+
+    <span class="k">if</span> <span class="n">duration</span> <span class="o">&gt;</span> <span class="n">lifetime</span><span class="p">:</span>
+        <span class="n">nr_of_investments</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">duration</span><span class="o">/</span><span class="n">lifetime</span><span class="p">)</span>
+        <span class="n">reinv_cost</span> <span class="o">=</span> <span class="p">[</span><span class="n">calc_reinvest</span><span class="p">(</span><span class="n">inv_cost</span><span class="p">,</span> <span class="n">lifetime</span><span class="o">*</span><span class="n">i</span><span class="p">,</span> <span class="n">escalation_rate</span><span class="p">,</span> <span class="n">i_eff</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">nr_of_investments</span><span class="p">)]</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">lifetime</span><span class="o">*</span><span class="n">nr_of_investments</span> <span class="o">-</span> <span class="n">duration</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">residual_value</span> <span class="o">=</span> <span class="n">calc_residual_value</span><span class="p">(</span>
+                <span class="n">reinv_cost</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">lifetime</span><span class="p">,</span> <span class="n">duration</span> <span class="o">-</span> <span class="p">(</span><span class="n">nr_of_investments</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">lifetime</span><span class="p">,</span> <span class="n">i_eff</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">duration</span> <span class="o">==</span> <span class="n">lifetime</span><span class="o">*</span><span class="n">nr_of_investments</span><span class="p">:</span>
+            <span class="n">residual_value</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span>
+        <span class="n">inv_cost</span> <span class="o">=</span> <span class="n">inv_cost</span> <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="n">reinv_cost</span><span class="p">)</span> <span class="o">-</span> <span class="n">residual_value</span>
+    <span class="k">elif</span> <span class="n">duration</span> <span class="o">&lt;</span> <span class="n">lifetime</span><span class="p">:</span>
+        <span class="n">inv_cost</span> <span class="o">=</span> <span class="n">inv_cost</span> <span class="o">-</span> <span class="n">calc_residual_value</span><span class="p">(</span><span class="n">inv_cost</span><span class="p">,</span> <span class="n">lifetime</span><span class="p">,</span> <span class="n">duration</span><span class="p">,</span> <span class="n">i_eff</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">inv_cost</span> <span class="o">=</span> <span class="n">inv_cost</span>
+
+    <span class="k">return</span> <span class="n">inv_cost</span></div>
+
+
+<div class="viewcode-block" id="inflation_adjustment"><a class="viewcode-back" href="../../model.html#model.economics.inflation_adjustment">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">inflation_adjustment</span><span class="p">(</span><span class="n">annuity</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">i_nom</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">duration</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inflation_rate</span><span class="p">:</span> <span class="nb">float</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Calculates the adjusted annuity to account for the effects of inflation using the nominal</span>
+<span class="sd">    interest rate, effective interest rate, duration of annuity, and inflation rate.</span>
+
+<span class="sd">    This function leverages cash flow ratios (CRF) to compute the adjustment based on given</span>
+<span class="sd">    parameters or default constants when values are not provided. The inflation adjustment is</span>
+<span class="sd">    considered to help accurately determine the real value of the annuity over its duration.</span>
+
+<span class="sd">    :param annuity: Initial annuity value to be inflation-adjusted.</span>
+<span class="sd">    :type annuity: float</span>
+<span class="sd">    :param i_nom: Nominal interest rate.</span>
+<span class="sd">    :type i_nom: float</span>
+<span class="sd">    :param duration: Annuity duration in years. Optional; uses a default value if not provided.</span>
+<span class="sd">    :type duration: int, optional</span>
+<span class="sd">    :param i_eff: Effective annual interest rate. Optional; uses a default value if not provided.</span>
+<span class="sd">    :type i_eff: float, optional</span>
+<span class="sd">    :param inflation_rate: Annual inflation rate. Optional; uses a default value if not provided.</span>
+<span class="sd">    :type inflation_rate: float, optional</span>
+<span class="sd">    :return: Inflation-adjusted annuity value.</span>
+<span class="sd">    :rtype: float</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">duration</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">duration</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">DURATION</span>
+    <span class="k">if</span> <span class="n">i_eff</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">i_eff</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">REAL_INTEREST_RATE</span>
+    <span class="k">if</span> <span class="n">inflation_rate</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">inflation_rate</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">INFLATION_RATE</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">annuity</span> <span class="o">*</span> <span class="n">crf</span><span class="p">(</span><span class="n">lifetime</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="n">i_eff</span><span class="p">)</span><span class="o">/</span>
+            <span class="p">(</span><span class="n">crf</span><span class="p">(</span><span class="n">lifetime</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span> <span class="n">i_eff</span><span class="o">=</span><span class="n">i_nom</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mi">1</span><span class="o">+</span><span class="n">inflation_rate</span><span class="p">)</span><span class="o">**</span><span class="n">duration</span><span class="p">))</span></div>
+
+
+<span class="c1"># ToDo: Inflationsbereinigung?</span>
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

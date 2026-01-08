@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>data_preparation.pvgis_climate_data &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../modules.html">src</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">data_preparation.pvgis_climate_data</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for data_preparation.pvgis_climate_data</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">src/data_preparation/pvgis_climate_data.py</span>
+
+<span class="sd">Helpers to fetch, cache and process PVGIS photovoltaic and meteorological data</span>
+<span class="sd">for a given geographic location and PV plane configuration.</span>
+
+<span class="sd">Main responsibilities:</span>
+
+<span class="sd">- get_pvgis_hourly_data(...):</span>
+<span class="sd">    - Download or load cached hourly PV generation and meteorological data</span>
+<span class="sd">      from the EU-JRC PVGIS service.</span>
+<span class="sd">    - Return a :class:`Timeseries` with PV power converted to kW and columns</span>
+<span class="sd">      defined in `PvgisDataCols`.</span>
+<span class="sd">    - Supports custom year ranges, plane tilt/azimuth, horizon shading and</span>
+<span class="sd">      caching to disk.</span>
+
+<span class="sd">- get_pvgis_tmy_data(...):</span>
+<span class="sd">    - Fetch or load cached PVGIS Typical Meteorological Year (TMY) data and</span>
+<span class="sd">      return it as a :class:`Timeseries`.</span>
+<span class="sd">    - Provides common TMY columns referenced by `PvgisTmyDataCols`.</span>
+
+<span class="sd">- get_pvgis_monthly_data(...):</span>
+<span class="sd">    - Query PVGIS monthly summaries via HTTP, produce simple aggregations</span>
+<span class="sd">      (average temperature, yearly irradiation) and call plotting helpers.</span>
+
+<span class="sd">Notes and behavior:</span>
+
+<span class="sd">- Depends on `pvlib.iotools.pvgis`, `pandas`, `requests`, project `Timeseries`</span>
+<span class="sd">  and project constants (e.g. `const.LATITUDE`, `const.LONGITUDE`, `PATH_TO_WD`).</span>
+<span class="sd">- Functions cache CSV files in the specified `pvgis_folder`; initial calls</span>
+<span class="sd">  require network access.</span>
+<span class="sd">- PV power returned by PVGIS (W) is converted to kW before constructing the</span>
+<span class="sd">  `Timeseries`.</span>
+<span class="sd">- Column name enums `PvgisDataCols` and `PvgisTmyDataCols` expose the expected</span>
+<span class="sd">  output fields for downstream processing.</span>
+<span class="sd">- Some helpers produce plots or write files as side effects; callers in</span>
+<span class="sd">  headless or restricted environments may need to disable plotting or adjust</span>
+<span class="sd">  file paths.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">enum</span><span class="w"> </span><span class="kn">import</span> <span class="n">Enum</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">requests</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pvlib.iotools.pvgis</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pvgis</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src</span><span class="w"> </span><span class="kn">import</span> <span class="n">const</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">PATH_TO_WD</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.data_preparation.data_formats</span><span class="w"> </span><span class="kn">import</span> <span class="n">Timeseries</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">src.export.analysis_plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">scatterplot</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PvgisDataCols</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="c1"># Time = &quot;time&quot;</span>
+    <span class="n">P_el_t</span> <span class="o">=</span> <span class="s2">&quot;P&quot;</span>
+    <span class="n">Direct_rad</span> <span class="o">=</span> <span class="s2">&quot;poa_direct&quot;</span>
+    <span class="n">Diffuse_rad_sky</span> <span class="o">=</span> <span class="s2">&quot;poa_sky_diffuse&quot;</span>
+    <span class="n">Diffuse_rad_ground</span> <span class="o">=</span> <span class="s2">&quot;poa_ground_diffuse&quot;</span>
+    <span class="n">Solar_elevation</span> <span class="o">=</span> <span class="s2">&quot;solar_elevation&quot;</span>
+    <span class="n">Air_temp</span> <span class="o">=</span> <span class="s2">&quot;temp_air&quot;</span>
+    <span class="n">Wind_speed</span> <span class="o">=</span> <span class="s2">&quot;wind_speed&quot;</span>
+    <span class="c1"># Int = &quot;Int&quot; # unknown</span>
+
+
+<span class="k">class</span><span class="w"> </span><span class="nc">PvgisTmyDataCols</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="c1"># T2m [°C] - Dry bulb (air) temperature.</span>
+    <span class="c1"># RH [%] - Relative Humidity.</span>
+    <span class="c1"># G(h) [W/m2] - Global horizontal irradiance.</span>
+    <span class="c1"># Gb(n) [W/m2] - Direct (beam) irradiance.</span>
+    <span class="c1"># Gd(h) [W/m2] - Diffuse horizontal irradiance.</span>
+    <span class="c1"># IR(h) [W/m2] - Infrared radiation downwards.</span>
+    <span class="c1"># WS10m [m/s] - Windspeed.</span>
+    <span class="c1"># WD10m [°] - Wind direction.</span>
+    <span class="c1"># SP [Pa] - Surface (air) pressure.</span>
+    <span class="n">Air_temp</span> <span class="o">=</span> <span class="s1">&#39;T2m&#39;</span>
+    <span class="n">Humidity</span> <span class="o">=</span> <span class="s1">&#39;RH&#39;</span>
+    <span class="n">GHI</span> <span class="o">=</span> <span class="s1">&#39;G(h)&#39;</span>
+    <span class="n">Direct_rad</span> <span class="o">=</span> <span class="s1">&#39;Gb(n)&#39;</span>
+    <span class="n">Diffuse_rad</span> <span class="o">=</span> <span class="s1">&#39;Gd(h)&#39;</span>
+    <span class="n">Infrared</span> <span class="o">=</span> <span class="s1">&#39;IR(h)&#39;</span>
+    <span class="n">Windspeed</span> <span class="o">=</span> <span class="s1">&#39;WS10m&#39;</span>
+    <span class="n">Winddir</span> <span class="o">=</span> <span class="s1">&#39;WD10m&#39;</span>
+    <span class="n">AirPressure</span> <span class="o">=</span> <span class="s1">&#39;SP&#39;</span>
+
+
+<div class="viewcode-block" id="get_pvgis_hourly_data"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.pvgis_climate_data.get_pvgis_hourly_data">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_pvgis_hourly_data</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">,</span> <span class="n">surface_tilt</span><span class="o">=</span><span class="mi">35</span><span class="p">,</span> <span class="n">surface_azimuth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                          <span class="n">peak_power_kw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">pvgis_folder</span><span class="o">=</span><span class="n">PATH_TO_WD</span><span class="o">+</span><span class="s2">&quot;/data/resources/PVGIS_hourly_data/&quot;</span><span class="p">,</span>
+                          <span class="n">start_year</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">end_year</span><span class="p">:</span><span class="nb">int</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">horizon</span><span class="p">:</span><span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                          <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Timeseries</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Retrieve hourly PV generation and meteorological time series from the EU-JRC PVGIS service.</span>
+
+<span class="sd">        The function uses `pvlib.iotools.pvgis.get_pvgis_hourly` to download an hourly profile for a given</span>
+<span class="sd">        location and PV plane configuration. Results are cached on disk: if a matching CSV file already</span>
+<span class="sd">        exists in `pvgis_folder`, it is loaded instead of calling the PVGIS API again.</span>
+
+<span class="sd">        **What you get**</span>
+<span class="sd">        - A :class:`~core.data_preparation.data_formats.Timeseries` instance containing hourly data for the</span>
+<span class="sd">          selected period (`start_year`..`end_year`, inclusive).</span>
+<span class="sd">        - The returned table includes the columns defined by :class:`PvgisDataCols` (e.g. PV power and</span>
+<span class="sd">          weather/radiation quantities). PV power is converted from **W** (PVGIS default) to **kW**</span>
+<span class="sd">          before building the Timeseries object.</span>
+
+<span class="sd">        **Caching / file naming**</span>
+<span class="sd">        The cache key is derived from latitude/longitude, tilt, azimuth, horizon setting, peak power and</span>
+<span class="sd">        the requested year range. Changing any of these inputs results in a different CSV file name.</span>
+
+<span class="sd">        :param latitude: Latitude of the location in decimal degrees (-90..90), north is positive.</span>
+<span class="sd">        :type latitude: float</span>
+<span class="sd">        :param longitude: Longitude of the location in decimal degrees (-180..180), east is positive.</span>
+<span class="sd">        :type longitude: float</span>
+<span class="sd">        :param surface_tilt: Tilt angle of the fixed plane in degrees (0 = horizontal, 90 = vertical).</span>
+<span class="sd">        :type surface_tilt: int | float</span>
+<span class="sd">        :param surface_azimuth: Azimuth/orientation of the plane in degrees.</span>
+<span class="sd">            Convention used by PVGIS/pvlib: 0 = south, 90 = west, -90 = east.</span>
+<span class="sd">        :type surface_azimuth: int | float</span>
+<span class="sd">        :param peak_power_kw: Installed PV capacity in kWp used for the PVGIS PV calculation.</span>
+<span class="sd">        :type peak_power_kw: int | float</span>
+<span class="sd">        :param pvgis_folder: Folder used to read/write cached PVGIS hourly CSV files.</span>
+<span class="sd">        :type pvgis_folder: str</span>
+<span class="sd">        :param start_year: First year of the requested time range. Must be provided together with `end_year`.</span>
+<span class="sd">            If both are omitted, defaults to `const.MODELED_YEAR`.</span>
+<span class="sd">        :type start_year: int | None</span>
+<span class="sd">        :param end_year: Last year of the requested time range. Must be provided together with `start_year`.</span>
+<span class="sd">            If both are omitted, defaults to `const.MODELED_YEAR`.</span>
+<span class="sd">        :type end_year: int | None</span>
+<span class="sd">        :param horizon: Optional user-defined horizon profile to account for shading by surrounding terrain/objects.</span>
+<span class="sd">            Provide as a comma-separated string of elevation angles (degrees) around the horizon, as expected by PVGIS</span>
+<span class="sd">            (e.g. ``&quot;0,0,0,0,50,0,0,0&quot;``). If ``None``, PVGIS&#39; default horizon handling is used.</span>
+<span class="sd">        :type horizon: str | None</span>
+<span class="sd">        :return: Hourly PVGIS time series (PV power and selected weather/radiation variables).</span>
+<span class="sd">        :rtype: Timeseries</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">start_year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">end_year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">start_year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">end_year</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;start_year and end_year always need to be given both&quot;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">start_year</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span>
+        <span class="n">end_year</span> <span class="o">=</span> <span class="n">const</span><span class="o">.</span><span class="n">MODELED_YEAR</span>
+
+    <span class="n">hourlydata_fname</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Timeseries_</span><span class="si">{</span><span class="n">latitude</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">longitude</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">surface_tilt</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">deg_</span><span class="si">{</span><span class="n">surface_azimuth</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;_</span><span class="si">{</span><span class="n">horizon</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">,</span><span class="s1">&#39;&#39;</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s1">&#39;_&#39;</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">horizon</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">&#39;_&#39;</span><span class="si">}</span><span class="s2">deg_</span><span class="si">{</span><span class="n">peak_power_kw</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">kWp_&quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">start_year</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">end_year</span><span class="si">:</span><span class="s2">d</span><span class="si">}</span><span class="s2">.csv&quot;</span><span class="p">)</span>
+    <span class="n">fpath</span> <span class="o">=</span> <span class="n">pvgis_folder</span> <span class="o">+</span> <span class="n">hourlydata_fname</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;getting stored PVGIS hourly data...&quot;</span><span class="p">)</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;getting hourly data from PVGIS API...&quot;</span><span class="p">)</span>
+        <span class="n">query_args</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">latitude</span><span class="o">=</span><span class="n">latitude</span><span class="p">,</span>
+            <span class="n">longitude</span><span class="o">=</span><span class="n">longitude</span><span class="p">,</span>
+            <span class="n">surface_tilt</span><span class="o">=</span><span class="n">surface_tilt</span><span class="p">,</span>
+            <span class="n">surface_azimuth</span><span class="o">=</span><span class="n">surface_azimuth</span><span class="p">,</span>
+            <span class="n">peakpower</span><span class="o">=</span><span class="n">peak_power_kw</span><span class="p">,</span>
+            <span class="n">loss</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span>
+            <span class="n">pvcalculation</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">outputformat</span><span class="o">=</span><span class="s2">&quot;csv&quot;</span><span class="p">,</span>
+            <span class="n">start</span><span class="o">=</span><span class="n">start_year</span><span class="p">,</span>
+            <span class="n">end</span><span class="o">=</span><span class="n">end_year</span><span class="p">,</span>
+            <span class="n">components</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">usehorizon</span><span class="o">=</span><span class="mi">1</span> <span class="k">if</span> <span class="n">horizon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+            <span class="n">userhorizon</span><span class="o">=</span><span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">horizon</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span> <span class="k">if</span> <span class="n">horizon</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="c1"># url=&quot;https://re.jrc.ec.europa.eu/api/v5_3/&quot;</span>
+        <span class="p">)</span>
+        <span class="n">df</span><span class="p">,</span> <span class="n">meta</span> <span class="o">=</span> <span class="n">pvgis</span><span class="o">.</span><span class="n">get_pvgis_hourly</span><span class="p">(</span><span class="o">**</span><span class="n">query_args</span><span class="p">)</span>
+        <span class="n">df</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># Deprecated: time column is not used anymore</span>
+    <span class="c1"># df[PVDataCols.Time.value] = pd.to_datetime(df.index)</span>
+
+    <span class="c1"># P in kW</span>
+    <span class="n">df</span><span class="p">[</span><span class="n">PvgisDataCols</span><span class="o">.</span><span class="n">P_el_t</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="n">PvgisDataCols</span><span class="o">.</span><span class="n">P_el_t</span><span class="p">]</span> <span class="o">/</span> <span class="mi">1000</span>
+    <span class="c1"># return Timeseries(df, freq=&#39;1h&#39;)</span>
+    <span class="n">ts</span> <span class="o">=</span> <span class="n">Timeseries</span><span class="p">(</span><span class="n">df</span><span class="p">[[</span><span class="n">e</span><span class="o">.</span><span class="n">value</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">PvgisDataCols</span><span class="p">]],</span> <span class="n">start_year</span><span class="o">=</span><span class="n">start_year</span><span class="p">,</span> <span class="n">end_year</span><span class="o">=</span><span class="n">end_year</span><span class="p">)</span>
+
+    <span class="c1"># plot_seasonal_boxplots(ts.df, PvgisDataCols.Air_temp)</span>
+    <span class="c1"># ts.plot_typeday(PvgisDataCols.P_el_t, title=f&quot;tilt: {surface_tilt}, azimuth: {surface_azimuth}&quot;)</span>
+
+    <span class="k">return</span> <span class="n">ts</span></div>
+
+
+<div class="viewcode-block" id="get_pvgis_tmy_data"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.pvgis_climate_data.get_pvgis_tmy_data">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_pvgis_tmy_data</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">,</span>
+                       <span class="n">pvgis_folder</span><span class="o">=</span><span class="n">PATH_TO_WD</span><span class="o">+</span><span class="s2">&quot;/data/resources/PVGIS_hourly_data/&quot;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fetches PVGIS Typical Meteorological Year (TMY) data based on the provided latitude </span>
+<span class="sd">    and longitude. If the data already exists in the specified folder, it loads the </span>
+<span class="sd">    stored CSV file. Otherwise, it fetches the data from PVGIS, saves it to the CSV file, </span>
+<span class="sd">    and then loads it. </span>
+
+<span class="sd">    This function helps in assessing renewable energy potential by providing solar </span>
+<span class="sd">    radiation and meteorological data for simulations.</span>
+
+<span class="sd">    :param latitude: The latitude of the location for which TMY data is requested.</span>
+<span class="sd">    :type latitude: float</span>
+<span class="sd">    :param longitude: The longitude of the location for which TMY data is requested.</span>
+<span class="sd">    :type longitude: float</span>
+<span class="sd">    :param pvgis_folder: The folder to check or store the resulting TMY data file.</span>
+<span class="sd">    :type pvgis_folder: str</span>
+<span class="sd">    :return: Timeseries object containing TMY data.</span>
+<span class="sd">    :rtype: Timeseries</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">fname</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;TMY_</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">LATITUDE</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">.csv&quot;</span>
+    <span class="n">fpath</span> <span class="o">=</span> <span class="n">pvgis_folder</span> <span class="o">+</span> <span class="n">fname</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">fpath</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;getting stored PVGIS TMY data...&quot;</span><span class="p">)</span>
+        <span class="n">tmy_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tmy_data</span><span class="p">,</span> <span class="n">months_selected</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">metadata</span> <span class="o">=</span> <span class="n">pvgis</span><span class="o">.</span><span class="n">get_pvgis_tmy</span><span class="p">(</span><span class="n">latitude</span><span class="p">,</span> <span class="n">longitude</span><span class="p">)</span>
+        <span class="n">tmy_data</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">fpath</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">,</span> <span class="n">decimal</span><span class="o">=</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+
+    <span class="c1"># # hourly data for comparison</span>
+    <span class="c1"># hourly_data = get_pvgis_hourly_data(surface_tilt=0, surface_azimuth=0)</span>
+    <span class="c1"># compare_typical_day_quantiles([</span>
+    <span class="c1">#     (hourly_data[PVDataCols.Direct_rad] + hourly_data[PVDataCols.Diffuse_rad_sky]).astype(float),</span>
+    <span class="c1">#     tmy_data[&#39;G(h)&#39;]], subplot_titles=(str(START_YEAR), &#39;TMY&#39;),</span>
+    <span class="c1">#     title=&#39;Solar radiation&#39;</span>
+    <span class="c1"># )</span>
+    <span class="c1"># compare_typical_day_quantiles([</span>
+    <span class="c1">#     hourly_data[PVDataCols.Air_temp].astype(float),</span>
+    <span class="c1">#     tmy_data[TMYDataCols.Air_temp]], subplot_titles=(str(START_YEAR), &#39;TMY&#39;),</span>
+    <span class="c1">#     title=&#39;Air temperature&#39;</span>
+    <span class="c1"># )</span>
+
+    <span class="k">return</span> <span class="n">Timeseries</span><span class="p">(</span><span class="n">tmy_data</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_pvgis_monthly_data"><a class="viewcode-back" href="../../data_preparation.html#data_preparation.pvgis_climate_data.get_pvgis_monthly_data">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_pvgis_monthly_data</span><span class="p">(</span><span class="n">latitude</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">LATITUDE</span><span class="p">,</span> <span class="n">longitude</span><span class="o">=</span><span class="n">const</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Fetches and processes PVGIS monthly data for a specified latitude and longitude.</span>
+
+<span class="sd">    This function retrieves photovoltaic data such as average temperature and</span>
+<span class="sd">    global irradiation for a specified location using the PVGIS API. It processes</span>
+<span class="sd">    the data to calculate average temperature and yearly global irradiation, then</span>
+<span class="sd">    creates a scatter plot to visualize these relationships. </span>
+
+<span class="sd">    :param latitude: Latitude of the location for which PVGIS data is retrieved.</span>
+<span class="sd">    :type latitude: float</span>
+<span class="sd">    :param longitude: Longitude of the location for which PVGIS data is retrieved.</span>
+<span class="sd">    :type longitude: float</span>
+<span class="sd">    :return: None</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="s2">&quot;https://re.jrc.ec.europa.eu/api/MRcalc?lat=45&amp;lon=8&amp;horirrad=1&quot;</span>
+
+    <span class="n">api_url</span> <span class="o">=</span> <span class="s2">&quot;https://re.jrc.ec.europa.eu/api/v5_3/MRcalc&quot;</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;?lat=</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">LATITUDE</span><span class="si">}</span><span class="s2">&amp;lon=</span><span class="si">{</span><span class="n">const</span><span class="o">.</span><span class="n">LONGITUDE</span><span class="si">}</span><span class="s2">&amp;horirrad=1&amp;outputformat=json&amp;global=1&amp;avtemp=1&quot;</span>
+
+    <span class="n">ret_val</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">api_url</span> <span class="o">+</span> <span class="n">query</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+    <span class="n">monthly_df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">ret_val</span><span class="p">[</span><span class="s1">&#39;outputs&#39;</span><span class="p">][</span><span class="s1">&#39;monthly&#39;</span><span class="p">])</span>
+
+    <span class="n">avg_temp</span> <span class="o">=</span> <span class="n">monthly_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)[</span><span class="s1">&#39;T2m&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+    <span class="n">yearly_glob_irr</span> <span class="o">=</span> <span class="n">monthly_df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s1">&#39;year&#39;</span><span class="p">)[</span><span class="s1">&#39;H(h)_m&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="n">scatterplot</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;Average temperature&#39;</span><span class="p">:</span> <span class="n">avg_temp</span><span class="p">,</span>
+            <span class="s1">&#39;Yearly global irradiation&#39;</span><span class="p">:</span> <span class="n">yearly_glob_irr</span><span class="p">,</span>
+         <span class="p">}</span>
+        <span class="p">),</span> <span class="n">y1</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Average temperature&#39;</span><span class="p">],</span> <span class="n">y2</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Yearly global irradiation&#39;</span><span class="p">]</span>
+    <span class="p">)</span></div>
+
+    <span class="c1"># print(&quot;Average temperature:\n&quot;, avg_temp, &quot;\nYearly global irradiation:\n&quot;, yearly_glob_irr)</span>
+
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+
+    <span class="n">climate_ts</span> <span class="o">=</span> <span class="n">get_pvgis_hourly_data</span><span class="p">(</span><span class="n">horizon</span><span class="o">=</span><span class="s2">&quot;0,0,0,0,50,0,0,0&quot;</span><span class="p">)</span>
+    <span class="c1"># climate_ts[&#39;HDD&#39;] = climate_ts.df.apply(lambda x: max(20 - x[PvgisDataCols.Air_temp],0), axis=1)</span>
+    <span class="c1"># climate_ts[&#39;year_week&#39;] = climate_ts.df.apply(lambda x: f&quot;{x[TimeseriesCols.Year]}_{x[TimeseriesCols.Week]}&quot;, axis=1)</span>
+    <span class="c1"># # df = get_pvgis_tmy_data()</span>
+    <span class="c1"># get_pvgis_monthly_data()</span>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

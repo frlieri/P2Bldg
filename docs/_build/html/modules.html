@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>src &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="config module" href="config.html" />
+    <link rel="prev" title="Welcome to P2Bldg’s documentation!" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">src</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="const.html">const module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html">data_preparation package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="export.html">export package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html">helper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_battery_opt.html">run_battery_opt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_building_opt.html">run_building_opt module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">src</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/modules.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="src">
+<h1>src<a class="headerlink" href="#src" title="Permalink to this heading"></a></h1>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="const.html">const module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_preparation.html">data_preparation package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html#module-data_preparation.data_formats">data_preparation.data_formats module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.BuildingModelInput"><code class="docutils literal notranslate"><span class="pre">BuildingModelInput</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.ScenarioData"><code class="docutils literal notranslate"><span class="pre">ScenarioData</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.ScenarioResults"><code class="docutils literal notranslate"><span class="pre">ScenarioResults</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.ScenarioResults.find_vals"><code class="docutils literal notranslate"><span class="pre">ScenarioResults.find_vals()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.ScenarioResults.get_en_balance"><code class="docutils literal notranslate"><span class="pre">ScenarioResults.get_en_balance()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.ScenarioResults.get_ti_sum"><code class="docutils literal notranslate"><span class="pre">ScenarioResults.get_ti_sum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.ScenarioResults.get_ts"><code class="docutils literal notranslate"><span class="pre">ScenarioResults.get_ts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.ScenarioResults.to_dict"><code class="docutils literal notranslate"><span class="pre">ScenarioResults.to_dict()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.SheetData"><code class="docutils literal notranslate"><span class="pre">SheetData</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries"><code class="docutils literal notranslate"><span class="pre">Timeseries</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.apply_agg"><code class="docutils literal notranslate"><span class="pre">Timeseries.apply_agg()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.convert_to_daily"><code class="docutils literal notranslate"><span class="pre">Timeseries.convert_to_daily()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.convert_to_hourly"><code class="docutils literal notranslate"><span class="pre">Timeseries.convert_to_hourly()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.convert_to_quarter_hourly"><code class="docutils literal notranslate"><span class="pre">Timeseries.convert_to_quarter_hourly()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.daily_avg"><code class="docutils literal notranslate"><span class="pre">Timeseries.daily_avg()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.daysums"><code class="docutils literal notranslate"><span class="pre">Timeseries.daysums()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.duration_curve"><code class="docutils literal notranslate"><span class="pre">Timeseries.duration_curve()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.filter"><code class="docutils literal notranslate"><span class="pre">Timeseries.filter()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.get_daysum_quant_range"><code class="docutils literal notranslate"><span class="pre">Timeseries.get_daysum_quant_range()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.get_profiles_for_days"><code class="docutils literal notranslate"><span class="pre">Timeseries.get_profiles_for_days()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.get_specs"><code class="docutils literal notranslate"><span class="pre">Timeseries.get_specs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.groupby"><code class="docutils literal notranslate"><span class="pre">Timeseries.groupby()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.max"><code class="docutils literal notranslate"><span class="pre">Timeseries.max()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.mean"><code class="docutils literal notranslate"><span class="pre">Timeseries.mean()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.min"><code class="docutils literal notranslate"><span class="pre">Timeseries.min()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.monthly_avg"><code class="docutils literal notranslate"><span class="pre">Timeseries.monthly_avg()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.no_of_timesteps"><code class="docutils literal notranslate"><span class="pre">Timeseries.no_of_timesteps()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.normalize"><code class="docutils literal notranslate"><span class="pre">Timeseries.normalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.plot_ts"><code class="docutils literal notranslate"><span class="pre">Timeseries.plot_ts()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.plot_typeday"><code class="docutils literal notranslate"><span class="pre">Timeseries.plot_typeday()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.Timeseries.sum"><code class="docutils literal notranslate"><span class="pre">Timeseries.sum()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.data_formats.prepare_dummy_ts"><code class="docutils literal notranslate"><span class="pre">prepare_dummy_ts()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html#module-data_preparation.demand_data">data_preparation.demand_data module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.demand_data.calc_emob_demands"><code class="docutils literal notranslate"><span class="pre">calc_emob_demands()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.demand_data.calc_flex_dem_from_ts_red_inputs"><code class="docutils literal notranslate"><span class="pre">calc_flex_dem_from_ts_red_inputs()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.demand_data.get_dhwcalc_series"><code class="docutils literal notranslate"><span class="pre">get_dhwcalc_series()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.demand_data.get_el_hh_profiles"><code class="docutils literal notranslate"><span class="pre">get_el_hh_profiles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.demand_data.get_elec_co2_intensity"><code class="docutils literal notranslate"><span class="pre">get_elec_co2_intensity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.demand_data.get_synpro_el_hh_profiles"><code class="docutils literal notranslate"><span class="pre">get_synpro_el_hh_profiles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.demand_data.get_var_elec_prices"><code class="docutils literal notranslate"><span class="pre">get_var_elec_prices()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html#module-data_preparation.pvgis_climate_data">data_preparation.pvgis_climate_data module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.pvgis_climate_data.get_pvgis_hourly_data"><code class="docutils literal notranslate"><span class="pre">get_pvgis_hourly_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.pvgis_climate_data.get_pvgis_monthly_data"><code class="docutils literal notranslate"><span class="pre">get_pvgis_monthly_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.pvgis_climate_data.get_pvgis_tmy_data"><code class="docutils literal notranslate"><span class="pre">get_pvgis_tmy_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html#module-data_preparation.timeseries_reduction">data_preparation.timeseries_reduction module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.timeseries_reduction.climate_data_analysis"><code class="docutils literal notranslate"><span class="pre">climate_data_analysis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="data_preparation.html#data_preparation.timeseries_reduction.prepare_ts_profiles"><code class="docutils literal notranslate"><span class="pre">prepare_ts_profiles()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="export.html">export package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="export.html#module-export.analysis_plots">export.analysis_plots module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.analysis_plots.calc_dayprofile_quantiles"><code class="docutils literal notranslate"><span class="pre">calc_dayprofile_quantiles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.analysis_plots.compare_typical_day_quantiles"><code class="docutils literal notranslate"><span class="pre">compare_typical_day_quantiles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.analysis_plots.plot_heat_curve"><code class="docutils literal notranslate"><span class="pre">plot_heat_curve()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.analysis_plots.plot_quantiles"><code class="docutils literal notranslate"><span class="pre">plot_quantiles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.analysis_plots.plot_seasonal_boxplots"><code class="docutils literal notranslate"><span class="pre">plot_seasonal_boxplots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.analysis_plots.plot_subplots"><code class="docutils literal notranslate"><span class="pre">plot_subplots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.analysis_plots.plot_timeseries"><code class="docutils literal notranslate"><span class="pre">plot_timeseries()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.analysis_plots.plot_typical_day_quantiles"><code class="docutils literal notranslate"><span class="pre">plot_typical_day_quantiles()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.analysis_plots.scatterplot"><code class="docutils literal notranslate"><span class="pre">scatterplot()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="export.html#module-export.excel_generator">export.excel_generator module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.excel_generator.add_chart_to_worksheet"><code class="docutils literal notranslate"><span class="pre">add_chart_to_worksheet()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.excel_generator.save_xlsx_wb"><code class="docutils literal notranslate"><span class="pre">save_xlsx_wb()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="export.html#module-export.export_results">export.export_results module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.CDD_SUM"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.CDD_SUM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.CDD_SUM_REL"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.CDD_SUM_REL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.CDD_WEEKLY"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.CDD_WEEKLY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.HDD_SUM"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.HDD_SUM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.HDD_SUM_REL"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.HDD_SUM_REL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.HDD_WEEKLY"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.HDD_WEEKLY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.P_SOLAR_SUM"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.P_SOLAR_SUM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.P_SOLAR_SUM_REL"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.P_SOLAR_SUM_REL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.P_SOLAR_SUM_WEEKLY"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.P_SOLAR_SUM_WEEKLY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.TEMP_AVG"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.TEMP_AVG</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.TEMP_MAX"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.TEMP_MAX</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.TEMP_MIN"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.TEMP_MIN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.capitalize"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.capitalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.casefold"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.casefold()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.center"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.center()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.count"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.encode"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.encode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.endswith"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.endswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.expandtabs"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.expandtabs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.find"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.find()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.format"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.format()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.format_map"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.format_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.index"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.isalnum"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.isalnum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.isalpha"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.isalpha()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.isascii"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.isascii()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.isdecimal"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.isdecimal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.isdigit"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.isdigit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.isidentifier"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.isidentifier()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.islower"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.islower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.isnumeric"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.isnumeric()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.isprintable"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.isprintable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.isspace"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.isspace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.istitle"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.istitle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.isupper"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.isupper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.join"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.join()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.ljust"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.ljust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.lower"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.lstrip"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.lstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.maketrans"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.maketrans()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.partition"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.partition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.removeprefix"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.removeprefix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.removesuffix"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.removesuffix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.replace"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.replace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.rfind"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.rfind()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.rindex"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.rindex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.rjust"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.rjust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.rpartition"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.rpartition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.rsplit"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.rsplit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.rstrip"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.rstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.split"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.split()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.splitlines"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.splitlines()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.startswith"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.startswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.strip"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.strip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.swapcase"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.swapcase()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.title"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.title()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.translate"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.translate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.upper"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.upper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.ClimateDataCols.zfill"><code class="docutils literal notranslate"><span class="pre">ClimateDataCols.zfill()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.Colors"><code class="docutils literal notranslate"><span class="pre">Colors</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.BLACK"><code class="docutils literal notranslate"><span class="pre">Colors.BLACK</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.BLUE"><code class="docutils literal notranslate"><span class="pre">Colors.BLUE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.BROWN"><code class="docutils literal notranslate"><span class="pre">Colors.BROWN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.DARK_BLUE"><code class="docutils literal notranslate"><span class="pre">Colors.DARK_BLUE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.DARK_BROWN"><code class="docutils literal notranslate"><span class="pre">Colors.DARK_BROWN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.DARK_GREEN"><code class="docutils literal notranslate"><span class="pre">Colors.DARK_GREEN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.DARK_GREY"><code class="docutils literal notranslate"><span class="pre">Colors.DARK_GREY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.DARK_ORANGE"><code class="docutils literal notranslate"><span class="pre">Colors.DARK_ORANGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.DARK_RED"><code class="docutils literal notranslate"><span class="pre">Colors.DARK_RED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.DARK_YELLOW"><code class="docutils literal notranslate"><span class="pre">Colors.DARK_YELLOW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.GREEN"><code class="docutils literal notranslate"><span class="pre">Colors.GREEN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.GREY"><code class="docutils literal notranslate"><span class="pre">Colors.GREY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.LIGHT_BLUE"><code class="docutils literal notranslate"><span class="pre">Colors.LIGHT_BLUE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.LIGHT_BROWN"><code class="docutils literal notranslate"><span class="pre">Colors.LIGHT_BROWN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.LIGHT_GREEN"><code class="docutils literal notranslate"><span class="pre">Colors.LIGHT_GREEN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.LIGHT_GREY"><code class="docutils literal notranslate"><span class="pre">Colors.LIGHT_GREY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.LIGHT_ORANGE"><code class="docutils literal notranslate"><span class="pre">Colors.LIGHT_ORANGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.LIGHT_RED"><code class="docutils literal notranslate"><span class="pre">Colors.LIGHT_RED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.LIGHT_YELLOW"><code class="docutils literal notranslate"><span class="pre">Colors.LIGHT_YELLOW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.NEON"><code class="docutils literal notranslate"><span class="pre">Colors.NEON</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.ORANGE"><code class="docutils literal notranslate"><span class="pre">Colors.ORANGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.PINK"><code class="docutils literal notranslate"><span class="pre">Colors.PINK</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.RED"><code class="docutils literal notranslate"><span class="pre">Colors.RED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.WHITE"><code class="docutils literal notranslate"><span class="pre">Colors.WHITE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.YELLOW"><code class="docutils literal notranslate"><span class="pre">Colors.YELLOW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.capitalize"><code class="docutils literal notranslate"><span class="pre">Colors.capitalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.casefold"><code class="docutils literal notranslate"><span class="pre">Colors.casefold()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.center"><code class="docutils literal notranslate"><span class="pre">Colors.center()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.count"><code class="docutils literal notranslate"><span class="pre">Colors.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.encode"><code class="docutils literal notranslate"><span class="pre">Colors.encode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.endswith"><code class="docutils literal notranslate"><span class="pre">Colors.endswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.expandtabs"><code class="docutils literal notranslate"><span class="pre">Colors.expandtabs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.find"><code class="docutils literal notranslate"><span class="pre">Colors.find()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.format"><code class="docutils literal notranslate"><span class="pre">Colors.format()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.format_map"><code class="docutils literal notranslate"><span class="pre">Colors.format_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.index"><code class="docutils literal notranslate"><span class="pre">Colors.index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.isalnum"><code class="docutils literal notranslate"><span class="pre">Colors.isalnum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.isalpha"><code class="docutils literal notranslate"><span class="pre">Colors.isalpha()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.isascii"><code class="docutils literal notranslate"><span class="pre">Colors.isascii()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.isdecimal"><code class="docutils literal notranslate"><span class="pre">Colors.isdecimal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.isdigit"><code class="docutils literal notranslate"><span class="pre">Colors.isdigit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.isidentifier"><code class="docutils literal notranslate"><span class="pre">Colors.isidentifier()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.islower"><code class="docutils literal notranslate"><span class="pre">Colors.islower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.isnumeric"><code class="docutils literal notranslate"><span class="pre">Colors.isnumeric()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.isprintable"><code class="docutils literal notranslate"><span class="pre">Colors.isprintable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.isspace"><code class="docutils literal notranslate"><span class="pre">Colors.isspace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.istitle"><code class="docutils literal notranslate"><span class="pre">Colors.istitle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.isupper"><code class="docutils literal notranslate"><span class="pre">Colors.isupper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.join"><code class="docutils literal notranslate"><span class="pre">Colors.join()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.ljust"><code class="docutils literal notranslate"><span class="pre">Colors.ljust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.lower"><code class="docutils literal notranslate"><span class="pre">Colors.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.lstrip"><code class="docutils literal notranslate"><span class="pre">Colors.lstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.maketrans"><code class="docutils literal notranslate"><span class="pre">Colors.maketrans()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.partition"><code class="docutils literal notranslate"><span class="pre">Colors.partition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.removeprefix"><code class="docutils literal notranslate"><span class="pre">Colors.removeprefix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.removesuffix"><code class="docutils literal notranslate"><span class="pre">Colors.removesuffix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.replace"><code class="docutils literal notranslate"><span class="pre">Colors.replace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.rfind"><code class="docutils literal notranslate"><span class="pre">Colors.rfind()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.rindex"><code class="docutils literal notranslate"><span class="pre">Colors.rindex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.rjust"><code class="docutils literal notranslate"><span class="pre">Colors.rjust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.rpartition"><code class="docutils literal notranslate"><span class="pre">Colors.rpartition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.rsplit"><code class="docutils literal notranslate"><span class="pre">Colors.rsplit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.rstrip"><code class="docutils literal notranslate"><span class="pre">Colors.rstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.split"><code class="docutils literal notranslate"><span class="pre">Colors.split()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.splitlines"><code class="docutils literal notranslate"><span class="pre">Colors.splitlines()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.startswith"><code class="docutils literal notranslate"><span class="pre">Colors.startswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.strip"><code class="docutils literal notranslate"><span class="pre">Colors.strip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.swapcase"><code class="docutils literal notranslate"><span class="pre">Colors.swapcase()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.title"><code class="docutils literal notranslate"><span class="pre">Colors.title()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.translate"><code class="docutils literal notranslate"><span class="pre">Colors.translate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.upper"><code class="docutils literal notranslate"><span class="pre">Colors.upper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.Colors.zfill"><code class="docutils literal notranslate"><span class="pre">Colors.zfill()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.SmryCols"><code class="docutils literal notranslate"><span class="pre">SmryCols</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.AC_KW"><code class="docutils literal notranslate"><span class="pre">SmryCols.AC_KW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.BATT_CYCLES"><code class="docutils literal notranslate"><span class="pre">SmryCols.BATT_CYCLES</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.BATT_KWH"><code class="docutils literal notranslate"><span class="pre">SmryCols.BATT_KWH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.BOILER_KW"><code class="docutils literal notranslate"><span class="pre">SmryCols.BOILER_KW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.BUFFER_KWH"><code class="docutils literal notranslate"><span class="pre">SmryCols.BUFFER_KWH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.BUFFER_L"><code class="docutils literal notranslate"><span class="pre">SmryCols.BUFFER_L</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.CAPEX"><code class="docutils literal notranslate"><span class="pre">SmryCols.CAPEX</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.CAPEX_ANNUITY"><code class="docutils literal notranslate"><span class="pre">SmryCols.CAPEX_ANNUITY</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.CAPEX_BATT"><code class="docutils literal notranslate"><span class="pre">SmryCols.CAPEX_BATT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.CAPEX_HEAT"><code class="docutils literal notranslate"><span class="pre">SmryCols.CAPEX_HEAT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.CAPEX_PV"><code class="docutils literal notranslate"><span class="pre">SmryCols.CAPEX_PV</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.CAPEX_REFURB"><code class="docutils literal notranslate"><span class="pre">SmryCols.CAPEX_REFURB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.CO2_COSTS"><code class="docutils literal notranslate"><span class="pre">SmryCols.CO2_COSTS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.COP"><code class="docutils literal notranslate"><span class="pre">SmryCols.COP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.DEH_KW"><code class="docutils literal notranslate"><span class="pre">SmryCols.DEH_KW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.DHW_KWH"><code class="docutils literal notranslate"><span class="pre">SmryCols.DHW_KWH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.DHW_L"><code class="docutils literal notranslate"><span class="pre">SmryCols.DHW_L</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_COST_EMOB"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_COST_EMOB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_COST_HEAT"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_COST_HEAT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_COST_HH"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_COST_HH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_DEM_AC"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_DEM_AC</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_DEM_DEH"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_DEM_DEH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_DEM_EMOB"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_DEM_EMOB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_DEM_HEAT_TOTAL"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_DEM_HEAT_TOTAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_DEM_HH"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_DEM_HH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_DEM_HP"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_DEM_HP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_DEM_TOTAL"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_DEM_TOTAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_IMP_EMOB"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_IMP_EMOB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_IMP_HEAT"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_IMP_HEAT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.EL_IMP_HH"><code class="docutils literal notranslate"><span class="pre">SmryCols.EL_IMP_HH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.FEEDIN_REV"><code class="docutils literal notranslate"><span class="pre">SmryCols.FEEDIN_REV</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.FUEL_COSTS"><code class="docutils literal notranslate"><span class="pre">SmryCols.FUEL_COSTS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.GREEN_CHARGE_SHARE"><code class="docutils literal notranslate"><span class="pre">SmryCols.GREEN_CHARGE_SHARE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.HP_KW"><code class="docutils literal notranslate"><span class="pre">SmryCols.HP_KW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.LCOE_PV"><code class="docutils literal notranslate"><span class="pre">SmryCols.LCOE_PV</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.LCOE_SELF"><code class="docutils literal notranslate"><span class="pre">SmryCols.LCOE_SELF</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.LCOE_TOTAL"><code class="docutils literal notranslate"><span class="pre">SmryCols.LCOE_TOTAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.LCOH"><code class="docutils literal notranslate"><span class="pre">SmryCols.LCOH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.OPEX_TOTAL"><code class="docutils literal notranslate"><span class="pre">SmryCols.OPEX_TOTAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.PV_FEEDIN"><code class="docutils literal notranslate"><span class="pre">SmryCols.PV_FEEDIN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.PV_GEN"><code class="docutils literal notranslate"><span class="pre">SmryCols.PV_GEN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.PV_GEN_CURTAILED"><code class="docutils literal notranslate"><span class="pre">SmryCols.PV_GEN_CURTAILED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.PV_GEN_USED"><code class="docutils literal notranslate"><span class="pre">SmryCols.PV_GEN_USED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.PV_KWP"><code class="docutils literal notranslate"><span class="pre">SmryCols.PV_KWP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.PV_USED_EMOB"><code class="docutils literal notranslate"><span class="pre">SmryCols.PV_USED_EMOB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.PV_USED_HEAT"><code class="docutils literal notranslate"><span class="pre">SmryCols.PV_USED_HEAT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.PV_USED_HH"><code class="docutils literal notranslate"><span class="pre">SmryCols.PV_USED_HH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.SCOP_WINTER"><code class="docutils literal notranslate"><span class="pre">SmryCols.SCOP_WINTER</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.SELF_CONS"><code class="docutils literal notranslate"><span class="pre">SmryCols.SELF_CONS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.SELF_SUFF"><code class="docutils literal notranslate"><span class="pre">SmryCols.SELF_SUFF</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.SELF_SUFF_EMOB"><code class="docutils literal notranslate"><span class="pre">SmryCols.SELF_SUFF_EMOB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.SELF_SUFF_HEAT"><code class="docutils literal notranslate"><span class="pre">SmryCols.SELF_SUFF_HEAT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.SELF_SUFF_HH"><code class="docutils literal notranslate"><span class="pre">SmryCols.SELF_SUFF_HH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.SPEC_PV_GEN"><code class="docutils literal notranslate"><span class="pre">SmryCols.SPEC_PV_GEN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.TH_DEM_DHW"><code class="docutils literal notranslate"><span class="pre">SmryCols.TH_DEM_DHW</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.TH_DEM_ROOM"><code class="docutils literal notranslate"><span class="pre">SmryCols.TH_DEM_ROOM</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.TH_DEM_TOTAL"><code class="docutils literal notranslate"><span class="pre">SmryCols.TH_DEM_TOTAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.TH_GEN_AC"><code class="docutils literal notranslate"><span class="pre">SmryCols.TH_GEN_AC</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.TH_GEN_BOILER"><code class="docutils literal notranslate"><span class="pre">SmryCols.TH_GEN_BOILER</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.TH_GEN_DEH"><code class="docutils literal notranslate"><span class="pre">SmryCols.TH_GEN_DEH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.TH_GEN_HP"><code class="docutils literal notranslate"><span class="pre">SmryCols.TH_GEN_HP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.TH_INERTIA"><code class="docutils literal notranslate"><span class="pre">SmryCols.TH_INERTIA</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.TOTAL_COSTS"><code class="docutils literal notranslate"><span class="pre">SmryCols.TOTAL_COSTS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.capitalize"><code class="docutils literal notranslate"><span class="pre">SmryCols.capitalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.casefold"><code class="docutils literal notranslate"><span class="pre">SmryCols.casefold()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.center"><code class="docutils literal notranslate"><span class="pre">SmryCols.center()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.count"><code class="docutils literal notranslate"><span class="pre">SmryCols.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.encode"><code class="docutils literal notranslate"><span class="pre">SmryCols.encode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.endswith"><code class="docutils literal notranslate"><span class="pre">SmryCols.endswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.expandtabs"><code class="docutils literal notranslate"><span class="pre">SmryCols.expandtabs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.find"><code class="docutils literal notranslate"><span class="pre">SmryCols.find()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.format"><code class="docutils literal notranslate"><span class="pre">SmryCols.format()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.format_map"><code class="docutils literal notranslate"><span class="pre">SmryCols.format_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.index"><code class="docutils literal notranslate"><span class="pre">SmryCols.index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.isalnum"><code class="docutils literal notranslate"><span class="pre">SmryCols.isalnum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.isalpha"><code class="docutils literal notranslate"><span class="pre">SmryCols.isalpha()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.isascii"><code class="docutils literal notranslate"><span class="pre">SmryCols.isascii()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.isdecimal"><code class="docutils literal notranslate"><span class="pre">SmryCols.isdecimal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.isdigit"><code class="docutils literal notranslate"><span class="pre">SmryCols.isdigit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.isidentifier"><code class="docutils literal notranslate"><span class="pre">SmryCols.isidentifier()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.islower"><code class="docutils literal notranslate"><span class="pre">SmryCols.islower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.isnumeric"><code class="docutils literal notranslate"><span class="pre">SmryCols.isnumeric()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.isprintable"><code class="docutils literal notranslate"><span class="pre">SmryCols.isprintable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.isspace"><code class="docutils literal notranslate"><span class="pre">SmryCols.isspace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.istitle"><code class="docutils literal notranslate"><span class="pre">SmryCols.istitle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.isupper"><code class="docutils literal notranslate"><span class="pre">SmryCols.isupper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.join"><code class="docutils literal notranslate"><span class="pre">SmryCols.join()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.ljust"><code class="docutils literal notranslate"><span class="pre">SmryCols.ljust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.lower"><code class="docutils literal notranslate"><span class="pre">SmryCols.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.lstrip"><code class="docutils literal notranslate"><span class="pre">SmryCols.lstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.maketrans"><code class="docutils literal notranslate"><span class="pre">SmryCols.maketrans()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.partition"><code class="docutils literal notranslate"><span class="pre">SmryCols.partition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.removeprefix"><code class="docutils literal notranslate"><span class="pre">SmryCols.removeprefix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.removesuffix"><code class="docutils literal notranslate"><span class="pre">SmryCols.removesuffix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.replace"><code class="docutils literal notranslate"><span class="pre">SmryCols.replace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.rfind"><code class="docutils literal notranslate"><span class="pre">SmryCols.rfind()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.rindex"><code class="docutils literal notranslate"><span class="pre">SmryCols.rindex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.rjust"><code class="docutils literal notranslate"><span class="pre">SmryCols.rjust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.rpartition"><code class="docutils literal notranslate"><span class="pre">SmryCols.rpartition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.rsplit"><code class="docutils literal notranslate"><span class="pre">SmryCols.rsplit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.rstrip"><code class="docutils literal notranslate"><span class="pre">SmryCols.rstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.split"><code class="docutils literal notranslate"><span class="pre">SmryCols.split()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.splitlines"><code class="docutils literal notranslate"><span class="pre">SmryCols.splitlines()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.startswith"><code class="docutils literal notranslate"><span class="pre">SmryCols.startswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.strip"><code class="docutils literal notranslate"><span class="pre">SmryCols.strip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.swapcase"><code class="docutils literal notranslate"><span class="pre">SmryCols.swapcase()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.title"><code class="docutils literal notranslate"><span class="pre">SmryCols.title()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.translate"><code class="docutils literal notranslate"><span class="pre">SmryCols.translate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.upper"><code class="docutils literal notranslate"><span class="pre">SmryCols.upper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.SmryCols.zfill"><code class="docutils literal notranslate"><span class="pre">SmryCols.zfill()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.StrEnum"><code class="docutils literal notranslate"><span class="pre">StrEnum</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.capitalize"><code class="docutils literal notranslate"><span class="pre">StrEnum.capitalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.casefold"><code class="docutils literal notranslate"><span class="pre">StrEnum.casefold()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.center"><code class="docutils literal notranslate"><span class="pre">StrEnum.center()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.count"><code class="docutils literal notranslate"><span class="pre">StrEnum.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.encode"><code class="docutils literal notranslate"><span class="pre">StrEnum.encode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.endswith"><code class="docutils literal notranslate"><span class="pre">StrEnum.endswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.expandtabs"><code class="docutils literal notranslate"><span class="pre">StrEnum.expandtabs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.find"><code class="docutils literal notranslate"><span class="pre">StrEnum.find()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.format"><code class="docutils literal notranslate"><span class="pre">StrEnum.format()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.format_map"><code class="docutils literal notranslate"><span class="pre">StrEnum.format_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.index"><code class="docutils literal notranslate"><span class="pre">StrEnum.index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.isalnum"><code class="docutils literal notranslate"><span class="pre">StrEnum.isalnum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.isalpha"><code class="docutils literal notranslate"><span class="pre">StrEnum.isalpha()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.isascii"><code class="docutils literal notranslate"><span class="pre">StrEnum.isascii()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.isdecimal"><code class="docutils literal notranslate"><span class="pre">StrEnum.isdecimal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.isdigit"><code class="docutils literal notranslate"><span class="pre">StrEnum.isdigit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.isidentifier"><code class="docutils literal notranslate"><span class="pre">StrEnum.isidentifier()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.islower"><code class="docutils literal notranslate"><span class="pre">StrEnum.islower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.isnumeric"><code class="docutils literal notranslate"><span class="pre">StrEnum.isnumeric()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.isprintable"><code class="docutils literal notranslate"><span class="pre">StrEnum.isprintable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.isspace"><code class="docutils literal notranslate"><span class="pre">StrEnum.isspace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.istitle"><code class="docutils literal notranslate"><span class="pre">StrEnum.istitle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.isupper"><code class="docutils literal notranslate"><span class="pre">StrEnum.isupper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.join"><code class="docutils literal notranslate"><span class="pre">StrEnum.join()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.ljust"><code class="docutils literal notranslate"><span class="pre">StrEnum.ljust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.lower"><code class="docutils literal notranslate"><span class="pre">StrEnum.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.lstrip"><code class="docutils literal notranslate"><span class="pre">StrEnum.lstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.maketrans"><code class="docutils literal notranslate"><span class="pre">StrEnum.maketrans()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.partition"><code class="docutils literal notranslate"><span class="pre">StrEnum.partition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.removeprefix"><code class="docutils literal notranslate"><span class="pre">StrEnum.removeprefix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.removesuffix"><code class="docutils literal notranslate"><span class="pre">StrEnum.removesuffix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.replace"><code class="docutils literal notranslate"><span class="pre">StrEnum.replace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.rfind"><code class="docutils literal notranslate"><span class="pre">StrEnum.rfind()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.rindex"><code class="docutils literal notranslate"><span class="pre">StrEnum.rindex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.rjust"><code class="docutils literal notranslate"><span class="pre">StrEnum.rjust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.rpartition"><code class="docutils literal notranslate"><span class="pre">StrEnum.rpartition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.rsplit"><code class="docutils literal notranslate"><span class="pre">StrEnum.rsplit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.rstrip"><code class="docutils literal notranslate"><span class="pre">StrEnum.rstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.split"><code class="docutils literal notranslate"><span class="pre">StrEnum.split()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.splitlines"><code class="docutils literal notranslate"><span class="pre">StrEnum.splitlines()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.startswith"><code class="docutils literal notranslate"><span class="pre">StrEnum.startswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.strip"><code class="docutils literal notranslate"><span class="pre">StrEnum.strip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.swapcase"><code class="docutils literal notranslate"><span class="pre">StrEnum.swapcase()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.title"><code class="docutils literal notranslate"><span class="pre">StrEnum.title()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.to_list"><code class="docutils literal notranslate"><span class="pre">StrEnum.to_list()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.translate"><code class="docutils literal notranslate"><span class="pre">StrEnum.translate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.upper"><code class="docutils literal notranslate"><span class="pre">StrEnum.upper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.StrEnum.zfill"><code class="docutils literal notranslate"><span class="pre">StrEnum.zfill()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.TsElCols"><code class="docutils literal notranslate"><span class="pre">TsElCols</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.BATTERY_CHARGE"><code class="docutils literal notranslate"><span class="pre">TsElCols.BATTERY_CHARGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.BATTERY_DISCHARGE"><code class="docutils literal notranslate"><span class="pre">TsElCols.BATTERY_DISCHARGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.EL_DEMAND"><code class="docutils literal notranslate"><span class="pre">TsElCols.EL_DEMAND</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.EL_DEM_HEAT"><code class="docutils literal notranslate"><span class="pre">TsElCols.EL_DEM_HEAT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.EL_DEM_TOT"><code class="docutils literal notranslate"><span class="pre">TsElCols.EL_DEM_TOT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.FEEDIN"><code class="docutils literal notranslate"><span class="pre">TsElCols.FEEDIN</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.GRID_DEMAND"><code class="docutils literal notranslate"><span class="pre">TsElCols.GRID_DEMAND</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.GRID_EMOB"><code class="docutils literal notranslate"><span class="pre">TsElCols.GRID_EMOB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.GRID_HEATPUMP"><code class="docutils literal notranslate"><span class="pre">TsElCols.GRID_HEATPUMP</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.HELPER_EL"><code class="docutils literal notranslate"><span class="pre">TsElCols.HELPER_EL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.PV"><code class="docutils literal notranslate"><span class="pre">TsElCols.PV</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.PV_CURTAILED"><code class="docutils literal notranslate"><span class="pre">TsElCols.PV_CURTAILED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.capitalize"><code class="docutils literal notranslate"><span class="pre">TsElCols.capitalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.casefold"><code class="docutils literal notranslate"><span class="pre">TsElCols.casefold()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.center"><code class="docutils literal notranslate"><span class="pre">TsElCols.center()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.count"><code class="docutils literal notranslate"><span class="pre">TsElCols.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.encode"><code class="docutils literal notranslate"><span class="pre">TsElCols.encode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.endswith"><code class="docutils literal notranslate"><span class="pre">TsElCols.endswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.expandtabs"><code class="docutils literal notranslate"><span class="pre">TsElCols.expandtabs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.find"><code class="docutils literal notranslate"><span class="pre">TsElCols.find()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.format"><code class="docutils literal notranslate"><span class="pre">TsElCols.format()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.format_map"><code class="docutils literal notranslate"><span class="pre">TsElCols.format_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.index"><code class="docutils literal notranslate"><span class="pre">TsElCols.index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.isalnum"><code class="docutils literal notranslate"><span class="pre">TsElCols.isalnum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.isalpha"><code class="docutils literal notranslate"><span class="pre">TsElCols.isalpha()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.isascii"><code class="docutils literal notranslate"><span class="pre">TsElCols.isascii()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.isdecimal"><code class="docutils literal notranslate"><span class="pre">TsElCols.isdecimal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.isdigit"><code class="docutils literal notranslate"><span class="pre">TsElCols.isdigit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.isidentifier"><code class="docutils literal notranslate"><span class="pre">TsElCols.isidentifier()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.islower"><code class="docutils literal notranslate"><span class="pre">TsElCols.islower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.isnumeric"><code class="docutils literal notranslate"><span class="pre">TsElCols.isnumeric()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.isprintable"><code class="docutils literal notranslate"><span class="pre">TsElCols.isprintable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.isspace"><code class="docutils literal notranslate"><span class="pre">TsElCols.isspace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.istitle"><code class="docutils literal notranslate"><span class="pre">TsElCols.istitle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.isupper"><code class="docutils literal notranslate"><span class="pre">TsElCols.isupper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.join"><code class="docutils literal notranslate"><span class="pre">TsElCols.join()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.ljust"><code class="docutils literal notranslate"><span class="pre">TsElCols.ljust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.lower"><code class="docutils literal notranslate"><span class="pre">TsElCols.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.lstrip"><code class="docutils literal notranslate"><span class="pre">TsElCols.lstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.maketrans"><code class="docutils literal notranslate"><span class="pre">TsElCols.maketrans()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.partition"><code class="docutils literal notranslate"><span class="pre">TsElCols.partition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.removeprefix"><code class="docutils literal notranslate"><span class="pre">TsElCols.removeprefix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.removesuffix"><code class="docutils literal notranslate"><span class="pre">TsElCols.removesuffix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.replace"><code class="docutils literal notranslate"><span class="pre">TsElCols.replace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.rfind"><code class="docutils literal notranslate"><span class="pre">TsElCols.rfind()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.rindex"><code class="docutils literal notranslate"><span class="pre">TsElCols.rindex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.rjust"><code class="docutils literal notranslate"><span class="pre">TsElCols.rjust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.rpartition"><code class="docutils literal notranslate"><span class="pre">TsElCols.rpartition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.rsplit"><code class="docutils literal notranslate"><span class="pre">TsElCols.rsplit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.rstrip"><code class="docutils literal notranslate"><span class="pre">TsElCols.rstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.split"><code class="docutils literal notranslate"><span class="pre">TsElCols.split()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.splitlines"><code class="docutils literal notranslate"><span class="pre">TsElCols.splitlines()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.startswith"><code class="docutils literal notranslate"><span class="pre">TsElCols.startswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.strip"><code class="docutils literal notranslate"><span class="pre">TsElCols.strip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.swapcase"><code class="docutils literal notranslate"><span class="pre">TsElCols.swapcase()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.title"><code class="docutils literal notranslate"><span class="pre">TsElCols.title()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.translate"><code class="docutils literal notranslate"><span class="pre">TsElCols.translate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.upper"><code class="docutils literal notranslate"><span class="pre">TsElCols.upper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsElCols.zfill"><code class="docutils literal notranslate"><span class="pre">TsElCols.zfill()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.TsOtherCols"><code class="docutils literal notranslate"><span class="pre">TsOtherCols</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.CO2_EQ"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.CO2_EQ</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.ELEC_PRICE_EMOB"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.ELEC_PRICE_EMOB</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.ELEC_PRICE_HEAT"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.ELEC_PRICE_HEAT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.ELEC_PRICE_HH"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.ELEC_PRICE_HH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.TEMP_AIR"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.TEMP_AIR</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.capitalize"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.capitalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.casefold"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.casefold()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.center"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.center()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.count"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.encode"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.encode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.endswith"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.endswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.expandtabs"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.expandtabs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.find"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.find()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.format"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.format()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.format_map"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.format_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.index"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.isalnum"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.isalnum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.isalpha"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.isalpha()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.isascii"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.isascii()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.isdecimal"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.isdecimal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.isdigit"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.isdigit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.isidentifier"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.isidentifier()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.islower"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.islower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.isnumeric"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.isnumeric()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.isprintable"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.isprintable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.isspace"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.isspace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.istitle"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.istitle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.isupper"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.isupper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.join"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.join()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.ljust"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.ljust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.lower"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.lstrip"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.lstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.maketrans"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.maketrans()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.partition"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.partition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.removeprefix"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.removeprefix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.removesuffix"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.removesuffix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.replace"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.replace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.rfind"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.rfind()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.rindex"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.rindex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.rjust"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.rjust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.rpartition"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.rpartition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.rsplit"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.rsplit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.rstrip"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.rstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.split"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.split()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.splitlines"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.splitlines()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.startswith"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.startswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.strip"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.strip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.swapcase"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.swapcase()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.title"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.title()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.translate"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.translate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.upper"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.upper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsOtherCols.zfill"><code class="docutils literal notranslate"><span class="pre">TsOtherCols.zfill()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.TsThCols"><code class="docutils literal notranslate"><span class="pre">TsThCols</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.BUFFER_STORAGE_CHARGE"><code class="docutils literal notranslate"><span class="pre">TsThCols.BUFFER_STORAGE_CHARGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.BUFFER_STORAGE_CHARGE_HT"><code class="docutils literal notranslate"><span class="pre">TsThCols.BUFFER_STORAGE_CHARGE_HT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.BUFFER_STORAGE_DISCHARGE"><code class="docutils literal notranslate"><span class="pre">TsThCols.BUFFER_STORAGE_DISCHARGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.BUFFER_STORAGE_DISCHARGE_HT"><code class="docutils literal notranslate"><span class="pre">TsThCols.BUFFER_STORAGE_DISCHARGE_HT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.DHW_STORAGE_CHARGE"><code class="docutils literal notranslate"><span class="pre">TsThCols.DHW_STORAGE_CHARGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.DHW_STORAGE_DISCHARGE"><code class="docutils literal notranslate"><span class="pre">TsThCols.DHW_STORAGE_DISCHARGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.DIRECT_EL_HEATER"><code class="docutils literal notranslate"><span class="pre">TsThCols.DIRECT_EL_HEATER</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.GAS_BOILER"><code class="docutils literal notranslate"><span class="pre">TsThCols.GAS_BOILER</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.HEATPUMP_AMBIENT_HEAT"><code class="docutils literal notranslate"><span class="pre">TsThCols.HEATPUMP_AMBIENT_HEAT</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.HEATPUMP_EL"><code class="docutils literal notranslate"><span class="pre">TsThCols.HEATPUMP_EL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.HEAT_GAINS"><code class="docutils literal notranslate"><span class="pre">TsThCols.HEAT_GAINS</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.HEAT_GAINS_USED"><code class="docutils literal notranslate"><span class="pre">TsThCols.HEAT_GAINS_USED</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.HELPER_TH"><code class="docutils literal notranslate"><span class="pre">TsThCols.HELPER_TH</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.QMAX_SOLAR_THERMAL"><code class="docutils literal notranslate"><span class="pre">TsThCols.QMAX_SOLAR_THERMAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.ROOMHEAT_DEMAND"><code class="docutils literal notranslate"><span class="pre">TsThCols.ROOMHEAT_DEMAND</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.SOLAR_THERMAL"><code class="docutils literal notranslate"><span class="pre">TsThCols.SOLAR_THERMAL</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.TH_DEMAND"><code class="docutils literal notranslate"><span class="pre">TsThCols.TH_DEMAND</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.TH_INERTIA_CHARGE"><code class="docutils literal notranslate"><span class="pre">TsThCols.TH_INERTIA_CHARGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.TH_INERTIA_DISCHARGE"><code class="docutils literal notranslate"><span class="pre">TsThCols.TH_INERTIA_DISCHARGE</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.capitalize"><code class="docutils literal notranslate"><span class="pre">TsThCols.capitalize()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.casefold"><code class="docutils literal notranslate"><span class="pre">TsThCols.casefold()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.center"><code class="docutils literal notranslate"><span class="pre">TsThCols.center()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.count"><code class="docutils literal notranslate"><span class="pre">TsThCols.count()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.encode"><code class="docutils literal notranslate"><span class="pre">TsThCols.encode()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.endswith"><code class="docutils literal notranslate"><span class="pre">TsThCols.endswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.expandtabs"><code class="docutils literal notranslate"><span class="pre">TsThCols.expandtabs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.find"><code class="docutils literal notranslate"><span class="pre">TsThCols.find()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.format"><code class="docutils literal notranslate"><span class="pre">TsThCols.format()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.format_map"><code class="docutils literal notranslate"><span class="pre">TsThCols.format_map()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.index"><code class="docutils literal notranslate"><span class="pre">TsThCols.index()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.isalnum"><code class="docutils literal notranslate"><span class="pre">TsThCols.isalnum()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.isalpha"><code class="docutils literal notranslate"><span class="pre">TsThCols.isalpha()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.isascii"><code class="docutils literal notranslate"><span class="pre">TsThCols.isascii()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.isdecimal"><code class="docutils literal notranslate"><span class="pre">TsThCols.isdecimal()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.isdigit"><code class="docutils literal notranslate"><span class="pre">TsThCols.isdigit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.isidentifier"><code class="docutils literal notranslate"><span class="pre">TsThCols.isidentifier()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.islower"><code class="docutils literal notranslate"><span class="pre">TsThCols.islower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.isnumeric"><code class="docutils literal notranslate"><span class="pre">TsThCols.isnumeric()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.isprintable"><code class="docutils literal notranslate"><span class="pre">TsThCols.isprintable()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.isspace"><code class="docutils literal notranslate"><span class="pre">TsThCols.isspace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.istitle"><code class="docutils literal notranslate"><span class="pre">TsThCols.istitle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.isupper"><code class="docutils literal notranslate"><span class="pre">TsThCols.isupper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.join"><code class="docutils literal notranslate"><span class="pre">TsThCols.join()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.ljust"><code class="docutils literal notranslate"><span class="pre">TsThCols.ljust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.lower"><code class="docutils literal notranslate"><span class="pre">TsThCols.lower()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.lstrip"><code class="docutils literal notranslate"><span class="pre">TsThCols.lstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.maketrans"><code class="docutils literal notranslate"><span class="pre">TsThCols.maketrans()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.partition"><code class="docutils literal notranslate"><span class="pre">TsThCols.partition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.removeprefix"><code class="docutils literal notranslate"><span class="pre">TsThCols.removeprefix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.removesuffix"><code class="docutils literal notranslate"><span class="pre">TsThCols.removesuffix()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.replace"><code class="docutils literal notranslate"><span class="pre">TsThCols.replace()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.rfind"><code class="docutils literal notranslate"><span class="pre">TsThCols.rfind()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.rindex"><code class="docutils literal notranslate"><span class="pre">TsThCols.rindex()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.rjust"><code class="docutils literal notranslate"><span class="pre">TsThCols.rjust()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.rpartition"><code class="docutils literal notranslate"><span class="pre">TsThCols.rpartition()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.rsplit"><code class="docutils literal notranslate"><span class="pre">TsThCols.rsplit()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.rstrip"><code class="docutils literal notranslate"><span class="pre">TsThCols.rstrip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.split"><code class="docutils literal notranslate"><span class="pre">TsThCols.split()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.splitlines"><code class="docutils literal notranslate"><span class="pre">TsThCols.splitlines()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.startswith"><code class="docutils literal notranslate"><span class="pre">TsThCols.startswith()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.strip"><code class="docutils literal notranslate"><span class="pre">TsThCols.strip()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.swapcase"><code class="docutils literal notranslate"><span class="pre">TsThCols.swapcase()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.title"><code class="docutils literal notranslate"><span class="pre">TsThCols.title()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.translate"><code class="docutils literal notranslate"><span class="pre">TsThCols.translate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.upper"><code class="docutils literal notranslate"><span class="pre">TsThCols.upper()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="export.html#export.export_results.TsThCols.zfill"><code class="docutils literal notranslate"><span class="pre">TsThCols.zfill()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.create_keyfacts_summary"><code class="docutils literal notranslate"><span class="pre">create_keyfacts_summary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.define_ts_plots"><code class="docutils literal notranslate"><span class="pre">define_ts_plots()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.write_climate_data_xlsx_analysis"><code class="docutils literal notranslate"><span class="pre">write_climate_data_xlsx_analysis()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.write_results_summary"><code class="docutils literal notranslate"><span class="pre">write_results_summary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="export.html#export.export_results.write_scenario_results"><code class="docutils literal notranslate"><span class="pre">write_scenario_results()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="helper.html">helper module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.Tee"><code class="docutils literal notranslate"><span class="pre">Tee</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="helper.html#helper.Tee.flush"><code class="docutils literal notranslate"><span class="pre">Tee.flush()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="helper.html#helper.Tee.write"><code class="docutils literal notranslate"><span class="pre">Tee.write()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.calc_for_blocks_of_n"><code class="docutils literal notranslate"><span class="pre">calc_for_blocks_of_n()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.calc_hours_in_period"><code class="docutils literal notranslate"><span class="pre">calc_hours_in_period()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.calc_th_demand_summary"><code class="docutils literal notranslate"><span class="pre">calc_th_demand_summary()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.check_if_values_outside_range"><code class="docutils literal notranslate"><span class="pre">check_if_values_outside_range()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.check_if_zero_or_nan"><code class="docutils literal notranslate"><span class="pre">check_if_zero_or_nan()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.create_climate_data_dump_id"><code class="docutils literal notranslate"><span class="pre">create_climate_data_dump_id()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.create_result_folder"><code class="docutils literal notranslate"><span class="pre">create_result_folder()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.create_ts_data_dump_id"><code class="docutils literal notranslate"><span class="pre">create_ts_data_dump_id()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.create_ts_multiindex"><code class="docutils literal notranslate"><span class="pre">create_ts_multiindex()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.date_within_period"><code class="docutils literal notranslate"><span class="pre">date_within_period()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.day_of_year"><code class="docutils literal notranslate"><span class="pre">day_of_year()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.dump_pickle"><code class="docutils literal notranslate"><span class="pre">dump_pickle()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.get_country_state_city_for_coordinates"><code class="docutils literal notranslate"><span class="pre">get_country_state_city_for_coordinates()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.get_holidays"><code class="docutils literal notranslate"><span class="pre">get_holidays()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.get_holidays_from_lib"><code class="docutils literal notranslate"><span class="pre">get_holidays_from_lib()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.get_hour_from_multiindex"><code class="docutils literal notranslate"><span class="pre">get_hour_from_multiindex()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.get_season"><code class="docutils literal notranslate"><span class="pre">get_season()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.get_state_abbr_for_state_name"><code class="docutils literal notranslate"><span class="pre">get_state_abbr_for_state_name()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.get_typeday"><code class="docutils literal notranslate"><span class="pre">get_typeday()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.get_var_t"><code class="docutils literal notranslate"><span class="pre">get_var_t()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.hour_within_period"><code class="docutils literal notranslate"><span class="pre">hour_within_period()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.identify_blocks"><code class="docutils literal notranslate"><span class="pre">identify_blocks()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.linear_extrapolate_all_columns"><code class="docutils literal notranslate"><span class="pre">linear_extrapolate_all_columns()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.load_pickle"><code class="docutils literal notranslate"><span class="pre">load_pickle()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.match_str_with_enum"><code class="docutils literal notranslate"><span class="pre">match_str_with_enum()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.mm_dd_str_to_datetime"><code class="docutils literal notranslate"><span class="pre">mm_dd_str_to_datetime()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.normalize_wrt_sum"><code class="docutils literal notranslate"><span class="pre">normalize_wrt_sum()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.reformat_string_w_umlauts"><code class="docutils literal notranslate"><span class="pre">reformat_string_w_umlauts()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.tuple_list_from_hour_periods"><code class="docutils literal notranslate"><span class="pre">tuple_list_from_hour_periods()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html#helper.yield_pos_of_next_higher_number_in_ordered_list"><code class="docutils literal notranslate"><span class="pre">yield_pos_of_next_higher_number_in_ordered_list()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="model.html">model package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="model.html#module-model.components">model.components module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.CombustionHeater"><code class="docutils literal notranslate"><span class="pre">CombustionHeater</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.Component"><code class="docutils literal notranslate"><span class="pre">Component</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.Demand"><code class="docutils literal notranslate"><span class="pre">Demand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.Demand.p_t"><code class="docutils literal notranslate"><span class="pre">Demand.p_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.DirectElHeater"><code class="docutils literal notranslate"><span class="pre">DirectElHeater</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ElDemand"><code class="docutils literal notranslate"><span class="pre">ElDemand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElDemand.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">ElDemand.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElDemand.is_built"><code class="docutils literal notranslate"><span class="pre">ElDemand.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElDemand.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">ElDemand.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElDemand.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">ElDemand.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElDemand.p_t"><code class="docutils literal notranslate"><span class="pre">ElDemand.p_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElDemand.t_full_max"><code class="docutils literal notranslate"><span class="pre">ElDemand.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElDemand.t_full_min"><code class="docutils literal notranslate"><span class="pre">ElDemand.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElDemand.var_cost_t"><code class="docutils literal notranslate"><span class="pre">ElDemand.var_cost_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ElExport"><code class="docutils literal notranslate"><span class="pre">ElExport</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElExport.revenue_per_kwh"><code class="docutils literal notranslate"><span class="pre">ElExport.revenue_per_kwh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ElImport"><code class="docutils literal notranslate"><span class="pre">ElImport</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElImport.costs_per_kwh"><code class="docutils literal notranslate"><span class="pre">ElImport.costs_per_kwh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ElNode"><code class="docutils literal notranslate"><span class="pre">ElNode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElNode.sinks"><code class="docutils literal notranslate"><span class="pre">ElNode.sinks</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElNode.sources"><code class="docutils literal notranslate"><span class="pre">ElNode.sources</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ElSink"><code class="docutils literal notranslate"><span class="pre">ElSink</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ElSource"><code class="docutils literal notranslate"><span class="pre">ElSource</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ElStorage"><code class="docutils literal notranslate"><span class="pre">ElStorage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElStorage.c_max"><code class="docutils literal notranslate"><span class="pre">ElStorage.c_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElStorage.c_max_rel"><code class="docutils literal notranslate"><span class="pre">ElStorage.c_max_rel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElStorage.c_min"><code class="docutils literal notranslate"><span class="pre">ElStorage.c_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElStorage.c_min_rel"><code class="docutils literal notranslate"><span class="pre">ElStorage.c_min_rel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElStorage.c_rate_max"><code class="docutils literal notranslate"><span class="pre">ElStorage.c_rate_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElStorage.eff_in"><code class="docutils literal notranslate"><span class="pre">ElStorage.eff_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElStorage.eff_out"><code class="docutils literal notranslate"><span class="pre">ElStorage.eff_out</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElStorage.eff_store"><code class="docutils literal notranslate"><span class="pre">ElStorage.eff_store</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElStorage.p_max_in"><code class="docutils literal notranslate"><span class="pre">ElStorage.p_max_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElStorage.p_max_out"><code class="docutils literal notranslate"><span class="pre">ElStorage.p_max_out</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ElectricLine"><code class="docutils literal notranslate"><span class="pre">ElectricLine</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ElectricLine.eff"><code class="docutils literal notranslate"><span class="pre">ElectricLine.eff</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.Export"><code class="docutils literal notranslate"><span class="pre">Export</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.Export.revenue_per_kwh"><code class="docutils literal notranslate"><span class="pre">Export.revenue_per_kwh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.FlexElDemand"><code class="docutils literal notranslate"><span class="pre">FlexElDemand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.FlexElDemand.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">FlexElDemand.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.FlexElDemand.is_built"><code class="docutils literal notranslate"><span class="pre">FlexElDemand.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.FlexElDemand.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">FlexElDemand.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.FlexElDemand.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">FlexElDemand.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.FlexElDemand.revenue_per_kwh"><code class="docutils literal notranslate"><span class="pre">FlexElDemand.revenue_per_kwh</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.FlexElDemand.t_full_max"><code class="docutils literal notranslate"><span class="pre">FlexElDemand.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.FlexElDemand.t_full_min"><code class="docutils literal notranslate"><span class="pre">FlexElDemand.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.FlexElDemand.var_cost_t"><code class="docutils literal notranslate"><span class="pre">FlexElDemand.var_cost_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.FlowTempLevel"><code class="docutils literal notranslate"><span class="pre">FlowTempLevel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.HeatExchanger"><code class="docutils literal notranslate"><span class="pre">HeatExchanger</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.HeatExchanger.eff"><code class="docutils literal notranslate"><span class="pre">HeatExchanger.eff</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.HeatGains"><code class="docutils literal notranslate"><span class="pre">HeatGains</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.HeatGains.costs_per_kwh"><code class="docutils literal notranslate"><span class="pre">HeatGains.costs_per_kwh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.Heatpump"><code class="docutils literal notranslate"><span class="pre">Heatpump</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.Import"><code class="docutils literal notranslate"><span class="pre">Import</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.Import.costs_per_kwh"><code class="docutils literal notranslate"><span class="pre">Import.costs_per_kwh</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.Link"><code class="docutils literal notranslate"><span class="pre">Link</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.Link.eff"><code class="docutils literal notranslate"><span class="pre">Link.eff</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.MultiTempStorage"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.c_max"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.c_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.c_max_rel"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.c_max_rel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.c_min"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.c_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.c_min_rel"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.c_min_rel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.c_rate_max"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.c_rate_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.calc_th_capacity"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.calc_th_capacity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.eff_in"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.eff_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.eff_out"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.eff_out</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.eff_store"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.eff_store</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.p_max_in"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.p_max_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.MultiTempStorage.p_max_out"><code class="docutils literal notranslate"><span class="pre">MultiTempStorage.p_max_out</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.Node"><code class="docutils literal notranslate"><span class="pre">Node</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.Node.sinks"><code class="docutils literal notranslate"><span class="pre">Node.sinks</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.Node.sources"><code class="docutils literal notranslate"><span class="pre">Node.sources</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.PV"><code class="docutils literal notranslate"><span class="pre">PV</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.PV.potential"><code class="docutils literal notranslate"><span class="pre">PV.potential</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.PV.surface_azimuth"><code class="docutils literal notranslate"><span class="pre">PV.surface_azimuth</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.PV.surface_tilt"><code class="docutils literal notranslate"><span class="pre">PV.surface_tilt</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.Refurbishment"><code class="docutils literal notranslate"><span class="pre">Refurbishment</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.RoomheatDemand"><code class="docutils literal notranslate"><span class="pre">RoomheatDemand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatDemand.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">RoomheatDemand.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatDemand.is_built"><code class="docutils literal notranslate"><span class="pre">RoomheatDemand.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatDemand.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">RoomheatDemand.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatDemand.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">RoomheatDemand.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatDemand.p_t"><code class="docutils literal notranslate"><span class="pre">RoomheatDemand.p_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatDemand.t_full_max"><code class="docutils literal notranslate"><span class="pre">RoomheatDemand.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatDemand.t_full_min"><code class="docutils literal notranslate"><span class="pre">RoomheatDemand.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatDemand.var_cost_t"><code class="docutils literal notranslate"><span class="pre">RoomheatDemand.var_cost_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.RoomheatNode"><code class="docutils literal notranslate"><span class="pre">RoomheatNode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatNode.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">RoomheatNode.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatNode.is_built"><code class="docutils literal notranslate"><span class="pre">RoomheatNode.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatNode.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">RoomheatNode.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatNode.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">RoomheatNode.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatNode.sinks"><code class="docutils literal notranslate"><span class="pre">RoomheatNode.sinks</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatNode.sources"><code class="docutils literal notranslate"><span class="pre">RoomheatNode.sources</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatNode.t_full_max"><code class="docutils literal notranslate"><span class="pre">RoomheatNode.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatNode.t_full_min"><code class="docutils literal notranslate"><span class="pre">RoomheatNode.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatNode.temperature"><code class="docutils literal notranslate"><span class="pre">RoomheatNode.temperature</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.RoomheatNode.var_cost_t"><code class="docutils literal notranslate"><span class="pre">RoomheatNode.var_cost_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.Sink"><code class="docutils literal notranslate"><span class="pre">Sink</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.SolarPotential"><code class="docutils literal notranslate"><span class="pre">SolarPotential</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarPotential.gen_ts_normalized"><code class="docutils literal notranslate"><span class="pre">SolarPotential.gen_ts_normalized</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarPotential.surface_azimuth"><code class="docutils literal notranslate"><span class="pre">SolarPotential.surface_azimuth</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarPotential.surface_tilt"><code class="docutils literal notranslate"><span class="pre">SolarPotential.surface_tilt</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.SolarPotentialDummy"><code class="docutils literal notranslate"><span class="pre">SolarPotentialDummy</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.SolarTechnology"><code class="docutils literal notranslate"><span class="pre">SolarTechnology</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarTechnology.potential"><code class="docutils literal notranslate"><span class="pre">SolarTechnology.potential</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarTechnology.surface_azimuth"><code class="docutils literal notranslate"><span class="pre">SolarTechnology.surface_azimuth</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarTechnology.surface_tilt"><code class="docutils literal notranslate"><span class="pre">SolarTechnology.surface_tilt</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.SolarThermal"><code class="docutils literal notranslate"><span class="pre">SolarThermal</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.calc_qmax_t"><code class="docutils literal notranslate"><span class="pre">SolarThermal.calc_qmax_t()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">SolarThermal.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.is_built"><code class="docutils literal notranslate"><span class="pre">SolarThermal.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">SolarThermal.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">SolarThermal.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.potential"><code class="docutils literal notranslate"><span class="pre">SolarThermal.potential</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.surface_azimuth"><code class="docutils literal notranslate"><span class="pre">SolarThermal.surface_azimuth</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.surface_tilt"><code class="docutils literal notranslate"><span class="pre">SolarThermal.surface_tilt</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.t_full_max"><code class="docutils literal notranslate"><span class="pre">SolarThermal.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.t_full_min"><code class="docutils literal notranslate"><span class="pre">SolarThermal.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.SolarThermal.var_cost_t"><code class="docutils literal notranslate"><span class="pre">SolarThermal.var_cost_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.Source"><code class="docutils literal notranslate"><span class="pre">Source</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.StorageTechnology"><code class="docutils literal notranslate"><span class="pre">StorageTechnology</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.StorageTechnology.c_max"><code class="docutils literal notranslate"><span class="pre">StorageTechnology.c_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.StorageTechnology.c_max_rel"><code class="docutils literal notranslate"><span class="pre">StorageTechnology.c_max_rel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.StorageTechnology.c_min"><code class="docutils literal notranslate"><span class="pre">StorageTechnology.c_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.StorageTechnology.c_min_rel"><code class="docutils literal notranslate"><span class="pre">StorageTechnology.c_min_rel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.StorageTechnology.c_rate_max"><code class="docutils literal notranslate"><span class="pre">StorageTechnology.c_rate_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.StorageTechnology.eff_in"><code class="docutils literal notranslate"><span class="pre">StorageTechnology.eff_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.StorageTechnology.eff_out"><code class="docutils literal notranslate"><span class="pre">StorageTechnology.eff_out</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.StorageTechnology.eff_store"><code class="docutils literal notranslate"><span class="pre">StorageTechnology.eff_store</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.StorageTechnology.p_max_in"><code class="docutils literal notranslate"><span class="pre">StorageTechnology.p_max_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.StorageTechnology.p_max_out"><code class="docutils literal notranslate"><span class="pre">StorageTechnology.p_max_out</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.TempLevel"><code class="docutils literal notranslate"><span class="pre">TempLevel</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ThDemand"><code class="docutils literal notranslate"><span class="pre">ThDemand</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThDemand.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">ThDemand.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThDemand.is_built"><code class="docutils literal notranslate"><span class="pre">ThDemand.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThDemand.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">ThDemand.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThDemand.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">ThDemand.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThDemand.p_t"><code class="docutils literal notranslate"><span class="pre">ThDemand.p_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThDemand.t_full_max"><code class="docutils literal notranslate"><span class="pre">ThDemand.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThDemand.t_full_min"><code class="docutils literal notranslate"><span class="pre">ThDemand.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThDemand.var_cost_t"><code class="docutils literal notranslate"><span class="pre">ThDemand.var_cost_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ThExport"><code class="docutils literal notranslate"><span class="pre">ThExport</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThExport.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">ThExport.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThExport.is_built"><code class="docutils literal notranslate"><span class="pre">ThExport.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThExport.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">ThExport.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThExport.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">ThExport.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThExport.revenue_per_kwh"><code class="docutils literal notranslate"><span class="pre">ThExport.revenue_per_kwh</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThExport.t_full_max"><code class="docutils literal notranslate"><span class="pre">ThExport.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThExport.t_full_min"><code class="docutils literal notranslate"><span class="pre">ThExport.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThExport.var_cost_t"><code class="docutils literal notranslate"><span class="pre">ThExport.var_cost_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ThImport"><code class="docutils literal notranslate"><span class="pre">ThImport</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThImport.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">ThImport.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThImport.costs_per_kwh"><code class="docutils literal notranslate"><span class="pre">ThImport.costs_per_kwh</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThImport.is_built"><code class="docutils literal notranslate"><span class="pre">ThImport.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThImport.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">ThImport.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThImport.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">ThImport.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThImport.t_full_max"><code class="docutils literal notranslate"><span class="pre">ThImport.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThImport.t_full_min"><code class="docutils literal notranslate"><span class="pre">ThImport.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThImport.var_cost_t"><code class="docutils literal notranslate"><span class="pre">ThImport.var_cost_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ThInertia"><code class="docutils literal notranslate"><span class="pre">ThInertia</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.c_max"><code class="docutils literal notranslate"><span class="pre">ThInertia.c_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.c_max_rel"><code class="docutils literal notranslate"><span class="pre">ThInertia.c_max_rel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.c_min"><code class="docutils literal notranslate"><span class="pre">ThInertia.c_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.c_min_rel"><code class="docutils literal notranslate"><span class="pre">ThInertia.c_min_rel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.c_rate_max"><code class="docutils literal notranslate"><span class="pre">ThInertia.c_rate_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">ThInertia.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.eff_in"><code class="docutils literal notranslate"><span class="pre">ThInertia.eff_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.eff_out"><code class="docutils literal notranslate"><span class="pre">ThInertia.eff_out</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.eff_store"><code class="docutils literal notranslate"><span class="pre">ThInertia.eff_store</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.is_built"><code class="docutils literal notranslate"><span class="pre">ThInertia.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.p_max_in"><code class="docutils literal notranslate"><span class="pre">ThInertia.p_max_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.p_max_out"><code class="docutils literal notranslate"><span class="pre">ThInertia.p_max_out</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">ThInertia.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">ThInertia.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.t_full_max"><code class="docutils literal notranslate"><span class="pre">ThInertia.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.t_full_min"><code class="docutils literal notranslate"><span class="pre">ThInertia.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThInertia.var_cost_t"><code class="docutils literal notranslate"><span class="pre">ThInertia.var_cost_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ThNode"><code class="docutils literal notranslate"><span class="pre">ThNode</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThNode.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">ThNode.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThNode.is_built"><code class="docutils literal notranslate"><span class="pre">ThNode.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThNode.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">ThNode.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThNode.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">ThNode.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThNode.sinks"><code class="docutils literal notranslate"><span class="pre">ThNode.sinks</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThNode.sources"><code class="docutils literal notranslate"><span class="pre">ThNode.sources</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThNode.t_full_max"><code class="docutils literal notranslate"><span class="pre">ThNode.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThNode.t_full_min"><code class="docutils literal notranslate"><span class="pre">ThNode.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThNode.var_cost_t"><code class="docutils literal notranslate"><span class="pre">ThNode.var_cost_t</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ThSink"><code class="docutils literal notranslate"><span class="pre">ThSink</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ThSource"><code class="docutils literal notranslate"><span class="pre">ThSource</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.components.ThStorage"><code class="docutils literal notranslate"><span class="pre">ThStorage</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.c_max"><code class="docutils literal notranslate"><span class="pre">ThStorage.c_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.c_max_rel"><code class="docutils literal notranslate"><span class="pre">ThStorage.c_max_rel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.c_min"><code class="docutils literal notranslate"><span class="pre">ThStorage.c_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.c_min_rel"><code class="docutils literal notranslate"><span class="pre">ThStorage.c_min_rel</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.c_rate_max"><code class="docutils literal notranslate"><span class="pre">ThStorage.c_rate_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.co2eq_per_kwh_t"><code class="docutils literal notranslate"><span class="pre">ThStorage.co2eq_per_kwh_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.eff_in"><code class="docutils literal notranslate"><span class="pre">ThStorage.eff_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.eff_out"><code class="docutils literal notranslate"><span class="pre">ThStorage.eff_out</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.eff_store"><code class="docutils literal notranslate"><span class="pre">ThStorage.eff_store</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.is_built"><code class="docutils literal notranslate"><span class="pre">ThStorage.is_built</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.p_max_in"><code class="docutils literal notranslate"><span class="pre">ThStorage.p_max_in</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.p_max_out"><code class="docutils literal notranslate"><span class="pre">ThStorage.p_max_out</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.p_max_rel_t"><code class="docutils literal notranslate"><span class="pre">ThStorage.p_max_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.p_min_rel_t"><code class="docutils literal notranslate"><span class="pre">ThStorage.p_min_rel_t</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.t_full_max"><code class="docutils literal notranslate"><span class="pre">ThStorage.t_full_max</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.t_full_min"><code class="docutils literal notranslate"><span class="pre">ThStorage.t_full_min</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="model.html#model.components.ThStorage.var_cost_t"><code class="docutils literal notranslate"><span class="pre">ThStorage.var_cost_t</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="model.html#module-model.economics">model.economics module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.economics.calc_annuity"><code class="docutils literal notranslate"><span class="pre">calc_annuity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.economics.calc_constant_escalation_row"><code class="docutils literal notranslate"><span class="pre">calc_constant_escalation_row()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.economics.calc_inv_cost_with_residuals_and_reinvests"><code class="docutils literal notranslate"><span class="pre">calc_inv_cost_with_residuals_and_reinvests()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.economics.calc_present_value"><code class="docutils literal notranslate"><span class="pre">calc_present_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.economics.calc_reinvest"><code class="docutils literal notranslate"><span class="pre">calc_reinvest()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.economics.calc_residual_value"><code class="docutils literal notranslate"><span class="pre">calc_residual_value()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.economics.celf"><code class="docutils literal notranslate"><span class="pre">celf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.economics.crf"><code class="docutils literal notranslate"><span class="pre">crf()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.economics.inflation_adjustment"><code class="docutils literal notranslate"><span class="pre">inflation_adjustment()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="model.html#module-model.pyomo_model">model.pyomo_model module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.c_inst_max_rule"><code class="docutils literal notranslate"><span class="pre">c_inst_max_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.c_inst_min_rule"><code class="docutils literal notranslate"><span class="pre">c_inst_min_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.c_t_max_rule"><code class="docutils literal notranslate"><span class="pre">c_t_max_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.c_t_min_rule"><code class="docutils literal notranslate"><span class="pre">c_t_min_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.c_t_rule"><code class="docutils literal notranslate"><span class="pre">c_t_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.c_th_t_in_l_rule"><code class="docutils literal notranslate"><span class="pre">c_th_t_in_l_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.c_th_t_max_rule"><code class="docutils literal notranslate"><span class="pre">c_th_t_max_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.c_th_t_min_rule"><code class="docutils literal notranslate"><span class="pre">c_th_t_min_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.c_th_t_temp_rule"><code class="docutils literal notranslate"><span class="pre">c_th_t_temp_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.c_th_t_tot_rule"><code class="docutils literal notranslate"><span class="pre">c_th_t_tot_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.check_components"><code class="docutils literal notranslate"><span class="pre">check_components()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.co2_costs_rule"><code class="docutils literal notranslate"><span class="pre">co2_costs_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.co2eq_rule"><code class="docutils literal notranslate"><span class="pre">co2eq_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.deh_p_th_t_feed_rule"><code class="docutils literal notranslate"><span class="pre">deh_p_th_t_feed_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.el_node_balance_rule"><code class="docutils literal notranslate"><span class="pre">el_node_balance_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.fix_costs_rule"><code class="docutils literal notranslate"><span class="pre">fix_costs_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.hltf_pmax_rule"><code class="docutils literal notranslate"><span class="pre">hltf_pmax_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.hp_out_off_range_rule"><code class="docutils literal notranslate"><span class="pre">hp_out_off_range_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.hp_p_th_feed_max_rule"><code class="docutils literal notranslate"><span class="pre">hp_p_th_feed_max_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.hp_p_th_t_drain_rule"><code class="docutils literal notranslate"><span class="pre">hp_p_th_t_drain_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.hp_p_th_t_feed_rule"><code class="docutils literal notranslate"><span class="pre">hp_p_th_t_feed_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.init_pyomo_model"><code class="docutils literal notranslate"><span class="pre">init_pyomo_model()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.inv_costs_rule"><code class="docutils literal notranslate"><span class="pre">inv_costs_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.is_built_rule"><code class="docutils literal notranslate"><span class="pre">is_built_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.max_cap_w_degradation_rule"><code class="docutils literal notranslate"><span class="pre">max_cap_w_degradation_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.max_charge_rule"><code class="docutils literal notranslate"><span class="pre">max_charge_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.max_cycle_rule"><code class="docutils literal notranslate"><span class="pre">max_cycle_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.max_discharge_rule"><code class="docutils literal notranslate"><span class="pre">max_discharge_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.max_endofchargecurrent_rule"><code class="docutils literal notranslate"><span class="pre">max_endofchargecurrent_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.objective_function"><code class="docutils literal notranslate"><span class="pre">objective_function()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_el_t_drain_rule"><code class="docutils literal notranslate"><span class="pre">p_el_t_drain_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_el_t_drain_temp_levels_rule"><code class="docutils literal notranslate"><span class="pre">p_el_t_drain_temp_levels_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_el_t_feed_rule"><code class="docutils literal notranslate"><span class="pre">p_el_t_feed_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_inst_max_rule"><code class="docutils literal notranslate"><span class="pre">p_inst_max_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_inst_min_node_rule"><code class="docutils literal notranslate"><span class="pre">p_inst_min_node_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_inst_min_rule"><code class="docutils literal notranslate"><span class="pre">p_inst_min_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_t_demand_rule"><code class="docutils literal notranslate"><span class="pre">p_t_demand_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_t_drain_max_rule"><code class="docutils literal notranslate"><span class="pre">p_t_drain_max_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_t_drain_min_rule"><code class="docutils literal notranslate"><span class="pre">p_t_drain_min_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_t_feed_max_rule"><code class="docutils literal notranslate"><span class="pre">p_t_feed_max_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_t_feed_min_rule"><code class="docutils literal notranslate"><span class="pre">p_t_feed_min_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_t_heat_gains_rule"><code class="docutils literal notranslate"><span class="pre">p_t_heat_gains_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_t_roomheat_demand_rule"><code class="docutils literal notranslate"><span class="pre">p_t_roomheat_demand_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_th_t_drain_rule"><code class="docutils literal notranslate"><span class="pre">p_th_t_drain_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.p_th_t_feed_rule"><code class="docutils literal notranslate"><span class="pre">p_th_t_feed_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.peak_load_rule"><code class="docutils literal notranslate"><span class="pre">peak_load_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.pv_gen_rule"><code class="docutils literal notranslate"><span class="pre">pv_gen_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.revenues_rule"><code class="docutils literal notranslate"><span class="pre">revenues_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.set_refurb_cap_rule"><code class="docutils literal notranslate"><span class="pre">set_refurb_cap_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.solarpotential_area_rule"><code class="docutils literal notranslate"><span class="pre">solarpotential_area_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.st_gen_rule"><code class="docutils literal notranslate"><span class="pre">st_gen_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.t_full_max_rule"><code class="docutils literal notranslate"><span class="pre">t_full_max_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.t_full_min_rule"><code class="docutils literal notranslate"><span class="pre">t_full_min_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.th_node_balance_rule"><code class="docutils literal notranslate"><span class="pre">th_node_balance_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.tot_st_gen_calc"><code class="docutils literal notranslate"><span class="pre">tot_st_gen_calc()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.tot_st_gen_rule"><code class="docutils literal notranslate"><span class="pre">tot_st_gen_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.trans_rule"><code class="docutils literal notranslate"><span class="pre">trans_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.trans_th_rule"><code class="docutils literal notranslate"><span class="pre">trans_th_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.var_costs_rule"><code class="docutils literal notranslate"><span class="pre">var_costs_rule()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="model.html#model.pyomo_model.w_flex_demand_rule"><code class="docutils literal notranslate"><span class="pre">w_flex_demand_rule()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="run_battery_opt.html">run_battery_opt module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="run_battery_opt.html#run_battery_opt.apply_hlzf_windows"><code class="docutils literal notranslate"><span class="pre">apply_hlzf_windows()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_battery_opt.html#run_battery_opt.run_optimization"><code class="docutils literal notranslate"><span class="pre">run_optimization()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_battery_opt.html#run_battery_opt.write_results"><code class="docutils literal notranslate"><span class="pre">write_results()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="run_building_opt.html">run_building_opt module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="run_building_opt.html#run_building_opt.prepare_input_data"><code class="docutils literal notranslate"><span class="pre">prepare_input_data()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_building_opt.html#run_building_opt.run_scenario"><code class="docutils literal notranslate"><span class="pre">run_scenario()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to P2Bldg’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="config.html" class="btn btn-neutral float-right" title="config module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

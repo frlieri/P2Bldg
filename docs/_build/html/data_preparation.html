@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>data_preparation package &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="export package" href="export.html" />
+    <link rel="prev" title="const module" href="const.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="const.html">const module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">data_preparation package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#module-data_preparation.data_formats">data_preparation.data_formats module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.data_formats.BuildingModelInput"><code class="docutils literal notranslate"><span class="pre">BuildingModelInput</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.data_formats.ScenarioData"><code class="docutils literal notranslate"><span class="pre">ScenarioData</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.data_formats.ScenarioResults"><code class="docutils literal notranslate"><span class="pre">ScenarioResults</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.data_formats.SheetData"><code class="docutils literal notranslate"><span class="pre">SheetData</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.data_formats.Timeseries"><code class="docutils literal notranslate"><span class="pre">Timeseries</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.data_formats.prepare_dummy_ts"><code class="docutils literal notranslate"><span class="pre">prepare_dummy_ts()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-data_preparation.demand_data">data_preparation.demand_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.demand_data.calc_emob_demands"><code class="docutils literal notranslate"><span class="pre">calc_emob_demands()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.demand_data.calc_flex_dem_from_ts_red_inputs"><code class="docutils literal notranslate"><span class="pre">calc_flex_dem_from_ts_red_inputs()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.demand_data.get_dhwcalc_series"><code class="docutils literal notranslate"><span class="pre">get_dhwcalc_series()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.demand_data.get_el_hh_profiles"><code class="docutils literal notranslate"><span class="pre">get_el_hh_profiles()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.demand_data.get_elec_co2_intensity"><code class="docutils literal notranslate"><span class="pre">get_elec_co2_intensity()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.demand_data.get_synpro_el_hh_profiles"><code class="docutils literal notranslate"><span class="pre">get_synpro_el_hh_profiles()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.demand_data.get_var_elec_prices"><code class="docutils literal notranslate"><span class="pre">get_var_elec_prices()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-data_preparation.pvgis_climate_data">data_preparation.pvgis_climate_data module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.pvgis_climate_data.get_pvgis_hourly_data"><code class="docutils literal notranslate"><span class="pre">get_pvgis_hourly_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.pvgis_climate_data.get_pvgis_monthly_data"><code class="docutils literal notranslate"><span class="pre">get_pvgis_monthly_data()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.pvgis_climate_data.get_pvgis_tmy_data"><code class="docutils literal notranslate"><span class="pre">get_pvgis_tmy_data()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#module-data_preparation.timeseries_reduction">data_preparation.timeseries_reduction module</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.timeseries_reduction.climate_data_analysis"><code class="docutils literal notranslate"><span class="pre">climate_data_analysis()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#data_preparation.timeseries_reduction.prepare_ts_profiles"><code class="docutils literal notranslate"><span class="pre">prepare_ts_profiles()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="export.html">export package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html">helper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_battery_opt.html">run_battery_opt module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_building_opt.html">run_building_opt module</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+      <li class="breadcrumb-item active">data_preparation package</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/data_preparation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="data-preparation-package">
+<h1>data_preparation package<a class="headerlink" href="#data-preparation-package" title="Permalink to this heading"></a></h1>
+<p>contains modules for preparing and processing input data for the energy system model.</p>
+<section id="module-data_preparation.data_formats">
+<span id="data-preparation-data-formats-module"></span><h2>data_preparation.data_formats module<a class="headerlink" href="#module-data_preparation.data_formats" title="Permalink to this heading"></a></h2>
+<p>src/data_preparation/data_formats.py</p>
+<p>This module provides core data structures and utilities for preparing and
+handling time-series and scenario data used by the optimization workflows.</p>
+<p>Primary classes and responsibilities:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Timeseries:</dt><dd><p>Encapsulates time-indexed data using a pandas DataFrame and provides
+utilities for indexing, resampling (hourly, quarter-hourly, daily),
+filtering by season/typeday/week/hour ranges, aggregation, normalization,
+and plotting helpers for typical-day analysis.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>ScenarioData:</dt><dd><p>Wraps scenario-specific input values extracted from the project Excel
+workbook. It enforces declared datatypes and yields structured sheet-level
+data objects for downstream initialization of model components.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>SheetData:</dt><dd><p>Dynamically organizes sheet parameters and component entries (e.g.
+pv, batt, hp, st) into attributes and nested dictionaries. Empty component
+entries are dropped to simplify component initialization.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>BuildingModelInput:</dt><dd><p>Loads and validates the structured Excel input file, enforces consistent
+scenario definitions across sheets, and prepares scenario dictionaries and
+heat-pump specification tables for use by model builders.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>ScenarioResults:</dt><dd><p>Converts a solved Pyomo ConcreteModel into a set of labeled time-series
+tables and time-invariant component summaries. It exposes helpers to query
+component-level costs, balances and time-series slices by regex and season.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>prepare_dummy_ts:</dt><dd><p>Convenience function to create a Timeseries instance populated with a
+constant value for quick testing or placeholder inputs.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Notes and dependencies:</p>
+<ul class="simple">
+<li><p>This module depends on pandas and pyomo (ConcreteModel types are referenced),
+and it integrates with project constants and helper functions defined in
+<cite>src.const</cite> and <cite>src.helper</cite>.</p></li>
+<li><p>Timeseries index/metadata columns follow the project <cite>TimeseriesCols</cite>
+enumeration and rely on modeled year and time-step constants for correct
+indexing and resampling behaviour.</p></li>
+<li><p>Designed to be agnostic to solver details; conversion of model outputs to
+pandas DataFrames is intended to simplify postprocessing, plotting and
+export.</p></li>
+</ul>
+<dl class="py class">
+<dt class="sig sig-object py" id="data_preparation.data_formats.BuildingModelInput">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data_preparation.data_formats.</span></span><span class="sig-name descname"><span class="pre">BuildingModelInput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#BuildingModelInput"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.BuildingModelInput" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents an input model for building simulations derived from Excel files.</p>
+<p>This class is designed to read and process input data from the structured Excel input workbook
+used in the building optimization. It handles multiple sheets with specific configurations,
+validates the scenario data across sheets, and processes heat pump specifications (HP Specifications).
+The class ensures consistency in scenario data and prepares the data for further usage.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fpath</strong> – Full file path to the input Excel file.</p></li>
+<li><p><strong>sheet_names</strong> – List of sheet names expected in the input Excel file.</p></li>
+<li><p><strong>sheet_names_sce_data</strong> – List of sheet names containing scenario-related data.</p></li>
+<li><p><strong>excel_data</strong> – Dictionary containing processed data from each sheet in the input Excel file.
+This excludes empty columns and fills missing data with placeholder values (‘nan’).</p></li>
+<li><p><strong>scenarios</strong> – List of scenario names extracted from the ‘Location’ sheet of the input file.</p></li>
+<li><p><strong>scenario_data</strong> – Dictionary holding <cite>ScenarioData</cite> objects for each scenario.</p></li>
+<li><p><strong>hp_specs</strong> – Dictionary containing processed heat pump specifications indexed by heat pump type.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="data_preparation.data_formats.ScenarioData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data_preparation.data_formats.</span></span><span class="sig-name descname"><span class="pre">ScenarioData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">excel_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scenario</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#ScenarioData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.ScenarioData" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents a scenario-specific dataset extracted from the input excel sheet.</p>
+<p>This class is designed to manage and initialize data relevant to a specific
+scenario in a structured format. It extracts and converts data relevant to the
+scenario from the provided Excel sheets, ensuring proper datatype validation
+and consistency.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>scenario_name</strong> – The name of the scenario being processed.</p></li>
+<li><p><strong>location</strong> – Sheet-specific data for ‘Location’, initialized for the given scenario.</p></li>
+<li><p><strong>consumption_data</strong> – Sheet-specific data for ‘Consumption Data’, initialized for the given scenario.</p></li>
+<li><p><strong>building_data</strong> – Sheet-specific data for ‘Building Data’, initialized for the given scenario.</p></li>
+<li><p><strong>tech_data</strong> – Sheet-specific data for ‘Technical Component Data’, initialized for the given scenario.</p></li>
+<li><p><strong>economic_data</strong> – Sheet-specific data for ‘Economic Data’, initialized for the given scenario.</p></li>
+<li><p><strong>model_settings</strong> – Sheet-specific data for ‘Model Settings’, initialized for the given scenario.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="data_preparation.data_formats.ScenarioResults">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data_preparation.data_formats.</span></span><span class="sig-name descname"><span class="pre">ScenarioResults</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts_inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ConcreteModel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#ScenarioResults"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.ScenarioResults" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Represents the results of one scenario of run_building_opt, handling time-series data,
+energy balances, and result summaries.</p>
+<p>The class processes inputs and model parameters, extracting various time-series datasets
+related to energy sources, sinks, storages, and other components. It computes yearly
+summaries and provides methods to query and filter the data for insights and analysis.</p>
+<p>The purpose of this class is to enable streamlined management and retrieval of simulation
+results, offering flexibility for further analysis and reporting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ts_inputs</strong> – Time-series input data used in simulation.</p></li>
+<li><p><strong>ts_el_sources</strong> – Time-series data for electrical energy sources.</p></li>
+<li><p><strong>ts_el_sinks</strong> – Time-series data for electrical energy sinks.</p></li>
+<li><p><strong>ts_th_sources</strong> – Time-series data for thermal energy sources.</p></li>
+<li><p><strong>ts_th_sinks</strong> – Time-series data for thermal energy sinks.</p></li>
+<li><p><strong>ts_storages</strong> – Time-series data for storages.</p></li>
+<li><p><strong>ts_others</strong> – Time-series data for other parameters.</p></li>
+<li><p><strong>yearly_sums</strong> – Summarized yearly data grouped by energy sources, sinks, and others.</p></li>
+<li><p><strong>key_facts</strong> – Holds specific key insights or summaries extracted from the results. Default is None.</p></li>
+<li><p><strong>ts_el_balance</strong> – Represents the electrical energy balance time-series. Default is None.</p></li>
+<li><p><strong>ts_th_balance</strong> – Represents the thermal energy balance time-series. Default is None.</p></li>
+<li><p><strong>ti_components</strong> – Technical and investment-related data of components, extracted and structured.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.ScenarioResults.find_vals">
+<span class="sig-name descname"><span class="pre">find_vals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">result_table_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">column_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/data_preparation/data_formats.html#ScenarioResults.find_vals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.ScenarioResults.find_vals" title="Permalink to this definition"></a></dt>
+<dd><p>filters for values in the result tables (of type pd.DataFrame), supports regex
+:param result_table_name: needs to be an attribute of self
+:param first_val: first value to be filtered for (in column names)
+:param second_val: second value to be filtered for (in row names)
+:return: filtered values</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.ScenarioResults.get_en_balance">
+<span class="sig-name descname"><span class="pre">get_en_balance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">en_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_sink</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">season</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Season</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#ScenarioResults.get_en_balance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.ScenarioResults.get_en_balance" title="Permalink to this definition"></a></dt>
+<dd><p>Get the energy balance based on the specified energy type, source or sink,
+search value, and an optional season. This method provides the sum of energy
+values either for a specific season or throughout the year.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>en_type</strong> – Type of energy. Must be either ‘el’ (electric) or ‘th’ (thermal).</p></li>
+<li><p><strong>src_sink</strong> – Determines whether to calculate for sources (‘src’) or sinks
+(‘sink’). Must be either ‘src’ or ‘sink’.</p></li>
+<li><p><strong>search_val</strong> – The search value used to filter data for calculation.</p></li>
+<li><p><strong>season</strong> – Optional. A season object that defines the time range for
+seasonal calculations. If not provided, yearly values are used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The sum of energy values as a float based on the specified parameters.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.ScenarioResults.get_ti_sum">
+<span class="sig-name descname"><span class="pre">get_ti_sum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">col</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">row</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="reference internal" href="_modules/data_preparation/data_formats.html#ScenarioResults.get_ti_sum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.ScenarioResults.get_ti_sum" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.ScenarioResults.get_ts">
+<span class="sig-name descname"><span class="pre">get_ts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">en_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">src_sink</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_val</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">season</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Season</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#ScenarioResults.get_ts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.ScenarioResults.get_ts" title="Permalink to this definition"></a></dt>
+<dd><p>Retrieves a time series DataFrame filtered by the given search value. The function
+accesses the corresponding table for energy type (‘el’ or ‘th’) and source/sink,
+and optionally filters by a specific season if provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>en_type</strong> – A string specifying the energy type. Must be ‘el’ or ‘th’.</p></li>
+<li><p><strong>src_sink</strong> – A string indicating whether to access source or sink data.
+Must be either ‘src’ or ‘sink’.</p></li>
+<li><p><strong>search_val</strong> – A string or regex pattern used to filter the time series data.</p></li>
+<li><p><strong>season</strong> – An optional <cite>Season</cite> object for filtering data by season.
+Defaults to None to include all seasons.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A filtered DataFrame based on the search value and optional season.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.ScenarioResults.to_dict">
+<span class="sig-name descname"><span class="pre">to_dict</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#ScenarioResults.to_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.ScenarioResults.to_dict" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="data_preparation.data_formats.SheetData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data_preparation.data_formats.</span></span><span class="sig-name descname"><span class="pre">SheetData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">params</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#SheetData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.SheetData" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Holds and processes data related to various component types and their attributes.</p>
+<p>The <cite>SheetData</cite> class is designed to dynamically assign attributes based on
+provided data, categorizing attributes into components and supporting
+their initialization. Parameters not related to known components are stored
+directly as attributes, while recognized component-related attributes are
+organized into dictionaries for easier management. The class also removes
+component data that is entirely empty or contains only <cite>NaN</cite> values for
+better organization and relevance.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>attribute1</strong> – Description of the attribute. The attribute can be any key
+passed to the constructor that does not belong to a recognized
+component type.</p></li>
+<li><p><strong>component_type</strong> – A dictionary of dictionaries, categorizing attributes
+related to known components by their types and instances.
+For example, categories such as walls, roofs, PVs, etc.,
+create separate structured data storage.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">data_preparation.data_formats.</span></span><span class="sig-name descname"><span class="pre">Timeseries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">TSStepSize.HOURLY</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2023</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Handles time-series data and provides functionality for manipulation, aggregation, resampling,
+filtering, and visualization. This class is primarily designed to leverage pandas DataFrame under
+the hood to enable robust time-series data analysis.</p>
+<p>The class organizes time-series data within a structured DataFrame, allowing users to define
+attributes such as frequency, temporal periods, and specific data columns. It supports operations
+like normalization, averaging, resampling between resolutions, and specialized plots for
+analytic visualizations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Variables<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>years</strong> – List of years covered by the time-series data.</p></li>
+<li><p><strong>freq</strong> – Frequency/step size of the time-series data.</p></li>
+<li><p><strong>index_columns</strong> – List of pre-defined index columns for time-series metadata.</p></li>
+<li><p><strong>data_columns</strong> – List of data columns that represent the core time-series values.</p></li>
+<li><p><strong>df</strong> – The primary DataFrame representation of the time-series data.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.apply_agg">
+<span class="sig-name descname"><span class="pre">apply_agg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">groupby_col</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_cols</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.apply_agg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.apply_agg" title="Permalink to this definition"></a></dt>
+<dd><p>Applies an aggregation function across specified columns after grouping the
+dataframe by a given column.</p>
+<p>This method groups the dataframe by the specified column and applies the given
+function to the data in the specified columns. If no specific columns are
+provided, the aggregation function is applied across all columns in the
+dataframe.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>groupby_col</strong> (<em>str</em>) – The name of the column by which the dataframe should
+be grouped.</p></li>
+<li><p><strong>func</strong> (<em>Callable</em>) – The function to be applied to the grouped data.</p></li>
+<li><p><strong>data_cols</strong> (<em>list</em>) – A list of column names specifying the subset of the
+dataframe to which the function should be applied. If None, all columns
+are included.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The resulting dataframe after applying the aggregation function to
+the grouped data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.convert_to_daily">
+<span class="sig-name descname"><span class="pre">convert_to_daily</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.convert_to_daily"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.convert_to_daily" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.convert_to_hourly">
+<span class="sig-name descname"><span class="pre">convert_to_hourly</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.convert_to_hourly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.convert_to_hourly" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.convert_to_quarter_hourly">
+<span class="sig-name descname"><span class="pre">convert_to_quarter_hourly</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.convert_to_quarter_hourly"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.convert_to_quarter_hourly" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.daily_avg">
+<span class="sig-name descname"><span class="pre">daily_avg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.daily_avg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.daily_avg" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.daysums">
+<span class="sig-name descname"><span class="pre">daysums</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">season</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Series</span></span></span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.daysums"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.daysums" title="Permalink to this definition"></a></dt>
+<dd><p>Sums up data values by day for specified columns in the dataset. If a season is
+specified, sums are computed only for data within the given season; otherwise,
+the entire dataset is used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>columns</strong> (<em>list</em><em> | </em><em>str</em><em>, </em><em>optional</em>) – List of column names or a single column name to sum by day. If
+not provided, defaults to all data columns.</p></li>
+<li><p><strong>season</strong> (<em>str</em>) – The season for which data should be filtered (‘all’ by default
+for no filtering).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pandas Series where the index corresponds to days, and the values
+are the sum of the specified column(s) for each day.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.Series</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.duration_curve">
+<span class="sig-name descname"><span class="pre">duration_curve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">season</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typeday</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.duration_curve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.duration_curve" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.filter">
+<span class="sig-name descname"><span class="pre">filter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">season</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weeks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typeday</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">daysofweek</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hour_periods</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.filter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.filter" title="Permalink to this definition"></a></dt>
+<dd><p>Filters the dataset based on various temporal and categorical parameters.
+The method enables filtering by seasons, weeks, typedays, days of the week,
+specific hour periods, and can return data-only columns if required.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>season</strong> – The season to filter the dataset, must match values
+defined in <code class="docutils literal notranslate"><span class="pre">const.Season</span></code></p></li>
+<li><p><strong>weeks</strong> – A list or single integer representing specific week numbers
+to filter, ranging from 0 to 52</p></li>
+<li><p><strong>typeday</strong> – The type of day to filter, must match values defined in
+<code class="docutils literal notranslate"><span class="pre">const.Typeday</span></code></p></li>
+<li><p><strong>daysofweek</strong> – A list of integers (ranging from 0 to 6) representing
+days of the week to filter, where 0 is Monday and 6 is
+Sunday</p></li>
+<li><p><strong>hour_periods</strong> – A collection of hour periods used for filtering. Each
+period should define a valid range of hours</p></li>
+<li><p><strong>data_only</strong> – A boolean flag. If set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, only columns specified
+in <code class="docutils literal notranslate"><span class="pre">self.data_columns</span></code> are included in the returned DataFrame</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A filtered pandas DataFrame based on the specified parameters</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>pandas.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.get_daysum_quant_range">
+<span class="sig-name descname"><span class="pre">get_daysum_quant_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">season</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantiles</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.get_daysum_quant_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.get_daysum_quant_range" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates the range of quantiles for the daily sums of specified columns within a dataset,
+optionally filtered by season. The method allows users to analyze the distribution and
+quantitative ranges of the daily aggregated values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>columns</strong> – A list or string that specifies the data columns to process. If None,
+all data columns will be processed. If a string is provided, it will be
+converted into a single-element list.
+Type: list | str | None</p></li>
+<li><p><strong>season</strong> – A string indicating the season for which data should be filtered.
+Default is ‘all’, which means no seasonal filtering is applied.
+Type: str</p></li>
+<li><p><strong>quantiles</strong> – A list of float values indicating the quantiles to use for the
+calculation. If None, default quantiles from 0.0 to 0.9 (incremented by 0.1)
+will be used.
+Type: list[float] | None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A pandas DataFrame containing the quantile range classifications for the
+daily sums of the specified columns. Each column in the DataFrame corresponds
+to a column from the input, with values classified based on their respective
+quantile ranges.
+Type: pd.DataFrame</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.get_profiles_for_days">
+<span class="sig-name descname"><span class="pre">get_profiles_for_days</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">day_selection</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.get_profiles_for_days"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.get_profiles_for_days" title="Permalink to this definition"></a></dt>
+<dd><p>for all days in dayselection get the corresponding dayprofile and concatenate them
+:param day_selection: ordered list for day selection to create profiles
+:param data_only: decision variable whether only data columns should be passed or also Timeseries indices
+:return: pd.DataFrame with the concatenated dayprofiles</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.get_specs">
+<span class="sig-name descname"><span class="pre">get_specs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.get_specs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.get_specs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.groupby">
+<span class="sig-name descname"><span class="pre">groupby</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.groupby"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.groupby" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.max">
+<span class="sig-name descname"><span class="pre">max</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.max"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.max" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.mean">
+<span class="sig-name descname"><span class="pre">mean</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.mean" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.min">
+<span class="sig-name descname"><span class="pre">min</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.min"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.min" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.monthly_avg">
+<span class="sig-name descname"><span class="pre">monthly_avg</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.monthly_avg"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.monthly_avg" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.no_of_timesteps">
+<span class="sig-name descname"><span class="pre">no_of_timesteps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.no_of_timesteps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.no_of_timesteps" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.normalize">
+<span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns:</span> <span class="pre">(&lt;class</span> <span class="pre">'list'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'str'&gt;)</span> <span class="pre">=</span> <span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.normalize"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.normalize" title="Permalink to this definition"></a></dt>
+<dd><p>Normalize specified columns or data columns of the dataframe with respect
+to their sum. This can help in bringing the values of the dataset into
+a specific range by dividing them by their respective sum.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>columns</strong> (<em>list</em><em> or </em><em>str</em><em>, </em><em>optional</em>) – List of column names or string representing a column name
+to normalize. If None, all data columns will be normalized.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The dataframe after performing normalization on the specified
+columns.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.plot_ts">
+<span class="sig-name descname"><span class="pre">plot_ts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.plot_ts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.plot_ts" title="Permalink to this definition"></a></dt>
+<dd><p>Plots the timeseries data for specified columns in the DataFrame. If no columns
+are specified, it defaults to plotting all columns defined in the dataset’s
+data_columns attribute.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>columns</strong> (<em>list</em><em>, </em><em>optional</em>) – A list of column names to plot. If None, all relevant columns
+in the dataset will be used for plotting.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.plot_typeday">
+<span class="sig-name descname"><span class="pre">plot_typeday</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">column</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">season</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">typeday</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.plot_typeday"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.plot_typeday" title="Permalink to this definition"></a></dt>
+<dd><p>Plots the typical day quantiles for a given column in the dataframe. This method filters
+the data based on specified season and type of day, and then plots the quantiles for
+the specified column. The plot can also have a custom title if provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>column</strong> (<em>str</em>) – The name of the column in the dataframe to be plotted.</p></li>
+<li><p><strong>season</strong> (<em>Optional</em>) – Optionally specify a season for filtering the data.</p></li>
+<li><p><strong>typeday</strong> (<em>Optional</em>) – Optionally specify a type of day for filtering the data.</p></li>
+<li><p><strong>title</strong> (<em>Optional</em>) – Optional custom title for the plot. Defaults to the column name.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="data_preparation.data_formats.Timeseries.sum">
+<span class="sig-name descname"><span class="pre">sum</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/data_formats.html#Timeseries.sum"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.Timeseries.sum" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.data_formats.prepare_dummy_ts">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.data_formats.</span></span><span class="sig-name descname"><span class="pre">prepare_dummy_ts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_columns</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#data_preparation.data_formats.Timeseries" title="data_preparation.data_formats.Timeseries"><span class="pre">Timeseries</span></a></span></span><a class="reference internal" href="_modules/data_preparation/data_formats.html#prepare_dummy_ts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.data_formats.prepare_dummy_ts" title="Permalink to this definition"></a></dt>
+<dd><p>create a dummy instance for the Timeseries class
+:param data_columns:
+:param value:
+:param freq:
+:return:</p>
+</dd></dl>
+
+</section>
+<section id="module-data_preparation.demand_data">
+<span id="data-preparation-demand-data-module"></span><h2>data_preparation.demand_data module<a class="headerlink" href="#module-data_preparation.demand_data" title="Permalink to this heading"></a></h2>
+<p>src/data_preparation/demand_data.py</p>
+<p>Utilities to create and process electricity, domestic hot water (DHW), and
+e-mobility demand time series as well as other timeseries (prices) used by the building and battery optimization
+workflows.</p>
+<p>Responsibilities:</p>
+<ul class="simple">
+<li><p>Load and process external resource CSVs and precomputed profiles (synPRO,
+DHW Calc, electricity prices, CO₂ intensity) and convert them into project
+<cite>Timeseries</cite> objects.</p></li>
+<li><p>Produce variable electricity price series with optional seasonal/time-based
+variable grid fees and VAT adjustments.</p></li>
+<li><p>Generate normalized household electrical demand profiles and aggregate
+building-level loads from household mixes.</p></li>
+<li><p>Compute DHW energy demand from precomputed volume/temperature profiles.</p></li>
+<li><p>Build static and flexible EV charging profiles (charge types: flat, fast,
+optimized) and extract flexible charging blocks for time-series reduction.</p></li>
+<li><p>Provide enums for common column names and grid-fee specifications.</p></li>
+</ul>
+<p>Main functions:</p>
+<ul class="simple">
+<li><p>get_elec_co2_intensity(…) -&gt; Timeseries</p></li>
+<li><p>get_var_elec_prices(…) -&gt; Timeseries</p></li>
+<li><p>get_dhwcalc_series(…) -&gt; Timeseries</p></li>
+<li><p>get_synpro_el_hh_profiles(…) -&gt; Timeseries</p></li>
+<li><p>get_el_hh_profiles(…) -&gt; Timeseries</p></li>
+<li><p>calc_flex_dem_from_ts_red_inputs(…) -&gt; dict</p></li>
+<li><p>calc_emob_demands(…) -&gt; tuple[Timeseries, Timeseries]</p></li>
+</ul>
+<p>Dependencies and notes:</p>
+<ul class="simple">
+<li><p>Uses <cite>Timeseries</cite> from <cite>src.data_preparation.data_formats</cite> and project constants
+from <cite>src.const</cite> (e.g. <cite>PATH_TO_WD</cite>, <cite>PRECALC_FOLDER</cite>, <cite>TS_PER_HOUR</cite>).</p></li>
+<li><p>Some outputs are cached via <cite>dump_pickle</cite> / <cite>load_pickle</cite> to <cite>PRECALC_FOLDER</cite>.</p></li>
+<li><p>Expects resource files under <cite>data/resources</cite> relative to <cite>const.PATH_TO_WD</cite>.</p></li>
+<li><p>External data sources (e.g. electricitymaps, synPRO files) may be subject to
+their respective licensing and usage restrictions.</p></li>
+</ul>
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.demand_data.calc_emob_demands">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.demand_data.</span></span><span class="sig-name descname"><span class="pre">calc_emob_demands</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ev_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">src.data_preparation.data_formats.Timeseries</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">src.data_preparation.data_formats.Timeseries</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/data_preparation/demand_data.html#calc_emob_demands"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.demand_data.calc_emob_demands" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate e-mobility charging demands based on electric vehicle data.</p>
+<p>This function processes electric vehicle (EV) data to calculate both static (fixed)
+and flexible charging demands over specified charging periods. It computes the charging
+statuses and energy delivered for different charge types flat, fast, and optimized
+charging. Depending on the charging type, it determines whether the charging energy
+distribution is flexible or fixed during the charging period.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ev_data</strong> – <p>Dictionary containing electric vehicle data. The data includes details like
+charging type, driving distance, energy consumption rate (kWh/100km), charging periods,
+and other relevant parameters for charging demands of each vehicle, e.g.
+{</p>
+<blockquote>
+<div><dl class="simple">
+<dt>’ev1’: {</dt><dd><p>‘max_p’: 20,
+‘period’: ‘18-7’,
+‘drivedist’: 50,
+‘kwhper100km’: 20,
+‘daysinweek’: “1,2,3,4,5”,
+‘chargetype’: ‘optimized’</p>
+</dd>
+</dl>
+<p>},
+‘ev2’: {… above params must be given…},</p>
+</div></blockquote>
+<p>}</p>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><p>A tuple of two Timeseries objects:
+- The first Timeseries object contains static charging demands, with details of</p>
+<blockquote>
+<div><p>non-flexible loads and energy consumption during specified periods.</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>The second Timeseries object includes flexible charging demands, incorporating
+the capability to distribute charging energy more flexibly across the periods.</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[<a class="reference internal" href="#data_preparation.data_formats.Timeseries" title="data_preparation.data_formats.Timeseries">Timeseries</a>, <a class="reference internal" href="#data_preparation.data_formats.Timeseries" title="data_preparation.data_formats.Timeseries">Timeseries</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.demand_data.calc_flex_dem_from_ts_red_inputs">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.demand_data.</span></span><span class="sig-name descname"><span class="pre">calc_flex_dem_from_ts_red_inputs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts_red_inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/data_preparation/demand_data.html#calc_flex_dem_from_ts_red_inputs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.demand_data.calc_flex_dem_from_ts_red_inputs" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates flexible energy demands from a given charging data DataFrame.</p>
+<p>This function processes the input DataFrame containing flexible charging demands for
+electric vehicles (EVs). It identifies charging blocks for each EV using their
+charging status, and computes the demand and associated periods for each block.
+The results are then aggregated into a dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ts_red_inputs</strong> (<em>pd.DataFrame</em>) – A pandas DataFrame containing flexible charging data. The column
+names should follow the format “&lt;vehicle_id&gt;_&lt;metric&gt;”, where
+&lt;metric&gt; includes “charging_status” and “delivered_energy”.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary where each key corresponds to a charging block in the format
+“&lt;vehicle_id&gt;_&lt;block_id&gt;”, and the value is another dictionary with
+‘period’ (indices of periods in the block) and ‘demand’ (energy delivered
+in the block).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.demand_data.get_dhwcalc_series">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.demand_data.</span></span><span class="sig-name descname"><span class="pre">get_dhwcalc_series</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nr_of_households</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l_per_person_day</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp_dhw</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/demand_data.html#get_dhwcalc_series"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.demand_data.get_dhwcalc_series" title="Permalink to this definition"></a></dt>
+<dd><p>Computes a domestic hot water (DHW) time series based on the number of households, daily water
+consumption per person, and desired DHW temperature. The function loads a pre-computed DHW
+profile and scales it to energy demand according to the given parameters.</p>
+<p>The pre-computed load profiles have been prepared with DHW Calc from the University of Kassel.
+<a class="reference external" href="https://www.uni-kassel.de/maschinenbau/institute/thermische-energietechnik/fachgebiete/solar-und-anlagentechnik/downloads.html">https://www.uni-kassel.de/maschinenbau/institute/thermische-energietechnik/fachgebiete/solar-und-anlagentechnik/downloads.html</a>
+Pre-computed load profiles are available for 1 - 10 households a 2 persons, for an average hot water consumption of
+30,40 or 50 liters per person per day.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nr_of_households</strong> (<em>int</em>) – Number of households to consider for the DHW calculation.</p></li>
+<li><p><strong>l_per_person_day</strong> (<em>float</em>) – Daily water consumption per person in liters.</p></li>
+<li><p><strong>temp_dhw</strong> (<em>float</em>) – Desired temperature of the domestic hot water in degrees Celsius.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Time series data representing the calculated DHW energy demand.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#data_preparation.data_formats.Timeseries" title="data_preparation.data_formats.Timeseries">Timeseries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.demand_data.get_el_hh_profiles">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.demand_data.</span></span><span class="sig-name descname"><span class="pre">get_el_hh_profiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">el_demand</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nr_of_households</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nr_of_household_types</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Timeseries</span></span></span><a class="reference internal" href="_modules/data_preparation/demand_data.html#get_el_hh_profiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.demand_data.get_el_hh_profiles" title="Permalink to this definition"></a></dt>
+<dd><p>returns a Timeseries containing load profiles for each user type.
+The profiles sum up to the demand of one household.
+Like that, in a later step a load profile for the building can be calculated by adding up
+exemplary daily profiles for each household.
+This leads to more homogenous load profiles with a rising number of modelled households.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>el_demand</strong> – </p></li>
+<li><p><strong>nr_of_households</strong> – </p></li>
+<li><p><strong>nr_of_household_types</strong> – </p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.demand_data.get_elec_co2_intensity">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.demand_data.</span></span><span class="sig-name descname"><span class="pre">get_elec_co2_intensity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folderpath</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'C:\\Users\\Erik\\PycharmProjects\\P2Bldg/data/resources/co2_intensity_electricity_maps/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_val_lca</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">395.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default_val_direct</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">329.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2023</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Timeseries</span></span></span><a class="reference internal" href="_modules/data_preparation/demand_data.html#get_elec_co2_intensity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.demand_data.get_elec_co2_intensity" title="Permalink to this definition"></a></dt>
+<dd><p>Calculates and returns the electricity CO2 intensity as a timeseries.
+The data can be downloaded from <a class="reference external" href="https://app.electricitymaps.com">https://app.electricitymaps.com</a>. However, its commercial use is forbidden.</p>
+<p>This function reads hourly CO2 intensity data for electricity from a predefined
+CSV file, processes it, and converts it into a timeseries object. The timeseries
+contains lifecycle CO2 equivalent and direct CO2 emissions data.
+If no file is given, the default values for hourly CO2 intensity are used.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Processed timeseries object containing CO2 intensity data for electricity.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#data_preparation.data_formats.Timeseries" title="data_preparation.data_formats.Timeseries">Timeseries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.demand_data.get_synpro_el_hh_profiles">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.demand_data.</span></span><span class="sig-name descname"><span class="pre">get_synpro_el_hh_profiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hourly</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/demand_data.html#get_synpro_el_hh_profiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.demand_data.get_synpro_el_hh_profiles" title="Permalink to this definition"></a></dt>
+<dd><p>Retrieve and process synthetic electric household electricity load profiles.
+The load profiles have been prepared with the synPRO tool from Fraunhofer ISE <a class="reference external" href="https://synpro-lastprofile.de/">https://synpro-lastprofile.de/</a></p>
+<p>This function processes synthetic electric household profiles for different exemplary users from CSV files in
+a specified directory. It reads the data, extracts the relevant electric power
+values, and stores them into a Timeseries object. Optionally, it converts the
+profiles to hourly intervals depending on the <cite>hourly</cite> parameter.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>hourly</strong> (<em>bool</em>) – Specifies whether the timeseries should be converted to hourly
+intervals. Defaults to True.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Timeseries object containing the processed household electric
+profiles.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#data_preparation.data_formats.Timeseries" title="data_preparation.data_formats.Timeseries">Timeseries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.demand_data.get_var_elec_prices">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.demand_data.</span></span><span class="sig-name descname"><span class="pre">get_var_elec_prices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grid_fees_st</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">other_taxes_and_charges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vat</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.19</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var_grid_fees</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">year</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2023</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Timeseries</span></span></span><a class="reference internal" href="_modules/data_preparation/demand_data.html#get_var_elec_prices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.demand_data.get_var_elec_prices" title="Permalink to this definition"></a></dt>
+<dd><p>Compute variable electricity prices based on day-ahead wholesale prices, grid fees,
+other taxes and charges, as well as VAT. Optionally, seasonal and time-dependent
+variable grid fees can be applied.</p>
+<p>This function processes electricity price data for a given year, applies grid fees,
+and adjusts values based on provided parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>grid_fees_st</strong> – Base grid fee in €/kWh. Default is 0.1.</p></li>
+<li><p><strong>other_taxes_and_charges</strong> – Fixed value for other taxes and charges in €/kWh. Default is 0.05.</p></li>
+<li><p><strong>vat</strong> – Value-added tax (VAT) represented as a decimal (e.g., 0.19 for 19%). Default is 0.19.</p></li>
+<li><p><strong>var_grid_fees</strong> – <p>Optional dictionary defining seasonal variable grid fees and their respective
+time windows for high and low tariffs, e.g.
+var_grid_fees={</p>
+<blockquote>
+<div><dl class="simple">
+<dt>Season.Summer: {</dt><dd><p>VarGridFeeSpecs.HT_WINDOWS: [(17,20)],
+VarGridFeeSpecs.HT_VAL: 0.2,
+VarGridFeeSpecs.LT_WINDOWS: [(11,15)],
+VarGridFeeSpecs.LT_VAL: 0.01,</p>
+</dd>
+</dl>
+<p>},
+Season.Transition: {</p>
+<blockquote>
+<div><p>VarGridFeeSpecs.HT_WINDOWS: [(17,20)],
+VarGridFeeSpecs.HT_VAL: 0.2,
+VarGridFeeSpecs.LT_WINDOWS: [],
+VarGridFeeSpecs.LT_VAL: 0.01,</p>
+</div></blockquote>
+<p>},
+Season.Winter: {</p>
+<blockquote>
+<div><p>VarGridFeeSpecs.HT_WINDOWS: [(6,8), (17,20)],
+VarGridFeeSpecs.HT_VAL: 0.2,
+VarGridFeeSpecs.LT_WINDOWS: [(23,3)],
+VarGridFeeSpecs.LT_VAL: 0.01,</p>
+</div></blockquote>
+<p>},</p>
+</div></blockquote>
+<p>}</p>
+</p></li>
+<li><p><strong>year</strong> – Year for which the electricity prices are computed. Default is 2023.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Timeseries object containing computed electricity prices with applied
+taxes, fees, and optional variable components.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#data_preparation.data_formats.Timeseries" title="data_preparation.data_formats.Timeseries">Timeseries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-data_preparation.pvgis_climate_data">
+<span id="data-preparation-pvgis-climate-data-module"></span><h2>data_preparation.pvgis_climate_data module<a class="headerlink" href="#module-data_preparation.pvgis_climate_data" title="Permalink to this heading"></a></h2>
+<p>src/data_preparation/pvgis_climate_data.py</p>
+<p>Helpers to fetch, cache and process PVGIS photovoltaic and meteorological data
+for a given geographic location and PV plane configuration.</p>
+<p>Main responsibilities:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>get_pvgis_hourly_data(…):</dt><dd><ul>
+<li><p>Download or load cached hourly PV generation and meteorological data
+from the EU-JRC PVGIS service.</p></li>
+<li><p>Return a <code class="xref py py-class docutils literal notranslate"><span class="pre">Timeseries</span></code> with PV power converted to kW and columns
+defined in <cite>PvgisDataCols</cite>.</p></li>
+<li><p>Supports custom year ranges, plane tilt/azimuth, horizon shading and
+caching to disk.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>get_pvgis_tmy_data(…):</dt><dd><ul>
+<li><p>Fetch or load cached PVGIS Typical Meteorological Year (TMY) data and
+return it as a <code class="xref py py-class docutils literal notranslate"><span class="pre">Timeseries</span></code>.</p></li>
+<li><p>Provides common TMY columns referenced by <cite>PvgisTmyDataCols</cite>.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>get_pvgis_monthly_data(…):</dt><dd><ul>
+<li><p>Query PVGIS monthly summaries via HTTP, produce simple aggregations
+(average temperature, yearly irradiation) and call plotting helpers.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Notes and behavior:</p>
+<ul class="simple">
+<li><p>Depends on <cite>pvlib.iotools.pvgis</cite>, <cite>pandas</cite>, <cite>requests</cite>, project <cite>Timeseries</cite>
+and project constants (e.g. <cite>const.LATITUDE</cite>, <cite>const.LONGITUDE</cite>, <cite>PATH_TO_WD</cite>).</p></li>
+<li><p>Functions cache CSV files in the specified <cite>pvgis_folder</cite>; initial calls
+require network access.</p></li>
+<li><p>PV power returned by PVGIS (W) is converted to kW before constructing the
+<cite>Timeseries</cite>.</p></li>
+<li><p>Column name enums <cite>PvgisDataCols</cite> and <cite>PvgisTmyDataCols</cite> expose the expected
+output fields for downstream processing.</p></li>
+<li><p>Some helpers produce plots or write files as side effects; callers in
+headless or restricted environments may need to disable plotting or adjust
+file paths.</p></li>
+</ul>
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.pvgis_climate_data.get_pvgis_hourly_data">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.pvgis_climate_data.</span></span><span class="sig-name descname"><span class="pre">get_pvgis_hourly_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">48.163</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">11.51</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surface_tilt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">35</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">surface_azimuth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">peak_power_kw</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pvgis_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'C:\\Users\\Erik\\PycharmProjects\\P2Bldg/data/resources/PVGIS_hourly_data/'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_year</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">horizon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Timeseries</span></span></span><a class="reference internal" href="_modules/data_preparation/pvgis_climate_data.html#get_pvgis_hourly_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.pvgis_climate_data.get_pvgis_hourly_data" title="Permalink to this definition"></a></dt>
+<dd><p>Retrieve hourly PV generation and meteorological time series from the EU-JRC PVGIS service.</p>
+<p>The function uses <cite>pvlib.iotools.pvgis.get_pvgis_hourly</cite> to download an hourly profile for a given
+location and PV plane configuration. Results are cached on disk: if a matching CSV file already
+exists in <cite>pvgis_folder</cite>, it is loaded instead of calling the PVGIS API again.</p>
+<p><strong>What you get</strong>
+- A <code class="xref py py-class docutils literal notranslate"><span class="pre">Timeseries</span></code> instance containing hourly data for the</p>
+<blockquote>
+<div><p>selected period (<cite>start_year</cite>..`end_year`, inclusive).</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>The returned table includes the columns defined by <code class="xref py py-class docutils literal notranslate"><span class="pre">PvgisDataCols</span></code> (e.g. PV power and
+weather/radiation quantities). PV power is converted from <strong>W</strong> (PVGIS default) to <strong>kW</strong>
+before building the Timeseries object.</p></li>
+</ul>
+<p><strong>Caching / file naming</strong>
+The cache key is derived from latitude/longitude, tilt, azimuth, horizon setting, peak power and
+the requested year range. Changing any of these inputs results in a different CSV file name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>latitude</strong> (<em>float</em>) – Latitude of the location in decimal degrees (-90..90), north is positive.</p></li>
+<li><p><strong>longitude</strong> (<em>float</em>) – Longitude of the location in decimal degrees (-180..180), east is positive.</p></li>
+<li><p><strong>surface_tilt</strong> (<em>int</em><em> | </em><em>float</em>) – Tilt angle of the fixed plane in degrees (0 = horizontal, 90 = vertical).</p></li>
+<li><p><strong>surface_azimuth</strong> (<em>int</em><em> | </em><em>float</em>) – Azimuth/orientation of the plane in degrees.
+Convention used by PVGIS/pvlib: 0 = south, 90 = west, -90 = east.</p></li>
+<li><p><strong>peak_power_kw</strong> (<em>int</em><em> | </em><em>float</em>) – Installed PV capacity in kWp used for the PVGIS PV calculation.</p></li>
+<li><p><strong>pvgis_folder</strong> (<em>str</em>) – Folder used to read/write cached PVGIS hourly CSV files.</p></li>
+<li><p><strong>start_year</strong> (<em>int</em><em> | </em><em>None</em>) – First year of the requested time range. Must be provided together with <cite>end_year</cite>.
+If both are omitted, defaults to <cite>const.MODELED_YEAR</cite>.</p></li>
+<li><p><strong>end_year</strong> (<em>int</em><em> | </em><em>None</em>) – Last year of the requested time range. Must be provided together with <cite>start_year</cite>.
+If both are omitted, defaults to <cite>const.MODELED_YEAR</cite>.</p></li>
+<li><p><strong>horizon</strong> (<em>str</em><em> | </em><em>None</em>) – Optional user-defined horizon profile to account for shading by surrounding terrain/objects.
+Provide as a comma-separated string of elevation angles (degrees) around the horizon, as expected by PVGIS
+(e.g. <code class="docutils literal notranslate"><span class="pre">&quot;0,0,0,0,50,0,0,0&quot;</span></code>). If <code class="docutils literal notranslate"><span class="pre">None</span></code>, PVGIS’ default horizon handling is used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Hourly PVGIS time series (PV power and selected weather/radiation variables).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#data_preparation.data_formats.Timeseries" title="data_preparation.data_formats.Timeseries">Timeseries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.pvgis_climate_data.get_pvgis_monthly_data">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.pvgis_climate_data.</span></span><span class="sig-name descname"><span class="pre">get_pvgis_monthly_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">48.163</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">11.51</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/pvgis_climate_data.html#get_pvgis_monthly_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.pvgis_climate_data.get_pvgis_monthly_data" title="Permalink to this definition"></a></dt>
+<dd><p>Fetches and processes PVGIS monthly data for a specified latitude and longitude.</p>
+<p>This function retrieves photovoltaic data such as average temperature and
+global irradiation for a specified location using the PVGIS API. It processes
+the data to calculate average temperature and yearly global irradiation, then
+creates a scatter plot to visualize these relationships.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>latitude</strong> (<em>float</em>) – Latitude of the location for which PVGIS data is retrieved.</p></li>
+<li><p><strong>longitude</strong> (<em>float</em>) – Longitude of the location for which PVGIS data is retrieved.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.pvgis_climate_data.get_pvgis_tmy_data">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.pvgis_climate_data.</span></span><span class="sig-name descname"><span class="pre">get_pvgis_tmy_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">48.163</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">longitude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">11.51</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pvgis_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'C:\\Users\\Erik\\PycharmProjects\\P2Bldg/data/resources/PVGIS_hourly_data/'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/data_preparation/pvgis_climate_data.html#get_pvgis_tmy_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.pvgis_climate_data.get_pvgis_tmy_data" title="Permalink to this definition"></a></dt>
+<dd><p>Fetches PVGIS Typical Meteorological Year (TMY) data based on the provided latitude 
+and longitude. If the data already exists in the specified folder, it loads the 
+stored CSV file. Otherwise, it fetches the data from PVGIS, saves it to the CSV file, 
+and then loads it.</p>
+<p>This function helps in assessing renewable energy potential by providing solar 
+radiation and meteorological data for simulations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>latitude</strong> (<em>float</em>) – The latitude of the location for which TMY data is requested.</p></li>
+<li><p><strong>longitude</strong> (<em>float</em>) – The longitude of the location for which TMY data is requested.</p></li>
+<li><p><strong>pvgis_folder</strong> (<em>str</em>) – The folder to check or store the resulting TMY data file.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Timeseries object containing TMY data.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#data_preparation.data_formats.Timeseries" title="data_preparation.data_formats.Timeseries">Timeseries</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="module-data_preparation.timeseries_reduction">
+<span id="data-preparation-timeseries-reduction-module"></span><h2>data_preparation.timeseries_reduction module<a class="headerlink" href="#module-data_preparation.timeseries_reduction" title="Permalink to this heading"></a></h2>
+<p>src/data_preparation/timeseries_reduction.py</p>
+<p>Utilities to prepare, aggregate and reduce time-series inputs used in building and
+battery optimization workflows. This module contains functions to analyze climate
+data and to assemble either full-resolution or reduced reference-week profiles
+for downstream modelling.</p>
+<p>Main responsibilities:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>climate_data_analysis(…):</dt><dd><ul>
+<li><p>Fetches or loads cached PVGIS climate data, computes daily aggregates
+(temperature averages, min/max, solar yield) and derived metrics
+(heating/cooling degree days).</p></li>
+<li><p>Produces aggregated views by year, month, week and season, includes
+relative metrics and summary statistics, and optionally writes results to
+an Excel file.</p></li>
+<li><p>Caches computed analysis via the project’s pickle helpers.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>prepare_ts_profiles(…):</dt><dd><ul>
+<li><p>Builds model-ready input tables from a dictionary of Timeseries objects.</p></li>
+<li><p>Supports two modes: full-resolution (no reduction) and reduced reference-
+week mode (per-season representative weeks with cost factors).</p></li>
+<li><p>When reduction is enabled it selects representative weeks based on climate
+similarity metrics, assembles per-season reduced MultiIndex frames and
+fills them with climate, load, price and CO2 columns.</p></li>
+<li><p>Returns a DataFrame of prepared/reduced inputs and a Series/DataFrame of
+selected reference weeks.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Behavior and notes:</p>
+<ul class="simple">
+<li><p>Integrates with project constants (<cite>src.const</cite>) and Timeseries classes
+(<cite>src.data_preparation.data_formats</cite>), relies on PVGIS climate fetchers and
+precomputed pickles for caching.</p></li>
+<li><p>Expects Timeseries inputs to have correct resolution (<cite>TS_PER_HOUR * 24</cite>).</p></li>
+<li><p>Caching and file I/O use <cite>dump_pickle</cite> / <cite>load_pickle</cite> helpers; callers should
+ensure correct <cite>results_folder</cite> when writing Excel outputs.</p></li>
+<li><p>Designed to be deterministic and reproducible for scenario runs; reduction
+logic stores selected weeks and reduced timeseries for reuse.</p></li>
+</ul>
+<p>Dependencies:</p>
+<ul class="simple">
+<li><p>pandas, project <cite>Timeseries</cite> utilities, PVGIS climate helpers, and export
+utilities for optional xlsx output.</p></li>
+</ul>
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.timeseries_reduction.climate_data_analysis">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.timeseries_reduction.</span></span><span class="sig-name descname"><span class="pre">climate_data_analysis</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">write_xlsx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/data_preparation/timeseries_reduction.html#climate_data_analysis"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.timeseries_reduction.climate_data_analysis" title="Permalink to this definition"></a></dt>
+<dd><p>Performs climate data analysis by processing and aggregating climate-related data. It calculates key
+metrics such as temperature averages, extremes, solar yield, cooling and heating degree days, and
+aggregates them across different temporal levels such as years, seasons, months, and weeks, providing
+insights into climate trends.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>write_xlsx</strong> – A boolean flag determining whether the resulting analysis should be saved
+as an Excel file.</p></li>
+<li><p><strong>results_folder</strong> – A string specifying the directory in which the Excel file is to
+be saved; required if <cite>write_xlsx</cite> is set to True.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary where keys are aggregation levels (e.g., ‘years’, ‘weeks’, ‘seasons’) or
+summary types, and values are pandas DataFrames containing the aggregation results.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="data_preparation.timeseries_reduction.prepare_ts_profiles">
+<span class="sig-prename descclassname"><span class="pre">data_preparation.timeseries_reduction.</span></span><span class="sig-name descname"><span class="pre">prepare_ts_profiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts_inputs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">climate_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sel_weeks</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">DataFrame</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apply_ts_reduction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ts_red_climate_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.series.Series</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/data_preparation/timeseries_reduction.html#prepare_ts_profiles"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#data_preparation.timeseries_reduction.prepare_ts_profiles" title="Permalink to this definition"></a></dt>
+<dd><p>Prepare time series profiles by either reducing them to reference weeks or using the full data set. The function can
+handle various time series data, including climate data, load profiles, and other relevant datasets. Depending on
+the <cite>apply_ts_reduction</cite> flag, this function either reduces the input time series for computational optimization or
+processes it fully. It also aligns timeseries data with the required time resolution constraints.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ts_inputs</strong> (<em>dict</em>) – A dictionary of time series input data for a whole year, categorized by type.
+Each input time series must have the correct resolution.</p></li>
+<li><p><strong>climate_data</strong> (<em>dict</em><em>, </em><em>optional</em>) – Optional climate data dictionary, which may be used to compute reduced
+time series if <cite>sel_weeks</cite> or <cite>ts_red_climate_data</cite> is not provided.
+Default is None.</p></li>
+<li><p><strong>sel_weeks</strong> (<em>pd.DataFrame</em><em>, </em><em>optional</em>) – Optional DataFrame indicating selected reference weeks for timeseries reduction.
+If provided, this overrides the need to calculate the reference weeks from <cite>climate_data</cite>.
+Default is None.</p></li>
+<li><p><strong>apply_ts_reduction</strong> (<em>bool</em><em>, </em><em>optional</em>) – Flag indicating whether to apply timeseries reduction. If None, a default value
+is fetched from the constants. Default is None.</p></li>
+<li><p><strong>ts_red_climate_data</strong> (<em>dict</em><em>, </em><em>optional</em>) – Optional pre-calculated reduced climate data. If provided, it is used instead of
+deriving reduced data and reference weeks from scratch. Default is None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing a DataFrame of processed or reduced timeseries inputs (e.g., load profiles, climate data,
+etc.) indexed appropriately and a Series giving the selected reference weeks. Both
+outputs are formatted for compatibility with downstream modeling or analysis tasks.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[pd.DataFrame, pd.Series]</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="const.html" class="btn btn-neutral float-left" title="const module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="export.html" class="btn btn-neutral float-right" title="export package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

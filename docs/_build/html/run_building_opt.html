@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>run_building_opt module &mdash; P2Bldg 1.0.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="run_battery_opt module" href="run_battery_opt.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            P2Bldg
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">src</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="config.html">config module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="const.html">const module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_preparation.html">data_preparation package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="export.html">export package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html">helper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="model.html">model package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run_battery_opt.html">run_battery_opt module</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">run_building_opt module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#run_building_opt.prepare_input_data"><code class="docutils literal notranslate"><span class="pre">prepare_input_data()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#run_building_opt.run_scenario"><code class="docutils literal notranslate"><span class="pre">run_scenario()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">P2Bldg</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="modules.html">src</a></li>
+      <li class="breadcrumb-item active">run_building_opt module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/run_building_opt.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-run_building_opt">
+<span id="run-building-opt-module"></span><h1>run_building_opt module<a class="headerlink" href="#module-run_building_opt" title="Permalink to this heading"></a></h1>
+<p>src/run_building_opt.py</p>
+<p>This module prepares input data for a building energy system optimization,
+constructs component objects, initializes and solves a Pyomo optimization model,
+and exports the results.</p>
+<p>Main responsibilities:</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>prepare_input_data(sce_data, climate_data):</dt><dd><p>Processes scenario and climate inputs to produce reduced time series (electricity
+prices, household loads, PV/climate series), computes potentials and temperature
+levels, assembles demands, imports/exports, links and technology objects, and
+returns a components dictionary plus reduced time series.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>run_scenario(components, cost_weight_factors, co2_price):</dt><dd><p>Validates components, initializes the Pyomo ConcreteModel via init_pyomo_model,
+solves the model (supports NEOS/CPLEX or local solvers), logs infeasible
+constraints to <cite>infeasile.log</cite>, and returns the solved model.</p>
+</dd>
+</dl>
+</li>
+</ul>
+<p>Script entrypoint (when run as __main__):</p>
+<ul class="simple">
+<li><p>Loads BuildingModelInput and scenarios from an Excel file.</p></li>
+<li><p>Applies global constants from scenario settings.</p></li>
+<li><p>Performs climate analysis and timeseries preparation.</p></li>
+<li><p>Builds components, runs the optimization for each scenario,
+and writes result files (Excel, logs, pickles).</p></li>
+</ul>
+<p>Notes:</p>
+<ul class="simple">
+<li><p>Uses timeseries reduction and supports dynamic tariffs, variable grid fees,
+multi-temperature storages, heat pumps, PV, batteries, and other technologies.</p></li>
+<li><p>Outputs include scenario result workbooks and a pickled results object
+for postprocessing.</p></li>
+</ul>
+<dl class="py function">
+<dt class="sig sig-object py" id="run_building_opt.prepare_input_data">
+<span class="sig-prename descclassname"><span class="pre">run_building_opt.</span></span><span class="sig-name descname"><span class="pre">prepare_input_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sce_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">ScenarioData</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">climate_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">pandas.core.frame.DataFrame</span><span class="p"><span class="pre">]</span></span></span></span><a class="reference internal" href="_modules/run_building_opt.html#prepare_input_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#run_building_opt.prepare_input_data" title="Permalink to this definition"></a></dt>
+<dd><p>Prepare input data required for a simulation or analysis. This function processes
+scenario data and climate data to generate the necessary timeseries and input
+parameters, including electricity prices, demands, climate-based timeseries,
+temperature levels, and potentials. It handles exceptions for missing data
+and ensures that all necessary values are computed or retrieved.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sce_data</strong> (<a class="reference internal" href="data_preparation.html#data_preparation.data_formats.ScenarioData" title="data_preparation.data_formats.ScenarioData"><em>ScenarioData</em></a>) – Scenario data object containing consumption, economic, building,
+and technical specifications.</p></li>
+<li><p><strong>climate_data</strong> (<em>dict</em>) – Dictionary of climate data used to compute temperature and
+other climate-related timeseries.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tuple containing:
+1. A dictionary of input data for the energy system components.
+2. A DataFrame of (reduced) climate timeseries inputs.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple[dict, pd.DataFrame, pd.DataFrame]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="run_building_opt.run_scenario">
+<span class="sig-prename descclassname"><span class="pre">run_building_opt.</span></span><span class="sig-name descname"><span class="pre">run_scenario</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">components</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cost_weight_factors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Series</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">co2_price</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ConcreteModel</span></span></span><a class="reference internal" href="_modules/run_building_opt.html#run_scenario"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#run_building_opt.run_scenario" title="Permalink to this definition"></a></dt>
+<dd><p>Executes a scenario using the given components defined in the prepare_input_data function,
+cost weight factors, and co2 price.
+This function initializes a Pyomo model, solves it using a solver (either local e.g. GLPK or
+a solver online on the neos server), and logs any infeasible constraints if present.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>components</strong> (<em>dict</em>) – Dict of system components to be used in the model.</p></li>
+<li><p><strong>cost_weight_factors</strong> (<em>pd.Series</em>) – Cost weight factors applied in the optimization.</p></li>
+<li><p><strong>co2_price</strong> (<em>float</em>) – The price of CO2 to be considered in the optimization model.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Pyomo <cite>ConcreteModel</cite> object representing the solved optimization model.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>ConcreteModel</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="run_battery_opt.html" class="btn btn-neutral float-left" title="run_battery_opt module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Erik Froehlich.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
