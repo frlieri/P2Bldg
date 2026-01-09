@@ -62,7 +62,7 @@ from src.model.economics import calc_present_value
 from src.data_preparation.demand_data import CO2ElecCols
 from src.data_preparation.pvgis_climate_data import PvgisDataCols
 from src.export.excel_generator import save_xlsx_wb
-from src.helper import load_pickle, create_result_folder, dump_pickle, create_climate_data_dump_id
+from src.helper import load_pickle, create_result_folder, dump_pickle, create_climate_data_dump_id, create_ts_multiindex
 
 
 class Colors(str, Enum):
@@ -589,7 +589,8 @@ def create_keyfacts_summary(res: ScenarioResults, sce_data: ScenarioData, printo
     # Add costs to key_facts
     key_facts["COSTS"] = ""
     key_facts[SmryCols.TOTAL_COSTS.value] = res.get_ti_sum('tot_costs', 'sum')
-    key_facts[SmryCols.OPEX_TOTAL.value] = res.get_ti_sum('var_costs|revenues|fix_costs', 'sum')
+    key_facts[SmryCols.OPEX_TOTAL.value] = (res.get_ti_sum('var_costs|fix_costs', 'sum')
+                                            - res.get_ti_sum('revenues', 'sum'))
     key_facts[SmryCols.CO2_COSTS.value] = res.get_ti_sum('co2_costs', 'sum')
     key_facts[SmryCols.CAPEX_ANNUITY.value] = res.get_ti_sum('inv_costs', 'sum')
     key_facts[SmryCols.CAPEX.value] = calc_present_value(
@@ -789,71 +790,114 @@ def define_ts_plots(res: ScenarioResults):
     :return: None
     :rtype: NoneType
     """
-    for season in const.Season:
-        el_balance = {
-            TsElCols.HELPER_EL.value: -res.get_ts('el', 'sink', 'ElExport|ElStorage', season=season).sum(axis=1),
-            TsElCols.FEEDIN.value: res.get_ts('el', 'sink', 'ElExport', season=season).sum(axis=1),
-            TsElCols.BATTERY_CHARGE.value: res.get_ts('el', 'sink', 'ElStorage', season=season).sum(axis=1),
-            TsElCols.BATTERY_DISCHARGE.value: res.get_ts('el', 'src', 'ElStorage', season=season).sum(axis=1),
-            TsElCols.PV.value: res.get_ts('el', 'src', 'PV', season=season).sum(axis=1),
-            TsElCols.PV_CURTAILED.value: (res.ts_others.filter(regex='pmax_t').loc[season].sum(axis=1)
-                                          -  res.get_ts('el', 'src', 'PV', season=season).sum(axis=1)),
-            TsElCols.GRID_DEMAND.value: res.get_ts('el', 'src', 'ElImport: el_std', season=season).sum(axis=1),
-            TsElCols.GRID_HEATPUMP.value: res.get_ts('el', 'src', 'ElImport: el_hp', season=season).sum(axis=1),
-            TsElCols.GRID_EMOB.value: res.get_ts('el', 'src', 'ElImport: el_emob', season=season).sum(axis=1),
-            TsElCols.EL_DEMAND.value: res.get_ts('el', 'sink', 'ElDemand: el_hh', season=season).sum(axis=1),
-            TsElCols.EL_DEM_HEAT.value:
-                res.get_ts('el', 'sink', 'ElDemand: el_hh|Heatpump|DirectElHeater', season=season).sum(axis=1),
-            TsElCols.EL_DEM_TOT.value:
-                res.get_ts('el', 'sink', 'ElDemand|Heatpump|DirectElHeater', season=season).sum(axis=1),
-        }
+    for season in create_ts_multiindex().levels[0]:
+        try:
+            el_balance = {
+                TsElCols.HELPER_EL.value: -res.get_ts(
+                    'el', 'sink', 'ElExport|ElStorage', season=season).sum(axis=1),
+                TsElCols.FEEDIN.value: res.get_ts(
+                    'el', 'sink', 'ElExport', season=season).sum(axis=1),
+                TsElCols.BATTERY_CHARGE.value: res.get_ts(
+                    'el', 'sink', 'ElStorage', season=season).sum(axis=1),
+                TsElCols.BATTERY_DISCHARGE.value: res.get_ts(
+                    'el', 'src', 'ElStorage', season=season).sum(axis=1),
+                TsElCols.PV.value: res.get_ts(
+                    'el', 'src', 'PV', season=season).sum(axis=1),
+                TsElCols.PV_CURTAILED.value: (
+                        res.ts_others.filter(regex='pmax_t').loc[season].sum(axis=1)
+                        -  res.get_ts('el', 'src', 'PV', season=season).sum(axis=1)),
+                TsElCols.GRID_DEMAND.value: res.get_ts(
+                    'el', 'src', 'ElImport: el_std', season=season).sum(axis=1),
+                TsElCols.GRID_HEATPUMP.value: res.get_ts(
+                    'el', 'src', 'ElImport: el_hp', season=season).sum(axis=1),
+                TsElCols.GRID_EMOB.value: res.get_ts(
+                    'el', 'src', 'ElImport: el_emob', season=season).sum(axis=1),
+                TsElCols.EL_DEMAND.value: res.get_ts(
+                    'el', 'sink', 'ElDemand: el_hh', season=season).sum(axis=1),
+                TsElCols.EL_DEM_HEAT.value:
+                    res.get_ts(
+                        'el', 'sink', 'ElDemand: el_hh|Heatpump|DirectElHeater', season=season).sum(axis=1),
+                TsElCols.EL_DEM_TOT.value:
+                    res.get_ts(
+                        'el', 'sink', 'ElDemand|Heatpump|DirectElHeater', season=season).sum(axis=1),
+            }
+        except Exception as e:
+            print("Error in el_balance timeseries plot definition:", e)
+            el_balance = {}
 
-        th_balance = {
-            TsThCols.HELPER_TH.value:
-                -res.get_ts('th', 'sink', 'ThInertia|buffsto|dhwsto', season=season).sum(axis=1),
-            TsThCols.DHW_STORAGE_CHARGE.value: res.get_ts('th', 'sink', 'MultiTempStorage: dhwsto', season=season).sum(
-                axis=1),
-            TsThCols.BUFFER_STORAGE_CHARGE.value:
-                res.get_ts('th', 'sink', 'MultiTempStorage: buffsto.*ht_flow', season=season).iloc[:, 1],
-            TsThCols.BUFFER_STORAGE_CHARGE_HT.value:
-                res.get_ts('th', 'sink', 'MultiTempStorage: buffsto.*ht_flow', season=season).iloc[:, 0],
-            TsThCols.TH_INERTIA_CHARGE.value: res.get_ts('th', 'sink', 'ThInertia', season=season).sum(axis=1),
-            TsThCols.HEAT_GAINS_USED.value: (
-                    res.get_ts('th', 'src', 'HeatGains', season=season).sum(axis=1)
-                    - res.get_ts('th', 'sink', 'excess_heat', season=season).sum(axis=1)
-            ),
-            TsThCols.SOLAR_THERMAL.value: res.get_ts('th', 'src', 'SolarThermal', season=season).sum(axis=1),
-            TsThCols.HEATPUMP_EL.value: res.get_ts('el', 'sink', 'Heatpump', season=season).sum(axis=1),
-            TsThCols.HEATPUMP_AMBIENT_HEAT.value: res.get_ts('th', 'sink', 'Heatpump', season=season).sum(axis=1),
-            TsThCols.GAS_BOILER.value: res.get_ts('th', 'src', 'boiler', season=season).sum(axis=1),
-            TsThCols.DIRECT_EL_HEATER.value: res.get_ts('th', 'src', 'DirectElHeater', season=season).sum(axis=1),
-            TsThCols.DHW_STORAGE_DISCHARGE.value:
-                res.get_ts('th', 'src', 'MultiTempStorage: dhwsto', season=season).sum(axis=1),
-            TsThCols.BUFFER_STORAGE_DISCHARGE.value:
-                res.get_ts('th', 'src', 'MultiTempStorage: buffsto.*ht_flow', season=season).iloc[:, 1],
-            TsThCols.BUFFER_STORAGE_DISCHARGE_HT.value:
-                res.get_ts('th', 'src', 'MultiTempStorage: buffsto.*ht_flow', season=season).iloc[:, 0],
-            TsThCols.TH_INERTIA_DISCHARGE.value: res.get_ts('th', 'src', 'ThInertia', season=season).sum(axis=1),
-            TsThCols.ROOMHEAT_DEMAND.value: res.get_ts('th', 'sink', 'RoomheatDemand', season=season).sum(axis=1),
-            TsThCols.TH_DEMAND.value: (
-                    res.get_ts('th', 'sink', 'RoomheatDemand', season=season).sum(axis=1)
-                    + res.get_ts('th', 'sink', 'ThDemand', season=season).sum(axis=1)
-            ),
-            TsThCols.HEAT_GAINS.value: res.get_ts('th', 'src', 'HeatGains', season=season).sum(axis=1),
-            TsThCols.QMAX_SOLAR_THERMAL.value:
-                res.ts_others.filter(regex='(qmax_t.*ht_flow)(?!.*high)').loc[season].sum(axis=1),
-        }
+        try:
+            th_balance = {
+                TsThCols.HELPER_TH.value: -res.get_ts(
+                    'th', 'sink', 'ThInertia|buffsto|dhwsto', season=season).sum(axis=1),
+                TsThCols.DHW_STORAGE_CHARGE.value: res.get_ts(
+                    'th', 'sink', 'MultiTempStorage: dhwsto', season=season).sum(
+                    axis=1),
+                TsThCols.BUFFER_STORAGE_CHARGE.value:
+                    res.get_ts(
+                        'th', 'sink', 'MultiTempStorage: buffsto.*ht_flow', season=season).iloc[:, 1],
+                TsThCols.BUFFER_STORAGE_CHARGE_HT.value:
+                    res.get_ts(
+                        'th', 'sink', 'MultiTempStorage: buffsto.*ht_flow', season=season).iloc[:, 0],
+                TsThCols.TH_INERTIA_CHARGE.value: res.get_ts(
+                    'th', 'sink', 'ThInertia', season=season).sum(axis=1),
+                TsThCols.HEAT_GAINS_USED.value: (
+                        res.get_ts('th', 'src', 'HeatGains', season=season).sum(axis=1)
+                        - res.get_ts('th', 'sink', 'excess_heat', season=season).sum(axis=1)
+                ),
+                TsThCols.SOLAR_THERMAL.value: res.get_ts(
+                    'th', 'src', 'SolarThermal', season=season).sum(axis=1),
+                TsThCols.HEATPUMP_EL.value: res.get_ts(
+                    'el', 'sink', 'Heatpump', season=season).sum(axis=1),
+                TsThCols.HEATPUMP_AMBIENT_HEAT.value: res.get_ts(
+                    'th', 'sink', 'Heatpump', season=season).sum(axis=1),
+                TsThCols.GAS_BOILER.value: res.get_ts(
+                    'th', 'src', 'boiler', season=season).sum(axis=1),
+                TsThCols.DIRECT_EL_HEATER.value: res.get_ts(
+                    'th', 'src', 'DirectElHeater', season=season).sum(axis=1),
+                TsThCols.DHW_STORAGE_DISCHARGE.value:
+                    res.get_ts(
+                        'th', 'src', 'MultiTempStorage: dhwsto', season=season).sum(axis=1),
+                TsThCols.BUFFER_STORAGE_DISCHARGE.value:
+                    res.get_ts(
+                        'th', 'src', 'MultiTempStorage: buffsto.*ht_flow', season=season).iloc[:, 1],
+                TsThCols.BUFFER_STORAGE_DISCHARGE_HT.value:
+                    res.get_ts(
+                        'th', 'src', 'MultiTempStorage: buffsto.*ht_flow', season=season).iloc[:, 0],
+                TsThCols.TH_INERTIA_DISCHARGE.value: res.get_ts(
+                    'th', 'src', 'ThInertia', season=season).sum(axis=1),
+                TsThCols.ROOMHEAT_DEMAND.value: res.get_ts(
+                    'th', 'sink', 'RoomheatDemand', season=season).sum(axis=1),
+                TsThCols.TH_DEMAND.value: (
+                        res.get_ts('th', 'sink', 'RoomheatDemand', season=season).sum(axis=1)
+                        + res.get_ts('th', 'sink', 'ThDemand', season=season).sum(axis=1)
+                ),
+                TsThCols.HEAT_GAINS.value: res.get_ts(
+                    'th', 'src', 'HeatGains', season=season).sum(axis=1),
+                TsThCols.QMAX_SOLAR_THERMAL.value:
+                    res.ts_others.filter(regex='(qmax_t.*ht_flow)(?!.*high)').loc[season].sum(axis=1),
+            }
+        except Exception as e:
+            print("Error in th_balance timeseries plot definition:", e)
+            th_balance = {}
 
-        other_ts = {
-            TsOtherCols.TEMP_AIR.value: res.ts_inputs[PvgisDataCols.Air_temp].loc[season],
-            TsOtherCols.CO2_EQ.value: res.ts_inputs[CO2ElecCols.Co2eq_lca].loc[season],
-            TsOtherCols.ELEC_PRICE_HH.value: res.find_vals('ts_others', 'elec. price: el_std').sum(axis=1).loc[season],
-            TsOtherCols.ELEC_PRICE_HEAT.value: res.find_vals('ts_others', 'elec. price: el_hp').sum(axis=1).loc[season],
-            TsOtherCols.ELEC_PRICE_EMOB.value: res.find_vals('ts_others', 'elec. price: el_emob').sum(axis=1).loc[season],
-        }
+        try:
+            other_ts = {
+                TsOtherCols.TEMP_AIR.value: res.ts_inputs[PvgisDataCols.Air_temp].loc[season],
+                TsOtherCols.CO2_EQ.value: res.ts_inputs[CO2ElecCols.Co2eq_lca].loc[season],
+                TsOtherCols.ELEC_PRICE_HH.value: res.find_vals(
+                    'ts_others', 'elec. price: el_std').sum(axis=1).loc[season],
+                TsOtherCols.ELEC_PRICE_HEAT.value: res.find_vals(
+                    'ts_others', 'elec. price: el_hp').sum(axis=1).loc[season],
+                TsOtherCols.ELEC_PRICE_EMOB.value: res.find_vals(
+                    'ts_others', 'elec. price: el_emob').sum(axis=1).loc[season],
+            }
+        except Exception as e:
+            print("Error in ts_others timeseries plot definition:", e)
+            other_ts = {}
+
         setattr(
             res,
-            f'ts_plot_{season.value}',
+            f'ts_plot_{season.value if hasattr(season, "value") else season}',
             pd.DataFrame({**other_ts, **el_balance, **th_balance})
         )
 
@@ -890,7 +934,10 @@ def write_scenario_results(
     save_xlsx_wb(
         f"{results_folder}/OutputDetailed_{sce_data.scenario_name}.xlsx",
         res.to_dict(),
-        graphs={f'ts_plot_{season.value}': RES_TS_GRAPHS for season in const.Season}
+        graphs={
+            f'ts_plot_{season.value if hasattr(season, "value") else season}':
+                RES_TS_GRAPHS for season in create_ts_multiindex().levels[0]
+        }
     )
 
     return res
@@ -916,9 +963,9 @@ def write_results_summary(results: list, results_folder: str, print_summary=True
     res_output = {
         'summary': res_summary.T,
         **{
-            f"ts_plot_{sce}_{seas.value}": getattr(results[sce], f"ts_plot_{seas.value}")
+            f"{sce}_{res_key}": getattr(results[sce], res_key)
             for sce in results
-            for seas in const.Season
+            for res_key in results[sce].__dict__.keys() if "ts_plot" in res_key
         }
     }
     save_xlsx_wb(
@@ -926,7 +973,10 @@ def write_results_summary(results: list, results_folder: str, print_summary=True
         res_output,
         graphs={
             'summary': RES_BARCHART_GRAPHS,
-            **{f'ts_plot_{sce}_{seas.value}': RES_TS_GRAPHS for sce in results for seas in const.Season}
+            **{
+                res_key: RES_TS_GRAPHS
+                for res_key in res_output.keys() if "ts_plot" in res_key
+            }
         }
     )
 

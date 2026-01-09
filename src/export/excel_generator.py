@@ -420,9 +420,12 @@ def save_xlsx_wb(out_path: str, df_dict: dict, graphs: dict = None):
             workbook = writer.book
             worksheet = writer.sheets[dfname]
 
-            # add charts to worksheet
-            for graph_nr, graph_specs in enumerate(graphs[dfname]):
-                add_chart_to_worksheet(workbook, worksheet, graph_nr, graph_specs, df, dfname)
+            try:
+                # add charts to worksheet
+                for graph_nr, graph_specs in enumerate(graphs[dfname]):
+                    add_chart_to_worksheet(workbook, worksheet, graph_nr, graph_specs, df, dfname)
+            except Exception as e:
+                print(f"Error adding chart to worksheet {dfname}: {e}")
 
     writer.close()
 
