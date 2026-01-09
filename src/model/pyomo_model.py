@@ -240,6 +240,14 @@ def w_flex_demand_rule(m, flex_dem, flex_period):
             == flex_dem.flex_demands[flex_period]['demand'])
 
 
+def w_flex_demand_outside_period_rule(m, flex_dem, t, s):
+    all_flex_periods = [period for flex_demand in flex_dem.flex_demands.values() for period in flex_demand['period']]
+    if (s,t) not in all_flex_periods:
+        return m.p_t_drain[flex_dem, t, s] == 0
+    else:
+        return m.p_t_drain[flex_dem, t, s] >= 0
+
+
 def p_t_roomheat_demand_rule(m, dem, t, s):
 
     heat_loss_wout_refurb = dem.delta_temp_t[(s, t)] * (dem.transm_loss + dem.vent_loss)
@@ -909,6 +917,12 @@ def init_pyomo_model(components, cost_weight_factors: pd.Series, co2_price=1) ->
         m.flex_el_demands, m.flex_el_demand_periods,
         rule=w_flex_demand_rule,
         doc='sum constraint, s.t. demand is satisfied within period'
+    )
+
+    m.p_t_flex_demand_outside_period_calc = Constraint(
+        m.flex_el_demands, m.t, m.season,
+        rule=w_flex_demand_outside_period_rule,
+        doc='outside of flex period, demand is 0'
     )
     m.p_t_roomheat_drain_calc = Constraint(
         m.roomheat_demands, m.t, m.season,
