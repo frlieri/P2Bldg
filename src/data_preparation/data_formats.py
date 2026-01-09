@@ -58,7 +58,7 @@ from math import floor
 
 from src import const
 from src.const import TimeseriesCols, Season
-from src.helper import get_season, get_typeday, normalize_wrt_sum, hour_within_period
+from src.helper import get_season, get_typeday, normalize_wrt_sum, hour_within_period, create_ts_multiindex
 from src.export.analysis_plots import plot_typical_day_quantiles, plot_timeseries
 
 
@@ -672,10 +672,16 @@ class BuildingModelInput():
         }
         self.scenarios = self.excel_data['Location']['SCENARIO VALUES'].columns.to_list()
 
+        # check if scenario columns match in all worksheets
         for sheet in self.sheet_names_sce_data:
-            assert all(self.excel_data[sheet]['SCENARIO VALUES'].columns == self.scenarios), \
-                f"Scenarios must be the same for all sheets. Check for wrongly inserted data in excel input file." \
-                f"\n{sheet}: {self.excel_data[sheet]['SCENARIO VALUES'].columns.to_list()} != {self.scenarios}"
+            try:
+                assert all(self.excel_data[sheet]['SCENARIO VALUES'].columns == self.scenarios), \
+                    f"Scenarios must be the same for all sheets. Check for wrongly inserted data in excel input file." \
+                    f"\n{sheet}: {self.excel_data[sheet]['SCENARIO VALUES'].columns.to_list()} != {self.scenarios}"
+            except ValueError:
+                raise ValueError(
+                    f"Scenarios must be the same for all sheets. Check for wrongly inserted data in excel input file."
+                    f"\n{sheet}: {self.excel_data[sheet]['SCENARIO VALUES'].columns.to_list()} != {self.scenarios}")
 
         self._init_scenario_data()
         self.hp_specs = self._set_hp_specs()
@@ -859,6 +865,9 @@ class ScenarioResults:
         res_table_name = f"ts_{en_type}_{'sources' if src_sink == 'src' else 'sinks'}"
 
         ts_df = getattr(self, res_table_name)
+
+        if ts_df.empty:
+            ts_df = pd.DataFrame(index=create_ts_multiindex())
         if season is not None:
             ts_df = ts_df.loc[season]
 

@@ -14,10 +14,10 @@ The input data for the optimization is read from an Excel workbook located in `d
 (`example_building_opt_input.xlsx`) is provided in the repository. Descriptions of the input parameters can be found in 
 the workbook. The given example features 4 different scenarios: 
 - **BAU** (business as usual) with no PV and gas boilers
-- **WP+PV** with PV + BESS (battery electric storage system) and a heatpump (HP)
+- **PV+HP** with PV + BESS (battery electric storage system) and a heatpump (HP)
 - **Refurbishment** with PV, BESS and HP and a refurbishment measure (wall insulation)
 - **Flex** with PV, BESS, HP and optional refurbishment using a dynamic electiricity tariff also featuring 
-variable grid fees according to EnWG14a
+exemplary variable grid fees according to EnWG14a
 
 The results are written to a seperate result folder under `data/output/results` for each run. A result folder contains 
 - an analysis of climate data parameters (`ClimateDataAnalysis_**.xlsx`). It calculates heating degree days, 
@@ -60,7 +60,7 @@ the workbook.
 The results are written to an .xslx file under `data/output/results` for each run. An example is given under 
 `Example_battery_opt.xlsx`. A log file for each run is written to `data/output/logs`.
 
-How to run `run_battery_opt`
+How to run `run_battery_opt` (Windows)
 ----------------------------
 1. Fill in data into example input file (or copy input data file and rename. Make sure to update `proj_name` in 
 `run_battery_opt.py`).

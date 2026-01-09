@@ -26,3 +26,5 @@ jobs:
       run: |
         export PYTHONPATH=$PYTHONPATH:$(pwd)/src
         pytest tests
+        python src/run_building_opt.py
+        python src/run_battery_opt.py

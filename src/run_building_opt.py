@@ -562,6 +562,7 @@ def run_scenario(components: dict, cost_weight_factors: pd.Series, co2_price) ->
 if __name__ == "__main__":
 
     proj_name = "Example_building_opt"
+    print("project:", proj_name)
 
     # set up logging to file and console with tee
     out_path = f'{const.PATH_TO_WD}/data/output/logs/run_{proj_name}_{datetime.now().strftime("%Y%m%d-%H%M%S")}.txt'
