@@ -106,7 +106,7 @@ class Component:
                  fix_cost_inv=0.0, fix_cost_inv_escalation_rate=0.0,
                  fix_cost_one_time=0.0, fix_cost_one_time_escalation_rate=0.0,
                  fix_cost_yearly=0.0, fix_cost_yearly_escalation_rate=0.0,
-                 var_cost_t=0.0, var_cost_t_escalation_rate=0.0,
+                 var_cost_t=0.000000001, var_cost_t_escalation_rate=0.0,
                  lifetime=20, co2eq_per_cap=0.0, co2eq_per_kwh_t=0.0,
                  **params):
 
@@ -868,8 +868,9 @@ class StorageTechnology(Sink, Source):
     c_min_rel: float = None   # depth of discharge
     c_rate_max: float = None
 
-    def __init__(self, name, c_max=10**6, c_min=0.0, eff_in=1.0, eff_out=1.0, eff_store=0.999, p_max_in: float=None,
-                 p_max_out: float=None, c_rate_max=1.0, c_max_rel=1.0, c_min_rel=0.0, c_init_rel=0.0, **params):
+    def __init__(self, name, c_max=const.MAX_C, c_min=0.0, eff_in=1.0, eff_out=1.0, eff_store=0.999,
+                 p_max_in: float=const.MAX_P, p_max_out: float=const.MAX_P, c_rate_max=1.0, c_max_rel=1.0,
+                 c_min_rel=0.0, c_init_rel=0.0, **params):
         self.eff_in = eff_in
         self.eff_out = eff_out
         self.eff_store = eff_store

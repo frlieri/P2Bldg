@@ -1330,10 +1330,10 @@ if __name__ == '__main__':
 
     # write_climate_data_xlsx_analysis(results_folder=const.PATH_TO_WD + "/data/output/")
 
-    # debug write_results_summary
-    results = load_pickle('last_results')
-    write_results_summary(results, results_folder=create_result_folder('last_results'))
+    # # debug write_results_summary
+    # results = load_pickle('last_results')
+    # write_results_summary(results, results_folder=create_result_folder('last_results'))
 
-    # # debug write_scenario_results
-    # sce_data, m, ts_red_inputs = load_pickle('last_scenario_results')
-    # write_scenario_results(sce_data, m, ts_red_inputs, results_folder=create_result_folder('last_results'))
+    # debug write_scenario_results
+    sce_data, m, ts_red_inputs = load_pickle('last_scenario_results')
+    write_scenario_results(sce_data, m, ts_red_inputs, results_folder=create_result_folder('last_results'))
