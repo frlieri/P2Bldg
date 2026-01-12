@@ -54,6 +54,7 @@ from src.helper import check_if_values_outside_range, get_var_t
 
 
 def el_node_balance_rule(m, node, t, s):
+    """electrical energy balance at every node"""
     balance = 0
     for src in node.sources:
         balance += m.p_el_t_feed[src, t, s]
@@ -63,6 +64,7 @@ def el_node_balance_rule(m, node, t, s):
 
 
 def th_node_balance_rule(m, node, t, s):
+    """thermal energy balance at every node"""
     balance = 0
     for src in node.sources:
         balance += m.p_th_t_feed[src, node.temp_level, t, s]
@@ -72,6 +74,7 @@ def th_node_balance_rule(m, node, t, s):
 
 
 def objective_function(m):
+    """minimize costs"""
     costs = (
         summation(m.inv_costs) + summation(m.fix_costs) + summation(m.var_costs)
         - summation(m.revenues)
@@ -82,8 +85,8 @@ def objective_function(m):
 
 
 def var_costs_rule(m, source):
-    """ variable costs have to be weighted with factors to calculate var costs for a whole year solely based
-    on reference years """
+    """variable costs (OPEX). Have to be weighted with factors to calculate var costs for a whole year solely based
+    on reference years"""
     var_costs = sum(m.p_t_feed[source, t, s] * m.cost_weights[(s, t)] * get_var_t(source.var_cost_t_levelled, (s, t))
                     for t in m.t for s in m.season) / const.TS_PER_HOUR
 
@@ -91,10 +94,12 @@ def var_costs_rule(m, source):
 
 
 def fix_costs_rule(m, comp):
+    """yearly fix costs (OPEX)"""
     return m.fix_costs[comp] == comp.fix_cost_levelled
 
 
 def inv_costs_rule(m, comp):
+    """investment costs (CAPEX)"""
     if isinstance(comp, StorageTechnology):
         if isinstance(comp, MultiTempStorage):
             relevant_cap = m.c_inst_l[comp]
@@ -116,13 +121,14 @@ def inv_costs_rule(m, comp):
 
 
 def revenues_rule(m, export):
-    """revenues also have to be weighted (see var costs)"""
+    """revenues. Also have to be weighted (see var costs)"""
     return (m.revenues[export] == sum(
             -get_var_t(export.var_cost_t, (s, t)) * m.p_t_drain[export, t, s] * m.cost_weights[(s, t)]
             for t in m.t for s in m.season) / const.TS_PER_HOUR)
 
 
 def co2eq_rule(m, comp):
+    """calculate total co2eq emissions for each component"""
     if isinstance(comp, StorageTechnology):
         balance = comp.co2eq_per_cap * m.c_inst[comp] / comp.lifetime
     else:
@@ -136,18 +142,22 @@ def co2eq_rule(m, comp):
 
 
 def co2_costs_rule(m, comp):
+    """calculate costs for co2eq emissions for each component"""
     return m.co2_costs[comp] == m.co2eq_balance[comp] * m.co2_price
 
 
 def p_inst_min_rule(m, comp):
+    """lower bound for installed power"""
     return comp.p_min * m.is_built[comp] <= m.p_inst[comp]
 
 
 def p_inst_max_rule(m, comp):
+    """upper bound for installed power"""
     return m.p_inst[comp] <= comp.p_max * m.is_built[comp]
 
 
 def is_built_rule(m, comp):
+    """set components that must be installed"""
     if comp.is_built is not None:
         return m.is_built[comp] == comp.is_built
     else:
@@ -155,23 +165,27 @@ def is_built_rule(m, comp):
 
 
 def p_t_feed_max_rule(m, source, t, s):
+    """upper bound for power at every timestep for sources"""
     return m.p_t_feed[source, t, s] <= get_var_t(source.p_max_rel_t, (s, t))*m.p_inst[source]
 
 
 def p_t_feed_min_rule(m, source, t, s):
+    """lower bound for power at every timestep for sources"""
     return m.p_t_feed[source, t, s] >= get_var_t(source.p_min_rel_t, (s, t))*m.p_inst[source]
 
 
 def p_t_drain_max_rule(m, sink, t, s):
+    """upper bound for power at every timestep for sinks"""
     return m.p_t_drain[sink, t, s] <= get_var_t(sink.p_max_rel_t, (s, t))*m.p_inst[sink]
 
 
 def p_t_drain_min_rule(m, sink, t, s):
+    """lower bound for power at every timestep for sinks"""
     return m.p_t_drain[sink, t, s] >= get_var_t(sink.p_min_rel_t, (s, t))*m.p_inst[sink]
 
 
 def t_full_min_rule(m, comp):
-    """for storages the energy going in counts"""
+    """set min bound for full load hours. For storages the energy going in counts"""
     if isinstance(comp, Sink):
         return (sum(m.p_t_drain[comp, t, s] for t in m.t for s in m.season) / const.TS_PER_HOUR
                 >= comp.t_full_min * m.p_inst[comp])
@@ -181,6 +195,7 @@ def t_full_min_rule(m, comp):
 
 
 def t_full_max_rule(m, comp):
+    """set max bound for full load hours"""
     """for storages the energy going in counts"""
     if isinstance(comp, Sink):
         return (sum(m.p_t_drain[comp, t, s] for t in m.t for s in m.season) / const.TS_PER_HOUR
@@ -191,10 +206,12 @@ def t_full_max_rule(m, comp):
 
 
 def trans_rule(m, link, t, s):
+    """set transmission rule for links"""
     return m.p_t_feed[link, t, s] == link.eff * m.p_t_drain[link, t, s]
 
 
 def trans_th_rule(m, heat_ex, temp, t, s):
+    """set transmission rule for links"""
     if temp == heat_ex.temp_levels_feed[0]:
         return m.p_th_t_feed[heat_ex, temp, t, s] == (
                 heat_ex.eff * m.p_th_t_drain[heat_ex, heat_ex.temp_levels_drain[0], t, s])
@@ -203,11 +220,12 @@ def trans_th_rule(m, heat_ex, temp, t, s):
 
 
 def pv_gen_rule(m, pv, t, s):
-    """calculation of PV generation (includes module degeneration)"""
+    """generation series in relation to p_inst. Calculation includes module degeneration"""
     return m.p_t_feed[pv, t, s] <= m.p_inst[pv] * pv.potential.gen_ts_normalized[(s, t)] * (1.0 + pv.pmax_at_lifeend)/2
 
 
 def st_gen_rule(m, st, temp, t, s):
+    """generation series in relation to p_inst for each temperature level"""
     if temp in st.temp_levels_feed:
         return m.p_th_t_feed[st, temp, t, s] <= m.p_inst[st] * st.qmax_t[temp][(s, t)]
     else:
@@ -215,14 +233,17 @@ def st_gen_rule(m, st, temp, t, s):
 
 
 def tot_st_gen_calc(m, st, t, s):
+    """total p_t_feed calculation for solar thermal (ST)"""
     return m.p_t_feed[st, t, s] == sum(m.p_th_t_feed[st, temp, t, s] for temp in st.temp_levels_feed)
 
 
 def tot_st_gen_rule(m, st, t, s):
+    """constrain total p_t_feed to maximum ST generation"""
     return m.p_t_feed[st, t, s] <= max(st.qmax_t[temp][(s, t)] for temp in st.temp_levels_feed) * m.p_inst[st]
 
 
 def solarpotential_area_rule(m, pot):
+    """area of SolarPotential is limited, PV and ST have to share"""
     pot_user = []
     for comp in m.solar_technologies:
         if comp.potential == pot:
@@ -232,15 +253,18 @@ def solarpotential_area_rule(m, pot):
 
 
 def p_t_demand_rule(m, dem, t, s):
+    """set equal to demands"""
     return m.p_t_drain[dem, t, s] == dem.p_t[(s, t)]
 
 
 def w_flex_demand_rule(m, flex_dem, flex_period):
+    """sum constraint, s.t. demand is satisfied within period"""
     return (sum(m.p_t_drain[flex_dem, t, s] for (s,t) in flex_dem.flex_demands[flex_period]['period'])
             == flex_dem.flex_demands[flex_period]['demand'])
 
 
 def w_flex_demand_outside_period_rule(m, flex_dem, t, s):
+    """outside of flex period, demand is 0"""
     all_flex_periods = [period for flex_demand in flex_dem.flex_demands.values() for period in flex_demand['period']]
     if (s,t) not in all_flex_periods:
         return m.p_t_drain[flex_dem, t, s] == 0
@@ -249,7 +273,7 @@ def w_flex_demand_outside_period_rule(m, flex_dem, t, s):
 
 
 def p_t_roomheat_demand_rule(m, dem, t, s):
-
+    """calculate room heat demand"""
     heat_loss_wout_refurb = dem.delta_temp_t[(s, t)] * (dem.transm_loss + dem.vent_loss)
 
     heat_loss_w_refurb = heat_loss_wout_refurb * (
@@ -259,7 +283,7 @@ def p_t_roomheat_demand_rule(m, dem, t, s):
 
 
 def p_t_heat_gains_rule(m, imp, t, s):
-
+    """calculate heat gains"""
     heat_gains_wout_refurb = (imp.delta_temp_t[(s, t)] * (imp.transm_loss + imp.vent_loss) +
         imp.internal_gains_t[(s, t)] + imp.solar_gains_t[(s, t)])
 
@@ -269,16 +293,18 @@ def p_t_heat_gains_rule(m, imp, t, s):
     return m.p_t_feed[imp, t, s] == heat_gains_w_refurb
 
 
-# storages
 def c_inst_min_rule(m, sto):
+    """lower bound for installed capacity"""
     return sto.c_min * m.is_built[sto] <= m.c_inst[sto]
 
 
 def c_inst_max_rule(m, sto):
+    """upper bound for installed capacity"""
     return m.c_inst[sto] <= sto.c_max * m.is_built[sto]
 
 
 def c_t_rule(m, sto, t, s):
+    """calculation rule for storage capacity at timestep s,t"""
     if t > 0:
         current_state = sto.eff_store * m.c_t[sto, t-1, s]
     else:
@@ -288,39 +314,45 @@ def c_t_rule(m, sto, t, s):
 
 
 def c_t_max_rule(m, sto, t, s):
+    """storage capacity at timestep s,t has to be lower than installed cap"""
     return m.c_t[sto, t, s] <= sto.c_max_rel * m.c_inst[sto]
 
 
 def c_t_min_rule(m, sto, t, s):
+    """storage capacity at timestep s,t has to be higher than c_min"""
     return m.c_t[sto, t, s] >= sto.c_min_rel * sto.c_min
 
 
 def max_charge_rule(m, sto, t, s):
+    """charge must be smaller than c_rate_max"""
     return m.p_t_drain[sto, t, s] / const.TS_PER_HOUR <= sto.c_rate_max * m.c_inst[sto]
 
 
 def max_discharge_rule(m, sto, t, s):
+    """discharge must be smaller than c_rate_max"""
     return m.p_t_feed[sto, t, s] / const.TS_PER_HOUR <= sto.c_rate_max * m.c_inst[sto]
 
 
-# battery storages
 def max_cycle_rule(m, sto):
+    """maximum number of battery cycles until EOL is reached"""
     return (sto.lifetime *
             sum(m.cost_weights[(s, t)] * m.p_t_drain[sto, t, s] / const.TS_PER_HOUR for t in m.t for s in m.season)
             <= m.c_inst[sto] * sto.max_cycles)
 
 
 def max_endofchargecurrent_rule(m, sto, t, s):
+    """constraint for maximum charging current when constant voltage charging is reached"""
     return (m.p_t_drain[sto, t, s] / const.TS_PER_HOUR / sto.c_rate_max <=
             sto.endofcharge_eq_slope_offset[0] * m.c_t[sto, t, s] + sto.endofcharge_eq_slope_offset[1] * m.c_inst[sto])
 
 
 def max_cap_w_degradation_rule(m, sto, t, s):
+    """calculate average capacity over lifetime"""
     return m.c_t[sto, t, s] <= m.c_inst[sto] * sto.c_max_rel * (1.0 + sto.c_max_at_lifeend)/2
 
 
-# thermal multi-temp storages
 def c_th_t_temp_rule(m, sto, temp, t, s):
+    """calculate c_th_t for each temperature level"""
     if temp in sto.temp_levels_feed:
         if t > 0:
             current_state = sto.eff_store * m.c_th_t[sto, temp, t-1, s]
@@ -334,46 +366,54 @@ def c_th_t_temp_rule(m, sto, temp, t, s):
 
 
 def c_th_t_tot_rule(m, sto, t, s):
+    """calculate c_t from c_th_t"""
     return m.c_t[sto, t, s] == sum(m.c_th_t[sto, temp, t, s] for temp in sto.temp_levels_feed)
 
 
 def c_th_t_in_l_rule(m, sto, t, s):
+    """storage capacity in l at timestep s,t has to be lower than installed cap in l"""
     return sum(m.c_th_t[sto, temp, t, s]/(
                 const.TH_CAP_WATER_Wh_per_kg_K / 10 ** 3 * get_var_t(temp.delta_temp_t, (s, t)))
                for temp in sto.temp_levels_feed) <= sto.c_max_rel * m.c_inst_l[sto]
 
 
 def c_th_t_max_rule(m, sto):
+    """storage capacity in l has to be smaller than sto.c_max_l"""
     return m.c_inst_l[sto] <= sto.c_max_l
 
 
 def c_th_t_min_rule(m, sto):
+    """storage capacity in l has to be larger than sto.c_min_l"""
     return m.c_inst_l[sto] >= sto.c_min_l
 
 
-# general feed and drain rules
 def p_th_t_drain_rule(m, th_sink, t, s):
+    """set P th t in"""
     return sum(m.p_th_t_drain[th_sink, temp, t, s] for temp in th_sink.temp_levels_drain) == m.p_t_drain[th_sink, t, s]
 
 
 def p_th_t_feed_rule(m, th_source, t, s):
+    """set P th t out"""
     return sum(m.p_th_t_feed[th_source, temp, t, s] for temp in th_source.temp_levels_feed) == m.p_t_feed[th_source, t, s]
 
 
 def p_el_t_drain_rule(m, el_sink, t, s):
+    """set P el t in"""
     return m.p_el_t_drain[el_sink, t, s] == m.p_t_drain[el_sink, t, s]
 
 
 def p_el_t_feed_rule(m, el_source, t, s):
+    """set P el t out"""
     return m.p_el_t_feed[el_source, t, s] == m.p_t_feed[el_source, t, s]
 
 
 def p_inst_min_node_rule(m, node):
+    """E.g. for heating systems there is a mininum total capacity needed (Heizlast). Without storages"""
     return sum([m.p_inst[src] for src in node.sources if not isinstance(src, StorageTechnology)]) >= node.p_min
 
 
-# heatppump
 def hp_p_th_t_feed_rule(m, hp, temp, t, s):
+    """calculate P th t feed (heat delivered from heatpumps to drain node)"""
     if temp in hp.temp_levels_feed:
         return m.p_th_t_feed[hp, temp, t, s] == hp.cop_t[temp][(s, t)] * m.p_el_t_drain_temp_level[hp, temp, t, s]
     else:
@@ -381,29 +421,35 @@ def hp_p_th_t_feed_rule(m, hp, temp, t, s):
 
 
 def hp_p_th_t_drain_rule(m, hp, t, s):
+    """calculate P th t drain (heat drawn from feed node from heatpumps)"""
     return m.p_th_t_drain[hp, hp.temp_levels_drain[0], t, s] == sum(
         max(0, hp.cop_t[temp][(s, t)] - 1) * m.p_el_t_drain_temp_level[hp, temp, t, s] for temp in hp.temp_levels_feed)
 
 
 def p_el_t_drain_temp_levels_rule(m, comp, t, s):
+    """calculate total P el t drain (electricity drawn from node)"""
     return m.p_el_t_drain[comp, t, s] == sum(m.p_el_t_drain_temp_level[comp, temp, t, s]
                                              for temp in comp.temp_levels_feed)
 
 
 def hp_p_th_feed_max_rule(m, hp, t, s):
+    """calculate max. P th t depending on the source temperature"""
     return sum(m.p_th_t_feed[hp, temp, t, s]/hp.qmax_t[temp][(s, t)] for temp in hp.temp_levels_feed
                if hp.qmax_t[temp][(s, t)] > 0 ) <= m.p_inst[hp]
 
 
 def deh_p_th_t_feed_rule(m, deh, temp, t, s):
+    """calculate P th t (heat delivered from direct electric heaters)"""
     return m.p_th_t_feed[deh, temp, t, s] == deh.eff * m.p_el_t_drain_temp_level[deh, temp, t, s]
 
 
 def set_refurb_cap_rule(m, ref):
+    """set capacity values for refurbishments, so CO2-emissions will be considered"""
     return m.p_inst[ref] == m.is_built[ref]
 
 
 def peak_load_rule(m, el_imp, t, s):
+    """determine peak load during high load time frames for which grid fees are charged"""
     if el_imp.atypical_consumption and el_imp.peak_load_timesteps[(s, t)] == 1:
         return m.p_t_feed[el_imp, t, s] <= m.p_peak_hltf[el_imp]
     else:
@@ -411,6 +457,7 @@ def peak_load_rule(m, el_imp, t, s):
 
 
 def hltf_pmax_rule(m, el_imp):
+    """limit peak load during high load time frames"""
     return m.p_peak_hltf[el_imp] <= const.HLTF_PEAK_LOAD_LIMIT * m.p_inst[el_imp]
 
 
@@ -795,29 +842,29 @@ def init_pyomo_model(components, cost_weight_factors: pd.Series, co2_price=1) ->
     m.el_node_balance = Constraint(
         m.el_nodes, m.t, m.season,
         rule=el_node_balance_rule,
-        doc="energy balance at every node"
+        doc="electrical energy balance at every node"
     )
     m.th_node_balance = Constraint(
         m.th_nodes, m.t, m.season,
         rule=th_node_balance_rule,
-        doc="energy balance at every node"
+        doc="thermal energy balance at every node"
     )
 
 
     m.inv_costs_calc = Constraint(
         m.components,
         rule=inv_costs_rule,
-        doc='costs'
+        doc='investment costs (CAPEX)'
     )
     m.fix_costs_calc = Constraint(
         m.components,
         rule=fix_costs_rule,
-        doc='costs'
+        doc='yearly fix costs (OPEX)'
     )
     m.var_costs_calc = Constraint(
         m.sources,
         rule=var_costs_rule,
-        doc='costs'
+        doc='variable costs (OPEX)'
     )
     m.revenues_calc = Constraint(
         m.exports,

@@ -1,4 +1,4 @@
-# P2Bldg — Building Energy Systen Optimization Framework
+# P2Bldg — Building Energy System Optimization Framework
 
 P2Bldg ("Power to Building") is a Python framework for the integrated optimization of building energy systems.
 It features energy system components, such as PV, battery storage, heat pumps, thermal storages, and other heating 
@@ -9,7 +9,7 @@ Timeseries for loads, generation, and prices can be calculated inherently or ext
 Features
 --------
 - Integrated electrical and thermal energy system modeling.
-- Techno-economic optimization via MILP using Pyomo.
+- Techno-economic optimization via MILP using Pyomo, calculations in energy balances.
 - Flexible time resolution: hourly, quarter-hourly, computational efficiency via timeseries reduction 
 (selection of reference weeks)
 - Inherent calculation of demand profiles, notably room heating demands considering transmission and ventilation losses 
@@ -65,5 +65,6 @@ External dependencies
 - Domestic hot water load profiles have been generated with [DHWcalc](https://www.uni-kassel.de/maschinenbau/institute/thermische-energietechnik/fachgebiete/solar-und-anlagentechnik/downloads.html).
 - Household electricity load profiles have been generated with the [synPRO](https://synpro-lastprofile.de/) tool from Fraunhofer ISE.
 - Electricity price profiles are obtained from [energy-charts.info](https://www.energy-charts.info/).
+- Solver access is provided via [NEOS Server](https://neos-server.org/neos/).
 
 

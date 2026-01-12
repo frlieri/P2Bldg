@@ -64,9 +64,10 @@ How to run `run_battery_opt` (Windows)
 ----------------------------
 1. Fill in data into example input file (or copy input data file and rename. Make sure to update `proj_name` in 
 `run_battery_opt.py`).
-2. Run `run_building_opt.bat` (by double-clicking) to activate the virtual environment and run the script.
+2. Activate `m.atypical_consumption` and `m.hltf_p_max` constraints by uncommenting the respective lines in `src/model/pyomo_model.py`.
+3. Run `run_building_opt.bat` (by double-clicking) to activate the virtual environment and run the script.
 (the calculation of one scenario takes approx. 4mins -> ~20mins for a complete run).
-3. Outputs are written to `data/output/results`.
+4. Outputs are written to `data/output/results`.
 
 # Notes
 
