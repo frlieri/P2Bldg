@@ -418,21 +418,21 @@ def calc_emob_demands(ev_data: dict) -> tuple[Timeseries, Timeseries]:
         # optimized charging: energy has to be delivered somewhere in period, but is flexible when
         if ev_data[ev]['chargetype'] == EmobChargetype.optimized.value:
             flex_demands[f"flex_{ev}_charging_status"] = ts[f"{ev}_charging_status"]
-            flex_demands[f"flex_{ev}_delivered_energy"] = 0
+            flex_demands[f"flex_{ev}_delivered_energy"] = 0.0
             for block, idx in charge_block_idx.items():
                 flex_demands.df.loc[idx[-1], f"flex_{ev}_delivered_energy"] = ch_energy
 
         # flat charging: constant charging throughout charing period
         elif ev_data[ev]['chargetype'] == EmobChargetype.flat.value:
             stat_demands[f"{ev}_charging_status"] = ts[f"{ev}_charging_status"]
-            stat_demands[f"{ev}_load"] = 0
+            stat_demands[f"{ev}_load"] = 0.0
             for block, idx in charge_block_idx.items():
                 stat_demands.df.loc[idx, f"{ev}_load"] = ch_energy/ch_period_len
 
         # fast charging: charing with full power until full
         elif ev_data[ev]['chargetype'] == EmobChargetype.fast.value:
             stat_demands[f"{ev}_charging_status"] = ts[f"{ev}_charging_status"]
-            stat_demands[f"{ev}_load"] = 0
+            stat_demands[f"{ev}_load"] = 0.0
             ch_power = ev_data[ev]['max_p']
             max_ch_steps = math.floor(ch_energy / ch_power * const.TS_PER_HOUR)
             ch_power_rest = ch_energy * const.TS_PER_HOUR - max_ch_steps * ch_power

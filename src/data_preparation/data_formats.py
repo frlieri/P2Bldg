@@ -569,8 +569,8 @@ class ScenarioData():
                 elif datatype == 'str':
                     sce_data.loc[var] = str(sce_data[var])
 
-            except ValueError:
-                raise ValueError(f"{var}: {sce_data[var]} cannot be converted to {datatype}")
+            except TypeError as e:
+                raise TypeError(f"{var}: {sce_data[var]} cannot be converted to {datatype}. {e}")
 
         return sce_data
 
