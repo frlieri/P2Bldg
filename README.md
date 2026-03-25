@@ -43,15 +43,14 @@ can be found under [p2bldg.readthedocs](https://p2bldg.readthedocs.io/en/latest/
 Quick prerequisites
 -------------------
 1. Python 3.11 (or compatible).
-2. Internet connection for data collection (PVGIS) and remote solving (NEOS server).
-3. Optional: Local solver (e.g. glpk, cbc, cplex, gurobi)
+2. Internet connection for data collection (PVGIS).
 
 Install (Windows)
 -------
 1. Clone repository : ``git clone <repo-url> cd P2Bldg``(git bash) or download zip and extract.
 2. Run ``setup_env.bat`` (by double-clicking) to create virtual environment and install dependencies
-3. Configure access to NEOS solver (add your e-mail address under `os.environ['NEOS_EMAIL']` in ``src/config.py``) 
-or install local solver (e.g. glpk, cbc, cplex, gurobi).
+3. If you encounter any problems, please contact repository maintainer.
+4. Optional: Install other solver (e.g. glpk, cbc, cplex, gurobi) or configure access to NEOS solver (add your e-mail address under `os.environ['NEOS_EMAIL']` in ``src/config.py``).
 
 How to run
 ----------
@@ -65,6 +64,6 @@ External dependencies
 - Domestic hot water load profiles have been generated with [DHWcalc](https://www.uni-kassel.de/maschinenbau/institute/thermische-energietechnik/fachgebiete/solar-und-anlagentechnik/downloads.html).
 - Household electricity load profiles have been generated with the [synPRO](https://synpro-lastprofile.de/) tool from Fraunhofer ISE.
 - Electricity price profiles are obtained from [energy-charts.info](https://www.energy-charts.info/).
-- Solver access is provided via [NEOS Server](https://neos-server.org/neos/).
+- Solver access is provided using the [highspy](https://pypi.org/project/highspy/) package or using the online [NEOS Server](https://neos-server.org/neos/).
 
 

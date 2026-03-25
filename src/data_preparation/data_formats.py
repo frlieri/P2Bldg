@@ -565,7 +565,7 @@ class ScenarioData():
                 elif datatype == 'int':
                     sce_data.loc[var] = int(sce_data[var])
                 elif datatype == 'bool':
-                    sce_data.loc[var] = bool(sce_data[var])
+                    sce_data.loc[var] = int(bool(sce_data[var]))
                 elif datatype == 'str':
                     sce_data.loc[var] = str(sce_data[var])
 

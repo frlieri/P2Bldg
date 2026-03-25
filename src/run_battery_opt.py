@@ -40,7 +40,7 @@ from contextlib import redirect_stdout, redirect_stderr
 from datetime import datetime, timedelta
 import logging
 from pyomo.util.infeasible import log_infeasible_constraints
-from pyomo.environ import ConcreteModel, SolverManagerFactory
+from pyomo.environ import ConcreteModel, SolverManagerFactory, SolverFactory
 
 from src.const import *
 from src.model.components import *
@@ -74,16 +74,18 @@ def run_optimization(components, cost_weight_factors, co2_price) -> ConcreteMode
     # solve
     print('solving model...')
 
-    # use online solver: https://neos-server.org/neos/solvers/index.html
-    solver_manager = SolverManagerFactory('neos')
-    solver_manager.solve(m, solver="cplex").write()
+    # # use online solver: https://neos-server.org/neos/solvers/index.html
+    # solver_manager = SolverManagerFactory('neos')
+    # solver_manager.solve(m, solver="cplex").write()
 
-    # # use local solver: glpk
-    # SolverFactory('glpk').solve(m).write()
+    # use local solver: HiGHS
+    solver = SolverFactory('appsi_highs')
+    solver.options['time_limit'] = 300
+    solver.solve(m).write()
 
-    # log errors if needed
-    logging.basicConfig(filename='infeasile.log', encoding='utf-8', level=logging.DEBUG)
-    log_infeasible_constraints(m, log_expression=True, log_variables=True)
+    # # log errors if needed
+    # logging.basicConfig(filename='infeasile.log', encoding='utf-8', level=logging.DEBUG)
+    # log_infeasible_constraints(m, log_expression=True, log_variables=True)
 
     print("solving time: ", datetime.now() - start)
 

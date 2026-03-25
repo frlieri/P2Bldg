@@ -41,7 +41,8 @@ import logging
 from contextlib import redirect_stdout, redirect_stderr
 
 from pyomo.util.infeasible import log_infeasible_constraints
-from pyomo.environ import ConcreteModel, SolverManagerFactory
+from pyomo.environ import ConcreteModel, SolverManagerFactory, SolverFactory
+from pyomo.contrib import appsi
 
 from src.model.components import *
 from src.const import Season
@@ -543,16 +544,18 @@ def run_scenario(components: dict, cost_weight_factors: pd.Series, co2_price) ->
     # solve
     print('solving model...')
 
-    # use online solver: https://neos-server.org/neos/solvers/index.html
-    solver_manager = SolverManagerFactory('neos')
-    solver_manager.solve(m, solver="cplex").write()
+    # # use online solver: https://neos-server.org/neos/solvers/index.html
+    # solver_manager = SolverManagerFactory('neos')
+    # solver_manager.solve(m, solver="cplex").write()
 
-    # # use local solver: glpk
-    # SolverFactory('glpk').solve(m).write()
+    # use local solver: HiGHS
+    solver = SolverFactory('appsi_highs')
+    solver.options['time_limit'] = 300
+    solver.solve(m).write()
 
-    # log errors if needed
-    logging.basicConfig(filename='infeasile.log', encoding='utf-8', level=logging.DEBUG)
-    log_infeasible_constraints(m, log_expression=True, log_variables=True)
+    # # log errors if needed
+    # logging.basicConfig(filename='infeasile.log', encoding='utf-8', level=logging.DEBUG)
+    # log_infeasible_constraints(m, log_expression=True, log_variables=True)
 
     print("solving time: ", datetime.now() - start)
 
@@ -578,7 +581,7 @@ if __name__ == "__main__":
             results_folder = create_result_folder(proj_name)
             save_xlsx_wb(results_folder + "/InputData.xlsx", bm_input.excel_data)
 
-            skip_scenarios = [] #['BAU', 'PV']
+            skip_scenarios = ['Flex']
             for scenario in bm_input.scenarios:
                 start = datetime.now()
                 if scenario not in skip_scenarios:
