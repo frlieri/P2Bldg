@@ -69,11 +69,12 @@ How to run `run_battery_opt` (Windows)
 (the calculation of one scenario takes approx. 4mins -> ~20mins for a complete run).
 4. Outputs are written to `data/output/results`.
 
-# Notes
+# Note
 
-- By default the example uses NEOS/CPLEX in the project; to use a local solver, edit the solver call in 
-`run_building_opt.run_scenario`/`run_battery_opt.run_scenario` (see commented lines).
-- Make sure to configure NEOS solver access in `src/config.py` (add your e-mail address under `os.environ['NEOS_EMAIL']`).
+By default the examples use the HiGHS solver running locally using the highspy package. 
+If you want to use the NEOS online solver or another locally installed solver NEOS/CPLEX, edit the solver call in
+`run_building_opt.run_scenario`/`run_battery_opt.run_scenario` (see commented lines). For using NEOS make sure to 
+configure NEOS solver access in `src/config.py` (add your e-mail address under `os.environ['NEOS_EMAIL']`).
 
 
 # Troubleshooting
