@@ -550,7 +550,7 @@ def run_scenario(components: dict, cost_weight_factors: pd.Series, co2_price) ->
 
     # use local solver: HiGHS
     solver = SolverFactory('appsi_highs')
-    solver.options['time_limit'] = 300
+    # solver.options['time_limit'] = 300
     solver.solve(m).write()
 
     # # log errors if needed

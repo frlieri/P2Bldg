@@ -80,7 +80,7 @@ def run_optimization(components, cost_weight_factors, co2_price) -> ConcreteMode
 
     # use local solver: HiGHS
     solver = SolverFactory('appsi_highs')
-    solver.options['time_limit'] = 300
+    # solver.options['time_limit'] = 600
     solver.solve(m).write()
 
     # # log errors if needed
