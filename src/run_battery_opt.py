@@ -126,8 +126,8 @@ def apply_hlzf_windows(hlzf_df, df_target, year=2024):
 
     # Hole Start- und Enddaten jeder Saison
     for i, season in enumerate(seasons):
-        start_str = date_row[i * 2]
-        end_str = date_row[i * 2 + 1]
+        start_str = date_row.iloc[i * 2]
+        end_str = date_row.iloc[i * 2 + 1]
         # Parsing mit Dummy-Jahr
         start_date = pd.to_datetime(f"{start_str}{year}", format="%d.%m.%Y")
         end_date = pd.to_datetime(f"{end_str}{year}", format="%d.%m.%Y")
